@@ -80,7 +80,7 @@
             this.tsbtn_Reset.ImageTransparentColor = System.Drawing.Color.White;
             this.tsbtn_Reset.Name = "tsbtn_Reset";
             this.tsbtn_Reset.Size = new System.Drawing.Size(64, 64);
-            this.tsbtn_Reset.Text = "toolStripButton1";
+            this.tsbtn_Reset.Text = "Reset";
             // 
             // tsbtn_Settings
             // 
@@ -89,7 +89,7 @@
             this.tsbtn_Settings.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Settings.Name = "tsbtn_Settings";
             this.tsbtn_Settings.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_Settings.Text = "toolStripButton2";
+            this.tsbtn_Settings.Text = "Settings";
             // 
             // tsbtn_Start
             // 
@@ -98,7 +98,7 @@
             this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Start.Name = "tsbtn_Start";
             this.tsbtn_Start.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_Start.Text = "toolStripButton3";
+            this.tsbtn_Start.Text = "Start";
             // 
             // tsbtn_Stop
             // 
@@ -107,7 +107,7 @@
             this.tsbtn_Stop.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Stop.Name = "tsbtn_Stop";
             this.tsbtn_Stop.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_Stop.Text = "toolStripButton4";
+            this.tsbtn_Stop.Text = "Stop";
             // 
             // tsbtn_Help
             // 
@@ -117,7 +117,7 @@
             this.tsbtn_Help.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Help.Name = "tsbtn_Help";
             this.tsbtn_Help.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_Help.Text = "toolStripButton5";
+            this.tsbtn_Help.Text = "Help";
             // 
             // statusStrip1
             // 

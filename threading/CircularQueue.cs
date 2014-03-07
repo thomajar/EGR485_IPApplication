@@ -9,6 +9,7 @@ namespace SAF_OpticalFailureDetector.threading
 {
     public class CircularQueue<T>
     {
+        private String consumer = "";
         private List<T> queue;
         private int insertIndex;
         private int removeIndex;
@@ -23,13 +24,14 @@ namespace SAF_OpticalFailureDetector.threading
         /// </summary>
         /// <param name="maxSize">Number of elements initially in thread
         /// queue.</param>
-        public CircularQueue(int maxSize)
+        public CircularQueue(String consumer, int maxSize)
         {
             // create a thread safe synchronization method that only allows
             // one thread to access the circular queue at once. It is 
             // initially owned by creating thread.
             sem = new Semaphore(0, 1);
 
+            this.consumer = consumer;
             // verify passed max size is less that SIZE_LIMIT
             if (maxSize > SIZE_LIMIT)
             {
@@ -101,6 +103,33 @@ namespace SAF_OpticalFailureDetector.threading
                 removeIndex = (removeIndex + 1) % maxSize;
                 data = queue[removeIndex];
                 elements--;
+                result = true;
+            }
+            sem.Release();
+            return result;
+        }
+
+        /// <summary>
+        /// Method retrieves data from circular queue between
+        /// remove index and insert index.
+        /// </summary>
+        /// <param name="data">List to store returned data to.</param>
+        /// <returns>True upon success</returns>
+        public Boolean popAll(ref List<T> data)
+        {
+            Boolean result = false;
+            sem.WaitOne();
+            while (elements > 0)
+            {
+                if(((removeIndex + 1) % maxSize) != insertIndex)
+                {
+                    removeIndex = (removeIndex + 1) % maxSize;
+                    data.Add(queue[removeIndex]);
+                    elements--;
+                }
+            }
+            if (data.Count > 0)
+            {
                 result = true;
             }
             sem.Release();

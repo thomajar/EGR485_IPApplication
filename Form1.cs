@@ -7,13 +7,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SAF_OpticalFailureDetector.threading;
 
 namespace SAF_OpticalFailureDetector
 {
     public partial class Form1 : Form
     {
-        Bitmap b;
-        Rectangle r;
+        // mainQueue is to hold data intended for mainform
+        private CircularQueue<QueueElement> mainQueue;
+
+        private Bitmap displayBitmap;
+
+        private Rectangle r;
+
         public Form1()
         {
             InitializeComponent();
@@ -21,7 +27,7 @@ namespace SAF_OpticalFailureDetector
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            b = null;
+            displayBitmap = null;
             r = Rectangle.Empty;
         }
 
@@ -32,9 +38,9 @@ namespace SAF_OpticalFailureDetector
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                b = new Bitmap(ofd.FileName);
-                pictureBox1.Image = b;
-                r = IP.ROI(b);
+                displayBitmap = new Bitmap(ofd.FileName);
+                pictureBox1.Image = displayBitmap;
+                r = IP.ROI(displayBitmap);
                 ProcessImage();
             }
             
@@ -44,7 +50,7 @@ namespace SAF_OpticalFailureDetector
         {
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            Bitmap b2 = (Bitmap)b.Clone();
+            Bitmap b2 = (Bitmap)displayBitmap.Clone();
             IP.readImg(b2,r,Convert.ToInt32(nud_noise_lvl.Value),
                 Convert.ToInt32(nud_min_contrast.Value));
             pictureBox2.Image = b2;
