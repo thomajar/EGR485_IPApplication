@@ -44,6 +44,7 @@ namespace SAF_OpticalFailureDetector
                             row[(x + offset) * PixelSize] > row[x * PixelSize] + min_contrast)
                         {
                             Ishot = true;
+                            // color pixel green
                             row[x * PixelSize] = 0;   //Blue  0-255
                             row[x * PixelSize + 1] = 255; //Green 0-255
                             row[x * PixelSize + 2] = 0;   //Red   0-255
