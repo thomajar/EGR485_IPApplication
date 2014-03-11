@@ -13,9 +13,12 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private int minimumContrast;
         private int noiseRange;
 
-        public static int FindROI();
-        public static int ProcessROI();
-        public static int Histogram();
+        List<CircularQueue<QueueElement>> subscribers;
+        List<CircularQueue<QueueElement>> consumers;
+
+        //public static int FindROI()
+        //public static int ProcessROI();
+        //public static int Histogram();
 
 
         private enum IPState

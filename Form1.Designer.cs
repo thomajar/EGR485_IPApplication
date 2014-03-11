@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.tsbtn_Reset = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Settings = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Start = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Stop = new System.Windows.Forms.ToolStripButton();
@@ -61,7 +60,6 @@
             this.toolStrip1.AutoSize = false;
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(64, 64);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsbtn_Reset,
             this.tsbtn_Settings,
             this.tsbtn_Start,
             this.tsbtn_Stop,
@@ -72,16 +70,6 @@
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "toolStrip1";
             // 
-            // tsbtn_Reset
-            // 
-            this.tsbtn_Reset.AutoSize = false;
-            this.tsbtn_Reset.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_Reset.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Reset.Image")));
-            this.tsbtn_Reset.ImageTransparentColor = System.Drawing.Color.White;
-            this.tsbtn_Reset.Name = "tsbtn_Reset";
-            this.tsbtn_Reset.Size = new System.Drawing.Size(64, 64);
-            this.tsbtn_Reset.Text = "Reset";
-            // 
             // tsbtn_Settings
             // 
             this.tsbtn_Settings.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -90,24 +78,29 @@
             this.tsbtn_Settings.Name = "tsbtn_Settings";
             this.tsbtn_Settings.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Settings.Text = "Settings";
+            this.tsbtn_Settings.Click += new System.EventHandler(this.tsbtn_Settings_Click);
             // 
             // tsbtn_Start
             // 
             this.tsbtn_Start.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_Start.Enabled = false;
             this.tsbtn_Start.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Start.Image")));
             this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Start.Name = "tsbtn_Start";
             this.tsbtn_Start.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Start.Text = "Start";
+            this.tsbtn_Start.Click += new System.EventHandler(this.tsbtn_Start_Click);
             // 
             // tsbtn_Stop
             // 
             this.tsbtn_Stop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_Stop.Enabled = false;
             this.tsbtn_Stop.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Stop.Image")));
             this.tsbtn_Stop.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Stop.Name = "tsbtn_Stop";
             this.tsbtn_Stop.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Stop.Text = "Stop";
+            this.tsbtn_Stop.Click += new System.EventHandler(this.tsbtn_Stop_Click);
             // 
             // tsbtn_Help
             // 
@@ -118,6 +111,7 @@
             this.tsbtn_Help.Name = "tsbtn_Help";
             this.tsbtn_Help.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Help.Text = "Help";
+            this.tsbtn_Help.Click += new System.EventHandler(this.tsbtn_Help_Click);
             // 
             // statusStrip1
             // 
@@ -299,7 +293,6 @@
         private System.Windows.Forms.Button btn_LoadImage;
         private System.Windows.Forms.NumericUpDown nud_min_contrast;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.ToolStripButton tsbtn_Reset;
         private System.Windows.Forms.ToolStripButton tsbtn_Settings;
         private System.Windows.Forms.ToolStripButton tsbtn_Start;
         private System.Windows.Forms.ToolStripButton tsbtn_Stop;

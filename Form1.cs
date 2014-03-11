@@ -84,6 +84,39 @@ namespace SAF_OpticalFailureDetector
             ProcessImage();
         }
 
+        private void tsbtn_Settings_Click(object sender, EventArgs e)
+        {
+            Settings settings = new Settings();
+            if (settings.ShowDialog() == DialogResult.OK)
+            {
+                tsbtn_Start.Enabled = true;
+            }
+        }
+
+        private void tsbtn_Start_Click(object sender, EventArgs e)
+        {
+            tsbtn_Stop.Enabled = true;
+            tsbtn_Start.Enabled = false;
+            tsbtn_Settings.Enabled = false;
+        }
+
+        private void tsbtn_Stop_Click(object sender, EventArgs e)
+        {
+            tsbtn_Stop.Enabled = false;
+            tsbtn_Start.Enabled = false;
+            tsbtn_Settings.Enabled = true;
+        }
+
+        private void tsbtn_Reset_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tsbtn_Help_Click(object sender, EventArgs e)
+        {
+
+        }
+
         
     }
 }
