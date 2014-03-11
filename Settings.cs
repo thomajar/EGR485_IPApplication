@@ -12,9 +12,70 @@ namespace SAF_OpticalFailureDetector
 {
     public partial class Settings : Form
     {
+        private String camera1;
+        private String camera2;
+        private String emailAddress;
+        private String sampleNumber;
+        private String testNumber;
+        private String logLocation;
+
+        public String Camera1Name
+        {
+            get
+            {
+                return camera1;
+            }
+        }
+
+        public String Camera2Name
+        {
+            get
+            {
+                return camera2;
+            }
+        }
+
+        public String EmailAddress
+        {
+            get
+            {
+                return emailAddress;
+            }
+        }
+
+        public String SampleNumber
+        {
+            get
+            {
+                return sampleNumber;
+            }
+        }
+
+        public String TestNumber
+        {
+            get
+            {
+                return testNumber;
+            }
+        }
+
+        public String LogLocation
+        {
+            get
+            {
+                return logLocation;
+            }
+        }
+
         public Settings()
         {
             InitializeComponent();
+            camera1 = "";
+            camera2 = "";
+            emailAddress = "";
+            sampleNumber = "";
+            testNumber = "";
+            logLocation = "";
         }
 
         private void btnLogFileBrowse_Click(object sender, EventArgs e)
@@ -22,7 +83,8 @@ namespace SAF_OpticalFailureDetector
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             if(fbd.ShowDialog() == DialogResult.OK)
             {
-                txtLogFile.Text = fbd.SelectedPath;
+                logLocation = fbd.SelectedPath;
+                txtLogFile.Text = logLocation;
             }
         }
 
@@ -64,9 +126,6 @@ namespace SAF_OpticalFailureDetector
                 Close();
                 
             }
-            
-            //messenger.Messenger mess = new messenger.Messenger(txtEmail.Text,txtTestNumber.Text,txtSampleNumber.Text);
-            //1mess.SendMessage();/
         }
 
         private void btnRefresh_Click(object sender, EventArgs e)
@@ -77,12 +136,43 @@ namespace SAF_OpticalFailureDetector
             txtEmail.Text = "";
             cmboCam1.Text = "Select...";
             cmboCam2.Text = "Select...";
+            camera1 = "";
+            camera2 = "";
+            emailAddress = "";
+            sampleNumber = "";
+            testNumber = "";
+            logLocation = "";
         }
 
         private void btnClose_Click(object sender, EventArgs e)
         {
             DialogResult = System.Windows.Forms.DialogResult.Abort;
             Close();
+        }
+
+        private void cmboCam1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            camera1 = cmboCam1.Text;
+        }
+
+        private void cmboCam2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            camera2 = cmboCam2.Text;
+        }
+
+        private void txtEmail_TextChanged(object sender, EventArgs e)
+        {
+            emailAddress = txtEmail.Text;
+        }
+
+        private void txtSampleNumber_TextChanged(object sender, EventArgs e)
+        {
+            sampleNumber = txtSampleNumber.Text;
+        }
+
+        private void txtTestNumber_TextChanged(object sender, EventArgs e)
+        {
+            testNumber = txtTestNumber.Text;
         }
     }
 }

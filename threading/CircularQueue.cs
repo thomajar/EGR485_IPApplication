@@ -9,7 +9,7 @@ namespace SAF_OpticalFailureDetector.threading
 {
     public class CircularQueue<T>
     {
-        private String consumer = "";
+        private String name = "";
         private List<T> queue;
         private int insertIndex;
         private int removeIndex;
@@ -17,6 +17,14 @@ namespace SAF_OpticalFailureDetector.threading
         private int elements;
         private const int SIZE_LIMIT = 1000;
         private static Semaphore sem;
+
+        public String Name
+        {
+            get
+            {
+                return name;
+            }
+        }
 
         /// <summary>
         /// Creates a new circular queue method with up to maxSize number
@@ -31,7 +39,7 @@ namespace SAF_OpticalFailureDetector.threading
             // initially owned by creating thread.
             sem = new Semaphore(0, 1);
 
-            this.consumer = consumer;
+            this.name = consumer;
             // verify passed max size is less that SIZE_LIMIT
             if (maxSize > SIZE_LIMIT)
             {
