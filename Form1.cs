@@ -40,6 +40,7 @@ namespace SAF_OpticalFailureDetector
 
         public Form1()
         {
+            program_settings = new Settings();
             InitializeComponent();
         }
 

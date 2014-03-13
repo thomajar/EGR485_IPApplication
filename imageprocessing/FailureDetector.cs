@@ -21,7 +21,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             consumers = new List<CircularQueue<QueueElement>>();
             producers = new List<CircularQueue<QueueElement>>();
         }
-
+        /*
         public void AddConsumer(CircularQueue<QueueElement> consumer)
         {
             bool foundConsumer = false;
@@ -78,7 +78,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     i--;
                 }
             }
-        }
+        }*/
 
         public void Start()
         {
