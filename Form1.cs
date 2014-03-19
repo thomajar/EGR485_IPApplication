@@ -41,6 +41,8 @@ namespace SAF_OpticalFailureDetector
         public Form1()
         {
             program_settings = new Settings();
+            // initialize a queue for main program to receive data on
+            mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
             InitializeComponent();
         }
 
