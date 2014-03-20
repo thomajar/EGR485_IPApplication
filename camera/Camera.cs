@@ -8,8 +8,9 @@ using System.Threading;
 
 namespace SAF_OpticalFailureDetector.camera
 {
-    class Camera
+    public class Camera
     {
+        // lock to protect mutual exclusion
         private Semaphore sem;
 
         private Boolean isRunning;
