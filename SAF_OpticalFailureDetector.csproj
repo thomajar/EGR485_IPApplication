@@ -43,6 +43,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="TIS.Imaging.ICImagingControl33, Version=3.3.4.1837, Culture=neutral, PublicKeyToken=257805929e8b7928, processorArchitecture=AMD64" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="camera\Camera.cs" />

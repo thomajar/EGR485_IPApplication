@@ -12,11 +12,14 @@ using SAF_OpticalFailureDetector.camera;
 using SAF_OpticalFailureDetector.imageprocessing;
 using SAF_OpticalFailureDetector.messenger;
 using SAF_OpticalFailureDetector.savequeue;
+using System.Threading;
 
 namespace SAF_OpticalFailureDetector
 {
     public partial class Form1 : Form
     {
+        private Semaphore guiSem;
+
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
 
@@ -38,19 +41,71 @@ namespace SAF_OpticalFailureDetector
 
         private Settings program_settings;
 
+        private System.Threading.Timer imageUpdateTimer;
+
         public Form1()
         {
-            program_settings = new Settings();
-            // initialize a queue for main program to receive data on
-            mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
             InitializeComponent();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            guiSem = new Semaphore(0, 1);
+            program_settings = new Settings();
             mainQueue = new CircularQueue<QueueElement>("MAIN", 1000);
             displayBitmap = null;
             image_roi = Rectangle.Empty;
+            
+            
+            
+
+
+            cam1 = new Camera();
+            cam1.AddSubscriber(mainQueue);
+            cam1.StartCamera();
+
+            Thread.Sleep(50);
+
+
+            guiSem.Release();
+            // setup timer update
+            TimerCallback tcb = new TimerCallback(DisplayImage);
+            imageUpdateTimer = new System.Threading.Timer(tcb, imageUpdateTimer, Timeout.Infinite, Timeout.Infinite);
+            imageUpdateTimer.Change(1, 50);
+            
+        }
+
+        private void DisplayImage(object stateInfo)
+        {
+            List<QueueElement> imageList = new List<QueueElement>();
+            if (mainQueue.popAll(ref imageList))
+            {
+                guiSem.WaitOne();
+                displayBitmap = (Bitmap)imageList[imageList.Count - 1].Data;
+                guiSem.Release();
+                UpdateCameraImage();
+            }
+        }
+
+        private delegate void UpdateCameraImageCallback();
+
+        private void UpdateCameraImage()
+        {
+            if (this.pictureBox1.InvokeRequired || InvokeRequired || statusStrip1.InvokeRequired)
+            {
+                UpdateCameraImageCallback d = new UpdateCameraImageCallback(UpdateCameraImage);
+                this.BeginInvoke(d, null);
+            }
+            else
+            {
+                guiSem.WaitOne();
+                if (this.pictureBox1.Image != null)
+                {
+                    this.pictureBox1.Image.Dispose();
+                }
+                this.pictureBox1.Image = displayBitmap;
+                guiSem.Release();
+            }
         }
 
         private void btn_LoadImage_Click(object sender, EventArgs e)

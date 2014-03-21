@@ -157,7 +157,15 @@ namespace SAF_OpticalFailureDetector.threading
             // verify not inserting into object that has not been removed
             if(insertIndex != removeIndex)
             {
-                queue[insertIndex] = data;
+                if (queue.Count < maxSize)
+                {
+                    queue.Insert(queue.Count, data);
+                }
+                else
+                {
+                    queue[insertIndex] = data;
+                }
+                
                 elements++;
                 result = true;
             }

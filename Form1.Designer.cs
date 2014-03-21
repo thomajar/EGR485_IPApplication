@@ -45,6 +45,7 @@
             this.nud_noise_lvl = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.btn_LoadImage = new System.Windows.Forms.Button();
+            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -116,18 +117,19 @@
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tslbl_Status});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 720);
+            this.tslbl_Status,
+            this.toolStripStatusLabel1});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 717);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 13, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(911, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(911, 25);
             this.statusStrip1.TabIndex = 1;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // tslbl_Status
             // 
             this.tslbl_Status.Name = "tslbl_Status";
-            this.tslbl_Status.Size = new System.Drawing.Size(0, 17);
+            this.tslbl_Status.Size = new System.Drawing.Size(0, 20);
             // 
             // tableLayoutPanel1
             // 
@@ -144,7 +146,7 @@
             this.tableLayoutPanel1.RowCount = 2;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(911, 641);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(911, 638);
             this.tableLayoutPanel1.TabIndex = 2;
             // 
             // pictureBox1
@@ -153,7 +155,7 @@
             this.pictureBox1.Location = new System.Drawing.Point(3, 2);
             this.pictureBox1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(756, 316);
+            this.pictureBox1.Size = new System.Drawing.Size(756, 315);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
@@ -161,10 +163,10 @@
             // pictureBox2
             // 
             this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox2.Location = new System.Drawing.Point(3, 322);
+            this.pictureBox2.Location = new System.Drawing.Point(3, 321);
             this.pictureBox2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(756, 317);
+            this.pictureBox2.Size = new System.Drawing.Size(756, 315);
             this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox2.TabIndex = 1;
             this.pictureBox2.TabStop = false;
@@ -181,7 +183,7 @@
             this.panel_cntls.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel_cntls.Name = "panel_cntls";
             this.tableLayoutPanel1.SetRowSpan(this.panel_cntls, 2);
-            this.panel_cntls.Size = new System.Drawing.Size(143, 637);
+            this.panel_cntls.Size = new System.Drawing.Size(143, 634);
             this.panel_cntls.TabIndex = 2;
             // 
             // nud_min_contrast
@@ -251,6 +253,12 @@
             this.btn_LoadImage.UseVisualStyleBackColor = true;
             this.btn_LoadImage.Click += new System.EventHandler(this.btn_LoadImage_Click);
             // 
+            // toolStripStatusLabel1
+            // 
+            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(151, 20);
+            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -297,6 +305,7 @@
         private System.Windows.Forms.ToolStripButton tsbtn_Start;
         private System.Windows.Forms.ToolStripButton tsbtn_Stop;
         private System.Windows.Forms.ToolStripButton tsbtn_Help;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
     }
 }
 

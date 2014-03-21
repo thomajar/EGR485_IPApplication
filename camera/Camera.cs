@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using SAF_OpticalFailureDetector.threading;
 using System.Threading;
+using TIS.Imaging;
 
 namespace SAF_OpticalFailureDetector.camera
 {
-    public class Camera
+    class Camera
     {
         // lock to protect mutual exclusion
         private Semaphore sem;
@@ -16,12 +17,16 @@ namespace SAF_OpticalFailureDetector.camera
         private Boolean isRunning;
         private List<CircularQueue<QueueElement>> subscribers;
 
+        private ICImagingControl cam;
+
         public Camera()
         {
             // create camera lock so only one thread can enter at a time
             sem = new Semaphore(0, 1);
             isRunning = false;
             subscribers = new List<CircularQueue<QueueElement>>();
+            // initialize camera
+            cam = new ICImagingControl();
             sem.Release();
         }
 
@@ -100,10 +105,37 @@ namespace SAF_OpticalFailureDetector.camera
                 // start camera
                 brunning = true;
                 isRunning = true;
+                if(cam.Devices.Length > 0)
+                {
+                    cam.Device = cam.Devices[0];
+                    cam.VideoFormat = cam.VideoFormats[44];
+                    cam.DeviceLostExecutionMode = EventExecutionMode.AsyncInvoke;
+                    cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
+                    cam.OverlayBitmapPosition = PathPositions.None;
+                    cam.LiveCaptureLastImage = false;
+                    //cam.DeviceLost += new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraDisconnected);
+                    cam.ImageAvailable += new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
+                    cam.LiveCaptureContinuous = true;
+                    cam.LiveStart();
+                }
+
+                
             }
             // release control, exit critical section
             sem.Release();
             return brunning;
+        }
+
+        private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
+        {
+            ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
+            sem.WaitOne();
+            for (int i = 0; i < subscribers.Count; i++)
+            {
+                subscribers[i].push(new QueueElement("Camera", buff.Bitmap));
+            }
+            //buff.Bitmap.Save("temp.bmp");
+            sem.Release();
         }
 
         public bool StopCamera()
