@@ -59,12 +59,17 @@ namespace SAF_OpticalFailureDetector
             
             
 
-
+            // initialize camera
             cam1 = new Camera();
             cam1.AddSubscriber(mainQueue);
-            cam1.StartCamera();
 
-            Thread.Sleep(50);
+            // initialize failure detector
+            imagep1 = new FailureDetector("Detector1");
+            cam1.AddSubscriber(imagep1.GetConsumerQueue());
+            
+            //cam1.StartCamera();
+
+            //Thread.Sleep(50);
 
 
             guiSem.Release();
