@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="camera\Camera.cs" />
-    <Compile Include="camera\ImageData.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

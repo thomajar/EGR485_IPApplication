@@ -23,6 +23,8 @@ namespace SAF_OpticalFailureDetector
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
 
+        private CircularQueue<QueueElement> ipQueue;
+
         private Camera cam1;
 
         private Camera cam2;
@@ -35,7 +37,9 @@ namespace SAF_OpticalFailureDetector
 
         private SaveQueue saveQueue;
 
-        private Bitmap displayBitmap;
+        private Bitmap displayBitmap1;
+
+        private Bitmap displayBitmap2;
 
         private Rectangle image_roi;
 
@@ -53,7 +57,8 @@ namespace SAF_OpticalFailureDetector
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
             mainQueue = new CircularQueue<QueueElement>("MAIN", 1000);
-            displayBitmap = null;
+            ipQueue = new CircularQueue<QueueElement>("IP",1000);
+            displayBitmap1 = null;
             image_roi = Rectangle.Empty;
             
             
@@ -61,13 +66,19 @@ namespace SAF_OpticalFailureDetector
 
             // initialize camera
             cam1 = new Camera();
-            cam1.AddSubscriber(mainQueue);
+            //cam1.AddSubscriber(mainQueue);
+            cam1.AddSubscriber(ipQueue);
 
             // initialize failure detector
             imagep1 = new FailureDetector("Detector1");
-            cam1.AddSubscriber(imagep1.GetConsumerQueue());
+            imagep1.SetConsumerQueue(ipQueue);
+            imagep1.AddSubscriber(mainQueue);
             
-            //cam1.StartCamera();
+            
+            //imagep1.AddSubscriber(mainQueue);
+            
+            cam1.StartCamera();
+            imagep1.Start();
 
             //Thread.Sleep(50);
 
@@ -86,7 +97,9 @@ namespace SAF_OpticalFailureDetector
             if (mainQueue.popAll(ref imageList))
             {
                 guiSem.WaitOne();
-                displayBitmap = (Bitmap)imageList[imageList.Count - 1].Data;
+                IPData imageData = (IPData)imageList[imageList.Count - 1].Data;
+                displayBitmap1 = imageData.GetCameraImage();
+                displayBitmap2 = imageData.GetProcessedImage();
                 guiSem.Release();
                 UpdateCameraImage();
             }
@@ -104,11 +117,17 @@ namespace SAF_OpticalFailureDetector
             else
             {
                 guiSem.WaitOne();
-                if (this.pictureBox1.Image != null)
+
+                if (displayBitmap1 != null)
                 {
-                    this.pictureBox1.Image.Dispose();
+                    pictureBox1.Image = displayBitmap1;
                 }
-                this.pictureBox1.Image = displayBitmap;
+                if (displayBitmap2 != null)
+                {
+                    pictureBox2.Image = displayBitmap2;
+                }
+
+                
                 guiSem.Release();
             }
         }
@@ -120,9 +139,16 @@ namespace SAF_OpticalFailureDetector
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                displayBitmap = new Bitmap(ofd.FileName);
-                pictureBox1.Image = displayBitmap;
-                image_roi = IP.ROI(displayBitmap);
+                displayBitmap1 = new Bitmap(ofd.FileName);
+                if (displayBitmap1 != null)
+                {
+                    pictureBox1.Image = displayBitmap1;
+                }
+                if (displayBitmap2 != null)
+                {
+                    pictureBox2.Image = displayBitmap2;
+                }
+                image_roi = IP.ROI(displayBitmap1);
                 ProcessImage();
             }
             
@@ -132,7 +158,7 @@ namespace SAF_OpticalFailureDetector
         {
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            Bitmap b2 = (Bitmap)displayBitmap.Clone();
+            Bitmap b2 = (Bitmap)displayBitmap1.Clone();
             IP.readImg(b2,image_roi,Convert.ToInt32(nud_noise_lvl.Value),
                 Convert.ToInt32(nud_min_contrast.Value));
             pictureBox2.Image = b2;

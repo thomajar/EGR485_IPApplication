@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using SAF_OpticalFailureDetector.threading;
 using System.Threading;
 using TIS.Imaging;
+using SAF_OpticalFailureDetector.imageprocessing;
+using System.Drawing;
+
 
 namespace SAF_OpticalFailureDetector.camera
 {
@@ -129,10 +132,11 @@ namespace SAF_OpticalFailureDetector.camera
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
+            IPData data = new IPData((Bitmap)buff.Bitmap.Clone());
             sem.WaitOne();
             for (int i = 0; i < subscribers.Count; i++)
             {
-                subscribers[i].push(new QueueElement("Camera", buff.Bitmap));
+                subscribers[i].push(new QueueElement("Camera", data));
             }
             //buff.Bitmap.Save("temp.bmp");
             sem.Release();
