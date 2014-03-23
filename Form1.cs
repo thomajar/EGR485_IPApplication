@@ -98,10 +98,16 @@ namespace SAF_OpticalFailureDetector
             {
                 guiSem.WaitOne();
                 IPData imageData = (IPData)imageList[imageList.Count - 1].Data;
+
                 displayBitmap1 = imageData.GetCameraImage();
                 displayBitmap2 = imageData.GetProcessedImage();
                 guiSem.Release();
                 UpdateCameraImage();
+
+                for (int i = 0; i < imageList.Count - 1; i++)
+                {
+                    ((IPData)imageList[i].Data).GetProcessedImage().Dispose();
+                }
             }
         }
 
@@ -124,6 +130,10 @@ namespace SAF_OpticalFailureDetector
                 }
                 if (displayBitmap2 != null)
                 {
+                    if (pictureBox2.Image != null)
+                    {
+                        pictureBox2.Image.Dispose();
+                    }
                     pictureBox2.Image = displayBitmap2;
                 }
 

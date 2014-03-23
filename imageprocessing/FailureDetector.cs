@@ -182,13 +182,21 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 {
                     image = (IPData)imageElements[imageElements.Count - 1].Data;
 
-                    Bitmap processImage = (Bitmap)image.GetCameraImage().Clone();
+                    Size s = image.GetCameraImage().Size;
+                    Bitmap processImage = image.GetCameraImage();//new Bitmap(s.Width,s.Height);
+                    //Graphics g = Graphics.FromImage(processImage);
+                    //g.DrawImage(image.GetCameraImage(),0,0,s.Width,s.Height);
+                    //g.Dispose();
 
                     // update roi
-                    //updateROI(processImage);
+                    updateROI(processImage);
 
                     // perform image processing
                     filterImage(processImage);
+                    if (processImage != null)
+                    {
+                        //processImage.Save("tmp.bmp");
+                    }
                     image.SetProcessedImage(processImage);
                     image.SetContainsCrack(true);
 
@@ -216,8 +224,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             BitmapData B_data = null;
             int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
 
+            try
+            {
                 B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                     ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception)
+            {
+
+                return null;
+            }
+                
 
 
             for (int y = 0; y < b.Height; y++)
@@ -270,10 +287,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             // get weighted average of image
             int centerOfMass = weightedIntensity(hist);
 
-            if (b.PixelFormat == PixelFormat.Format24bppRgb)
-            {
-                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            }
+
+            B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
 
             //Find Top Edge
             for (int y = 0; y < B_data.Height; y++)
