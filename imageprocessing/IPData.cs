@@ -4,11 +4,13 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TIS.Imaging;
 
 namespace SAF_OpticalFailureDetector.imageprocessing
 {
     class IPData
     {
+        private ImageBuffer ib;
         private Bitmap camImage;
         private Bitmap processedImage;
         private Boolean containsCrack;
@@ -20,11 +22,21 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             containsCrack = false;
         }
 
-        public IPData(Bitmap b)
+        public IPData(ImageBuffer ib)
         {
-            camImage = b;
+            this.ib = ib;
+            this.ib.Lock();
+            camImage = this.ib.Bitmap;
             processedImage = null;
             containsCrack = false;
+        }
+
+        public void Unlock()
+        {
+            if (this.ib.Locked)
+            {
+                this.ib.ForceUnlock();
+            }
         }
 
         public void SetCameraImage(Bitmap b)

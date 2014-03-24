@@ -104,9 +104,9 @@ namespace SAF_OpticalFailureDetector
                 guiSem.Release();
                 UpdateCameraImage();
 
-                for (int i = 0; i < imageList.Count - 1; i++)
+                for (int i = 0; i < imageList.Count; i++)
                 {
-                    ((IPData)imageList[i].Data).GetProcessedImage().Dispose();
+                    ((IPData)imageList[i].Data).Unlock();
                 }
             }
         }

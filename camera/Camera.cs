@@ -116,6 +116,7 @@ namespace SAF_OpticalFailureDetector.camera
                     cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
                     cam.OverlayBitmapPosition = PathPositions.None;
                     cam.LiveCaptureLastImage = false;
+                    cam.ImageRingBufferSize = 5;
                     //cam.DeviceLost += new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraDisconnected);
                     cam.ImageAvailable += new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
                     cam.LiveCaptureContinuous = true;
@@ -132,7 +133,7 @@ namespace SAF_OpticalFailureDetector.camera
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
-            IPData data = new IPData((Bitmap)buff.Bitmap.Clone());
+            IPData data = new IPData(buff);
             sem.WaitOne();
             for (int i = 0; i < subscribers.Count; i++)
             {

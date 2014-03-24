@@ -189,7 +189,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     //g.Dispose();
 
                     // update roi
-                    updateROI(processImage);
+                    //updateROI(processImage);
 
                     // perform image processing
                     filterImage(processImage);
@@ -208,6 +208,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     for (int i = 0; i < subscribers.Count; i++)
                     {
                         subscribers[i].push(new QueueElement(consumerName, image));
+                    }
+
+                    for (int i = 0; i < imageElements.Count - 1; i++)
+                    {
+                        ((IPData)imageElements[i].Data).Unlock();
                     }
                 }
                 sem.Release();
