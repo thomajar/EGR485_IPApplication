@@ -36,6 +36,7 @@
             this.tsbtn_Help = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tslbl_Status = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
@@ -45,7 +46,7 @@
             this.nud_noise_lvl = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.btn_LoadImage = new System.Windows.Forms.Button();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -118,7 +119,8 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tslbl_Status,
-            this.toolStripStatusLabel1});
+            this.toolStripStatusLabel1,
+            this.toolStripStatusLabel2});
             this.statusStrip1.Location = new System.Drawing.Point(0, 717);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 13, 0);
@@ -130,6 +132,12 @@
             // 
             this.tslbl_Status.Name = "tslbl_Status";
             this.tslbl_Status.Size = new System.Drawing.Size(0, 20);
+            // 
+            // toolStripStatusLabel1
+            // 
+            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(151, 20);
+            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
             // tableLayoutPanel1
             // 
@@ -253,11 +261,11 @@
             this.btn_LoadImage.UseVisualStyleBackColor = true;
             this.btn_LoadImage.Click += new System.EventHandler(this.btn_LoadImage_Click);
             // 
-            // toolStripStatusLabel1
+            // toolStripStatusLabel2
             // 
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(151, 20);
-            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(151, 20);
+            this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
             // 
             // Form1
             // 
@@ -306,6 +314,7 @@
         private System.Windows.Forms.ToolStripButton tsbtn_Stop;
         private System.Windows.Forms.ToolStripButton tsbtn_Help;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
     }
 }
 

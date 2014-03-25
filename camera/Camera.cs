@@ -116,7 +116,7 @@ namespace SAF_OpticalFailureDetector.camera
                     cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
                     cam.OverlayBitmapPosition = PathPositions.None;
                     cam.LiveCaptureLastImage = false;
-                    cam.ImageRingBufferSize = 5;
+                    cam.ImageRingBufferSize = 10;
                     //cam.DeviceLost += new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraDisconnected);
                     cam.ImageAvailable += new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
                     cam.LiveCaptureContinuous = true;
@@ -130,16 +130,26 @@ namespace SAF_OpticalFailureDetector.camera
             return brunning;
         }
 
+        double lastTime = -1.0;
+
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
-            IPData data = new IPData(buff);
+
+            double elapsedTime = -1.0;
+            double time = cam.ReferenceTimeCurrent;
+            // get time elapsed
+            if (lastTime > 0.0)
+            {
+                elapsedTime = time - lastTime;
+            }
+            lastTime = time;
+            IPData data = new IPData(buff, elapsedTime);
             sem.WaitOne();
             for (int i = 0; i < subscribers.Count; i++)
             {
                 subscribers[i].push(new QueueElement("Camera", data));
             }
-            //buff.Bitmap.Save("temp.bmp");
             sem.Release();
         }
 

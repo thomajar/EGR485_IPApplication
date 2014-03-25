@@ -8,6 +8,7 @@ using SAF_OpticalFailureDetector.threading;
 using System.Threading;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 
 namespace SAF_OpticalFailureDetector.imageprocessing
 {
@@ -51,8 +52,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             processThread = new Thread(new ThreadStart(Process));
 
             // defaults
-            minimumContrast = 10;
-            noiseRange = 10;
+            minimumContrast = 15;
+            noiseRange = 15;
             enableROI = false;
             enableAutoExposure = false;
             targetIntesity = 200;
@@ -168,8 +169,24 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             return result;
         }
 
+        public void SetRange(int range)
+        {
+            sem.WaitOne();
+            this.noiseRange = range;
+            sem.Release();
+        }
+        public void SetContrast(int contrast)
+        {
+            sem.WaitOne();
+            this.minimumContrast = contrast;
+            sem.Release();
+        }
+
         private void Process()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             // keep thread running until told to stop or start
             while (isRunning)
             {
@@ -200,6 +217,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     image.SetProcessedImage(processImage);
                     image.SetContainsCrack(true);
 
+                    image.SetProcessTime(((Double)sw.ElapsedMilliseconds) / 1000);
+                    sw.Restart();
+
                     // check histogram update -- feedback to camera
 
                    
@@ -212,10 +232,12 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                     for (int i = 0; i < imageElements.Count - 1; i++)
                     {
+                        ((IPData)imageElements[i].Data).Dispose();
                         ((IPData)imageElements[i].Data).Unlock();
                     }
                 }
                 sem.Release();
+                
                 
             }
         }

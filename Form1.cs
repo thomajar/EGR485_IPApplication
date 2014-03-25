@@ -37,6 +37,8 @@ namespace SAF_OpticalFailureDetector
 
         private SaveQueue saveQueue;
 
+        private IPData imageData;
+
         private Bitmap displayBitmap1;
 
         private Bitmap displayBitmap2;
@@ -97,15 +99,18 @@ namespace SAF_OpticalFailureDetector
             if (mainQueue.popAll(ref imageList))
             {
                 guiSem.WaitOne();
-                IPData imageData = (IPData)imageList[imageList.Count - 1].Data;
-
-                displayBitmap1 = imageData.GetCameraImage();
-                displayBitmap2 = imageData.GetProcessedImage();
+                if (imageData != null)
+                {
+                    imageData.Dispose();
+                    imageData.Unlock();
+                }
+                imageData = (IPData)imageList[imageList.Count - 1].Data;
                 guiSem.Release();
                 UpdateCameraImage();
 
-                for (int i = 0; i < imageList.Count; i++)
+                for (int i = 0; i < imageList.Count - 1; i++)
                 {
+                    ((IPData)imageList[i].Data).Dispose();
                     ((IPData)imageList[i].Data).Unlock();
                 }
             }
@@ -124,19 +129,14 @@ namespace SAF_OpticalFailureDetector
             {
                 guiSem.WaitOne();
 
-                if (displayBitmap1 != null)
+                if (imageData != null)
                 {
-                    pictureBox1.Image = displayBitmap1;
+                    pictureBox1.Image = imageData.GetCameraImage();
+                    pictureBox2.Image = imageData.GetProcessedImage();
+                    
+                    toolStripStatusLabel1.Text = (1 / imageData.GetElapsedTime()).ToString();
+                    toolStripStatusLabel2.Text = (1 / imageData.GetProcessTime()).ToString();
                 }
-                if (displayBitmap2 != null)
-                {
-                    if (pictureBox2.Image != null)
-                    {
-                        pictureBox2.Image.Dispose();
-                    }
-                    pictureBox2.Image = displayBitmap2;
-                }
-
                 
                 guiSem.Release();
             }
@@ -177,12 +177,14 @@ namespace SAF_OpticalFailureDetector
 
         private void nud_noise_lvl_ValueChanged(object sender, EventArgs e)
         {
-            ProcessImage();
+            imagep1.SetContrast(Convert.ToInt32(nud_noise_lvl.Value));
+            //ProcessImage();
         }
 
         private void nud_min_contrast_ValueChanged(object sender, EventArgs e)
         {
-            ProcessImage();
+            imagep1.SetRange(Convert.ToInt32(nud_min_contrast.Value));
+            //ProcessImage();
         }
 
         private void tsbtn_Settings_Click(object sender, EventArgs e)

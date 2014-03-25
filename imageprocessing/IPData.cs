@@ -14,6 +14,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private Bitmap camImage;
         private Bitmap processedImage;
         private Boolean containsCrack;
+        private Double camElapsedTime;
+        private Double procElapsedTime;
 
         public IPData()
         {
@@ -22,12 +24,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             containsCrack = false;
         }
 
-        public IPData(ImageBuffer ib)
+        public IPData(ImageBuffer ib, double elapsedTime)
         {
             this.ib = ib;
             this.ib.Lock();
             camImage = this.ib.Bitmap;
             processedImage = null;
+            this.camElapsedTime = elapsedTime;
             containsCrack = false;
         }
 
@@ -37,6 +40,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             {
                 this.ib.ForceUnlock();
             }
+        }
+
+        public void Dispose()
+        {
+            camImage.Dispose();
+            processedImage.Dispose();
+            ib.Bitmap.Dispose();
         }
 
         public void SetCameraImage(Bitmap b)
@@ -63,6 +73,19 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         public Boolean ContainsCrack()
         {
             return containsCrack;
+        }
+        public Double GetElapsedTime()
+        {
+            return camElapsedTime;
+        }
+
+        public void SetProcessTime(Double elapsedTime)
+        {
+            procElapsedTime = elapsedTime;
+        }
+        public Double GetProcessTime()
+        {
+            return procElapsedTime;
         }
         
     }
