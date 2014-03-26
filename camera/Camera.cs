@@ -14,22 +14,45 @@ namespace SAF_OpticalFailureDetector.camera
 {
     class Camera
     {
-        // lock to protect mutual exclusion
+        /// <summary>
+        /// Used to synchronize critical sections in camera.
+        /// </summary>
         private Semaphore sem;
 
+        /// <summary>
+        /// Flag stating true if camera is running.
+        /// </summary>
         private Boolean isRunning;
+
+        /// <summary>
+        /// List of subscribers that camera populates with data.
+        /// </summary>
         private List<CircularQueue<QueueElement>> subscribers;
 
+        /// <summary>
+        /// Interface to TIS camera.
+        /// </summary>
         private ICImagingControl cam;
 
+        /// <summary>
+        /// Used to keep track of the last time image snapped on camera.
+        /// </summary>
+        private double lastTime = -1.0;
+
+        /// <summary>
+        /// Constructor for Camera
+        /// </summary>
         public Camera()
         {
             // create camera lock so only one thread can enter at a time
             sem = new Semaphore(0, 1);
+
+            // initialize variables
             isRunning = false;
             subscribers = new List<CircularQueue<QueueElement>>();
-            // initialize camera
             cam = new ICImagingControl();
+
+            // unlock critical section
             sem.Release();
         }
 
@@ -97,7 +120,13 @@ namespace SAF_OpticalFailureDetector.camera
             return !doesNotExist;
         }
 
-        public bool StartCamera()
+        /// <summary>
+        /// Starts up camera and begins populating consumers with
+        /// image data.
+        /// </summary>
+        /// <param name="camNumber">Index of camera starting at 0.</param>
+        /// <returns>True if started, False otherwise.</returns>
+        public bool StartCamera(int camNumber)
         {
             Boolean brunning = false;
             // wait for sem control to enter critical section
@@ -108,30 +137,84 @@ namespace SAF_OpticalFailureDetector.camera
                 // start camera
                 brunning = true;
                 isRunning = true;
-                if(cam.Devices.Length > 0)
+                if(cam.Devices.Length > camNumber)
                 {
-                    cam.Device = cam.Devices[0];
+                    cam.Device = cam.Devices[camNumber];
                     cam.VideoFormat = cam.VideoFormats[44];
                     cam.DeviceLostExecutionMode = EventExecutionMode.AsyncInvoke;
                     cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
                     cam.OverlayBitmapPosition = PathPositions.None;
                     cam.LiveCaptureLastImage = false;
-                    cam.ImageRingBufferSize = 10;
-                    //cam.DeviceLost += new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraDisconnected);
+                    cam.ImageRingBufferSize = 50;
+                    cam.DeviceLost += new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraLost);
                     cam.ImageAvailable += new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
                     cam.LiveCaptureContinuous = true;
-                    cam.LiveStart();
+                    try
+                    {
+                        cam.LiveStart();
+                    }
+                    catch (Exception)
+                    {
+                        isRunning = false;
+                        brunning = false;
+                    }
                 }
-
-                
             }
             // release control, exit critical section
             sem.Release();
             return brunning;
         }
 
-        double lastTime = -1.0;
+        /// <summary>
+        /// Stops the camera from recording images.
+        /// </summary>
+        /// <returns>True if successful, False otherwise.</returns>
+        public bool StopCamera()
+        {
+            Boolean brunning = false;
+            // wait for sem control to enter critical section
+            sem.WaitOne();
+            // verify camera is not already stopped
+            if(isRunning)
+            {
+                // stop camera
+                brunning = true;
+                isRunning = false;
+                cam.ImageAvailable -= new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
+                cam.LiveCaptureContinuous = true;
+                cam.LiveStop();
+            }
+            // release control, exit critical section
+            sem.Release();
+            return brunning;
+        }
 
+        public void SetExposure(double exposure)
+        {
+
+        }
+
+        /// <summary>
+        /// Called when camera is disconnected from PC.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CameraLost(object sender, ICImagingControl.DeviceLostEventArgs e)
+        {
+            try
+            {
+                cam.LiveStop();
+            }
+            catch (Exception) { }
+            isRunning = false;
+            cam.ImageAvailable -= new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
+        }
+
+        /// <summary>
+        /// Called when an image becomes available from camera.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
@@ -151,23 +234,6 @@ namespace SAF_OpticalFailureDetector.camera
                 subscribers[i].push(new QueueElement("Camera", data));
             }
             sem.Release();
-        }
-
-        public bool StopCamera()
-        {
-            Boolean brunning = false;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            // verify camera is not already stopped
-            if(isRunning)
-            {
-                // stop camera
-                brunning = true;
-                isRunning = false;
-            }
-            // release control, exit critical section
-            sem.Release();
-            return brunning;
         }
     }
 }

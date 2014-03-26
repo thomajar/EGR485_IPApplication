@@ -81,7 +81,7 @@
             this.tsbtn_Help});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(911, 79);
+            this.toolStrip1.Size = new System.Drawing.Size(1482, 79);
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -109,7 +109,7 @@
             // 
             this.tsbtn_Start.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
             this.tsbtn_Start.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Start.Image")));
-            this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.White;
             this.tsbtn_Start.Name = "tsbtn_Start";
             this.tsbtn_Start.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Start.Text = "Start";
@@ -118,8 +118,9 @@
             // tsbtn_Stop
             // 
             this.tsbtn_Stop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_Stop.Enabled = false;
             this.tsbtn_Stop.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Stop.Image")));
-            this.tsbtn_Stop.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbtn_Stop.ImageTransparentColor = System.Drawing.Color.White;
             this.tsbtn_Stop.Name = "tsbtn_Stop";
             this.tsbtn_Stop.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Stop.Text = "Stop";
@@ -155,7 +156,7 @@
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tlp_Main.Size = new System.Drawing.Size(911, 663);
+            this.tlp_Main.Size = new System.Drawing.Size(1482, 774);
             this.tlp_Main.TabIndex = 2;
             // 
             // process2Panel
@@ -163,9 +164,9 @@
             this.process2Panel.Controls.Add(this.process2Label);
             this.process2Panel.Controls.Add(this.process2ImageBox);
             this.process2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process2Panel.Location = new System.Drawing.Point(388, 334);
+            this.process2Panel.Location = new System.Drawing.Point(674, 390);
             this.process2Panel.Name = "process2Panel";
-            this.process2Panel.Size = new System.Drawing.Size(379, 326);
+            this.process2Panel.Size = new System.Drawing.Size(665, 381);
             this.process2Panel.TabIndex = 8;
             // 
             // process2Label
@@ -184,7 +185,7 @@
             this.process2ImageBox.Location = new System.Drawing.Point(0, 0);
             this.process2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.process2ImageBox.Name = "process2ImageBox";
-            this.process2ImageBox.Size = new System.Drawing.Size(379, 326);
+            this.process2ImageBox.Size = new System.Drawing.Size(665, 381);
             this.process2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.process2ImageBox.TabIndex = 1;
             this.process2ImageBox.TabStop = false;
@@ -194,9 +195,9 @@
             this.process1Panel.Controls.Add(this.process1Label);
             this.process1Panel.Controls.Add(this.process1ImageBox);
             this.process1Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process1Panel.Location = new System.Drawing.Point(3, 334);
+            this.process1Panel.Location = new System.Drawing.Point(3, 390);
             this.process1Panel.Name = "process1Panel";
-            this.process1Panel.Size = new System.Drawing.Size(379, 326);
+            this.process1Panel.Size = new System.Drawing.Size(665, 381);
             this.process1Panel.TabIndex = 7;
             // 
             // process1Label
@@ -215,7 +216,7 @@
             this.process1ImageBox.Location = new System.Drawing.Point(0, 0);
             this.process1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.process1ImageBox.Name = "process1ImageBox";
-            this.process1ImageBox.Size = new System.Drawing.Size(379, 326);
+            this.process1ImageBox.Size = new System.Drawing.Size(665, 381);
             this.process1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.process1ImageBox.TabIndex = 1;
             this.process1ImageBox.TabStop = false;
@@ -225,9 +226,9 @@
             this.camera2Panel.Controls.Add(this.camera2Label);
             this.camera2Panel.Controls.Add(this.camera2ImageBox);
             this.camera2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.camera2Panel.Location = new System.Drawing.Point(388, 3);
+            this.camera2Panel.Location = new System.Drawing.Point(674, 3);
             this.camera2Panel.Name = "camera2Panel";
-            this.camera2Panel.Size = new System.Drawing.Size(379, 325);
+            this.camera2Panel.Size = new System.Drawing.Size(665, 381);
             this.camera2Panel.TabIndex = 6;
             // 
             // camera2Label
@@ -246,7 +247,7 @@
             this.camera2ImageBox.Location = new System.Drawing.Point(0, 0);
             this.camera2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.camera2ImageBox.Name = "camera2ImageBox";
-            this.camera2ImageBox.Size = new System.Drawing.Size(379, 325);
+            this.camera2ImageBox.Size = new System.Drawing.Size(665, 381);
             this.camera2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.camera2ImageBox.TabIndex = 1;
             this.camera2ImageBox.TabStop = false;
@@ -259,11 +260,11 @@
             this.panel_cntls.Controls.Add(this.label1);
             this.panel_cntls.Controls.Add(this.btn_LoadImage);
             this.panel_cntls.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel_cntls.Location = new System.Drawing.Point(773, 2);
+            this.panel_cntls.Location = new System.Drawing.Point(1345, 2);
             this.panel_cntls.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel_cntls.Name = "panel_cntls";
             this.tlp_Main.SetRowSpan(this.panel_cntls, 2);
-            this.panel_cntls.Size = new System.Drawing.Size(135, 659);
+            this.panel_cntls.Size = new System.Drawing.Size(134, 770);
             this.panel_cntls.TabIndex = 2;
             // 
             // nud_min_contrast
@@ -339,7 +340,7 @@
             this.camera1Panel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.camera1Panel.Location = new System.Drawing.Point(3, 3);
             this.camera1Panel.Name = "camera1Panel";
-            this.camera1Panel.Size = new System.Drawing.Size(379, 325);
+            this.camera1Panel.Size = new System.Drawing.Size(665, 381);
             this.camera1Panel.TabIndex = 5;
             // 
             // camera1Label
@@ -358,7 +359,7 @@
             this.camera1ImageBox.Location = new System.Drawing.Point(0, 0);
             this.camera1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.camera1ImageBox.Name = "camera1ImageBox";
-            this.camera1ImageBox.Size = new System.Drawing.Size(379, 325);
+            this.camera1ImageBox.Size = new System.Drawing.Size(665, 381);
             this.camera1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.camera1ImageBox.TabIndex = 1;
             this.camera1ImageBox.TabStop = false;
@@ -367,7 +368,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(911, 742);
+            this.ClientSize = new System.Drawing.Size(1482, 853);
             this.Controls.Add(this.tlp_Main);
             this.Controls.Add(this.toolStrip1);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);

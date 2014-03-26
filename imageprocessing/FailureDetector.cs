@@ -49,7 +49,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
             // initialize processing thread variables
             isRunning = false;
-            processThread = new Thread(new ThreadStart(Process));
 
             // defaults
             minimumContrast = 15;
@@ -147,6 +146,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             {
                 result = true;
                 isRunning = true;
+                processThread = new Thread(new ThreadStart(Process));
                 processThread.Start();
             }
             return result;

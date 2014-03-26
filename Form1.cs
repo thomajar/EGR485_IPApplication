@@ -89,8 +89,9 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(mainQueue);
 
-            cam1.StartCamera();
-            imagep1.Start();
+            // start the cameras
+            cam1.StartCamera(0);
+            cam2.StartCamera(1);
 
             // initialize camera and processor periods
             camera1Period = 0.05;
@@ -233,15 +234,15 @@ namespace SAF_OpticalFailureDetector
             Start();
             tsbtn_Stop.Enabled = true;
             tsbtn_Start.Enabled = false;
-            tsbtn_Settings.Enabled = false;
+            //tsbtn_Settings.Enabled = false;
         }
 
         private void tsbtn_Stop_Click(object sender, EventArgs e)
         {
             Stop();
             tsbtn_Stop.Enabled = false;
-            tsbtn_Start.Enabled = false;
-            tsbtn_Settings.Enabled = true;
+            tsbtn_Start.Enabled = true;
+            //tsbtn_Settings.Enabled = true;
         }
 
         private void tsbtn_Help_Click(object sender, EventArgs e)
@@ -251,13 +252,16 @@ namespace SAF_OpticalFailureDetector
 
         private void Start()
         {
+            imagep1.Start();
+            imagep2.Start();
             //messenger = new Messenger(program_settings.EmailAddress,
             //    program_settings.TestNumber, program_settings.SampleNumber);
         }
 
         private void Stop()
         {
-
+            imagep1.Stop();
+            imagep2.Stop();
         }
 
         private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)

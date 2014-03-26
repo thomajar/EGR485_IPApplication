@@ -63,7 +63,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         }
         public Bitmap GetCameraImage()
         {
-            return camImage;
+            Bitmap b = (Bitmap)camImage.Clone();
+            return b;
         }
         public void SetProcessedImage(Bitmap b)
         {
