@@ -22,36 +22,25 @@ namespace SAF_OpticalFailureDetector
 
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
-
         private CircularQueue<QueueElement> ipQueue;
 
-
-
-
+        // camera and processor 
         private Camera cam1;
         private Camera cam2;
         private FailureDetector imagep1;
         private FailureDetector imagep2;
-
-
-
-        //private Messenger messenger;
-
-        //private SaveQueue saveQueue;
-
-        private IPData imageData;
-
-        //private Bitmap displayBitmap1;
-
-        //private Bitmap displayBitmap2;
-
-        //private Rectangle image_roi;
+        private IPData camera1Data;
+        private IPData camera2Data;
+        private Double camera1Period;
+        private Double camera2Period;
+        private Double process1Period;
+        private Double process2Period;
 
         private Settings program_settings;
 
         private System.Threading.Timer imageUpdateTimer;
 
-        private delegate void UpdateCameraImageCallback();
+        private delegate void UpdateCamera1ImageCallback();
 
         public Form1()
         {
@@ -65,21 +54,37 @@ namespace SAF_OpticalFailureDetector
             mainQueue = new CircularQueue<QueueElement>("MAIN", 1000);
             ipQueue = new CircularQueue<QueueElement>("IP",1000);
             
-            
+            // initialize form
+            camera1Label.Parent = camera1ImageBox;
+            camera1Label.ForeColor = Color.Red;
+            camera1Label.BackColor = Color.Transparent;
+
+            process1Label.Parent = process1ImageBox;
+            process1Label.ForeColor = Color.Red;
+            process1Label.BackColor = Color.Transparent;
+
+            camera2Label.Parent = camera2ImageBox;
+            camera2Label.ForeColor = Color.Red;
+            camera2Label.BackColor = Color.Transparent;
+
+            process2Label.Parent = process2ImageBox;
+            process2Label.ForeColor = Color.Red;
+            process2Label.BackColor = Color.Transparent;
             
 
             // initialize camera
             cam1 = new Camera();
-            //cam1.AddSubscriber(mainQueue);
             cam1.AddSubscriber(ipQueue);
 
             // initialize failure detector
             imagep1 = new FailureDetector("Detector1");
             imagep1.SetConsumerQueue(ipQueue);
             imagep1.AddSubscriber(mainQueue);
-            
-            
-            //imagep1.AddSubscriber(mainQueue);
+
+            camera1Period = 0.05;
+            camera2Period = 0.05;
+            process1Period = 0.05;
+            process2Period = 0.05;
             
             cam1.StartCamera();
             imagep1.Start();
@@ -101,14 +106,14 @@ namespace SAF_OpticalFailureDetector
             if (mainQueue.popAll(ref imageList))
             {
                 guiSem.WaitOne();
-                if (imageData != null)
+                if (camera1Data != null)
                 {
-                    imageData.Dispose();
-                    imageData.Unlock();
+                    camera1Data.Dispose();
+                    camera1Data.Unlock();
                 }
-                imageData = (IPData)imageList[imageList.Count - 1].Data;
+                camera1Data = (IPData)imageList[imageList.Count - 1].Data;
                 guiSem.Release();
-                UpdateCameraImage();
+                UpdateCamera1Image();
 
                 for (int i = 0; i < imageList.Count - 1; i++)
                 {
@@ -118,24 +123,28 @@ namespace SAF_OpticalFailureDetector
             }
         }
 
-        private void UpdateCameraImage()
+        private void UpdateCamera1Image()
         {
-            if (this.camera1ImageBox.InvokeRequired || InvokeRequired || statusStrip1.InvokeRequired)
+            if (this.camera1ImageBox.InvokeRequired || this.camera1Label.InvokeRequired ||
+                this.process1ImageBox.InvokeRequired || this.process1Label.InvokeRequired)
             {
-                UpdateCameraImageCallback d = new UpdateCameraImageCallback(UpdateCameraImage);
+                UpdateCamera1ImageCallback d = new UpdateCamera1ImageCallback(UpdateCamera1Image);
                 this.BeginInvoke(d, null);
             }
             else
             {
                 guiSem.WaitOne();
 
-                if (imageData != null)
+                if (camera1Data != null)
                 {
-                    camera1ImageBox.Image = imageData.GetCameraImage();
-                    process1ImageBox.Image = imageData.GetProcessedImage();
-                    
-                    toolStripStatusLabel1.Text = (1 / imageData.GetElapsedTime()).ToString();
-                    toolStripStatusLabel2.Text = (1 / imageData.GetProcessTime()).ToString();
+                    camera1ImageBox.Image = camera1Data.GetCameraImage();
+                    process1ImageBox.Image = camera1Data.GetProcessedImage();
+
+                    camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.GetElapsedTime();
+                    process1Period = 0.85 * process1Period + 0.15 * camera1Data.GetProcessTime();
+
+                    camera1Label.Text = String.Format("{0:0.00}",(1 / camera1Period));
+                    process1Label.Text = String.Format("{0:0.00}", (1 / process1Period));
                 }
                 
                 guiSem.Release();
