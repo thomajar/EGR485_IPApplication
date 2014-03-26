@@ -25,25 +25,25 @@ namespace SAF_OpticalFailureDetector
 
         private CircularQueue<QueueElement> ipQueue;
 
+
+
+
         private Camera cam1;
-
         private Camera cam2;
-
         private FailureDetector imagep1;
-
         private FailureDetector imagep2;
 
-        private Messenger messenger;
+        //private Messenger messenger;
 
-        private SaveQueue saveQueue;
+        //private SaveQueue saveQueue;
 
         private IPData imageData;
 
-        private Bitmap displayBitmap1;
+        //private Bitmap displayBitmap1;
 
-        private Bitmap displayBitmap2;
+        //private Bitmap displayBitmap2;
 
-        private Rectangle image_roi;
+        //private Rectangle image_roi;
 
         private Settings program_settings;
 
@@ -62,8 +62,6 @@ namespace SAF_OpticalFailureDetector
             program_settings = new Settings();
             mainQueue = new CircularQueue<QueueElement>("MAIN", 1000);
             ipQueue = new CircularQueue<QueueElement>("IP",1000);
-            displayBitmap1 = null;
-            image_roi = Rectangle.Empty;
             
             
             
@@ -154,10 +152,11 @@ namespace SAF_OpticalFailureDetector
 
         private void tsbtn_Settings_Click(object sender, EventArgs e)
         {
-            if (program_settings.ShowDialog() == DialogResult.OK)
+            MessageBox.Show("This feature is not yet implemented.", "Settings");
+            /*if (program_settings.ShowDialog() == DialogResult.OK)
             {
                 tsbtn_Start.Enabled = true;
-            }
+            }*/
         }
 
         private void tsbtn_Start_Click(object sender, EventArgs e)
@@ -178,18 +177,23 @@ namespace SAF_OpticalFailureDetector
 
         private void tsbtn_Help_Click(object sender, EventArgs e)
         {
-
+            MessageBox.Show("This feature is not yet implemented.", "Help");
         }
 
         private void Start()
         {
-            messenger = new Messenger(program_settings.EmailAddress,
-                program_settings.TestNumber, program_settings.SampleNumber);
+            //messenger = new Messenger(program_settings.EmailAddress,
+            //    program_settings.TestNumber, program_settings.SampleNumber);
         }
 
         private void Stop()
         {
 
+        }
+
+        private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("This feature is not yet implemented.", "Refresh Camera");
         }
 
         

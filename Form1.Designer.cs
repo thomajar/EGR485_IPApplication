@@ -37,6 +37,7 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tslbl_Status = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
@@ -46,7 +47,7 @@
             this.nud_noise_lvl = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.btn_LoadImage = new System.Windows.Forms.Button();
-            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.tsbtn_RefreshCamera = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -63,6 +64,7 @@
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(64, 64);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsbtn_Settings,
+            this.tsbtn_RefreshCamera,
             this.tsbtn_Start,
             this.tsbtn_Stop,
             this.tsbtn_Help});
@@ -85,7 +87,6 @@
             // tsbtn_Start
             // 
             this.tsbtn_Start.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_Start.Enabled = false;
             this.tsbtn_Start.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Start.Image")));
             this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Start.Name = "tsbtn_Start";
@@ -96,7 +97,6 @@
             // tsbtn_Stop
             // 
             this.tsbtn_Stop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_Stop.Enabled = false;
             this.tsbtn_Stop.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Stop.Image")));
             this.tsbtn_Stop.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_Stop.Name = "tsbtn_Stop";
@@ -138,6 +138,12 @@
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(151, 20);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            // 
+            // toolStripStatusLabel2
+            // 
+            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(151, 20);
+            this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
             // 
             // tableLayoutPanel1
             // 
@@ -260,11 +266,15 @@
             this.btn_LoadImage.Text = "Load Image";
             this.btn_LoadImage.UseVisualStyleBackColor = true;
             // 
-            // toolStripStatusLabel2
+            // tsbtn_RefreshCamera
             // 
-            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(151, 20);
-            this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
+            this.tsbtn_RefreshCamera.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_RefreshCamera.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_RefreshCamera.Image")));
+            this.tsbtn_RefreshCamera.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbtn_RefreshCamera.Name = "tsbtn_RefreshCamera";
+            this.tsbtn_RefreshCamera.Size = new System.Drawing.Size(68, 76);
+            this.tsbtn_RefreshCamera.Text = "Refresh Camera";
+            this.tsbtn_RefreshCamera.Click += new System.EventHandler(this.tsbtn_RefreshCamera_Click);
             // 
             // Form1
             // 
@@ -314,6 +324,7 @@
         private System.Windows.Forms.ToolStripButton tsbtn_Help;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
+        private System.Windows.Forms.ToolStripButton tsbtn_RefreshCamera;
     }
 }
 
