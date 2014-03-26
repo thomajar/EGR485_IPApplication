@@ -22,7 +22,8 @@ namespace SAF_OpticalFailureDetector
 
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
-        private CircularQueue<QueueElement> ipQueue;
+        private CircularQueue<QueueElement> ipQueue1;
+        private CircularQueue<QueueElement> ipQueue2;
 
         // camera and processor 
         private Camera cam1;
@@ -41,6 +42,7 @@ namespace SAF_OpticalFailureDetector
         private System.Threading.Timer imageUpdateTimer;
 
         private delegate void UpdateCamera1ImageCallback();
+        private delegate void UpdateCamera2ImageCallback();
 
         public Form1()
         {
@@ -51,8 +53,9 @@ namespace SAF_OpticalFailureDetector
         {
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
-            mainQueue = new CircularQueue<QueueElement>("MAIN", 1000);
-            ipQueue = new CircularQueue<QueueElement>("IP",1000);
+            mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
+            ipQueue1 = new CircularQueue<QueueElement>("IP1",100);
+            ipQueue2 = new CircularQueue<QueueElement>("IP2",100);
             
             // initialize form
             camera1Label.Parent = camera1ImageBox;
@@ -72,25 +75,28 @@ namespace SAF_OpticalFailureDetector
             process2Label.BackColor = Color.Transparent;
             
 
-            // initialize camera
+            // initialize camera and processor 1
             cam1 = new Camera();
-            cam1.AddSubscriber(ipQueue);
-
-            // initialize failure detector
+            cam1.AddSubscriber(ipQueue1);
             imagep1 = new FailureDetector("Detector1");
-            imagep1.SetConsumerQueue(ipQueue);
+            imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(mainQueue);
 
+            // initialize camera and processor 2
+            cam2 = new Camera();
+            cam2.AddSubscriber(ipQueue2);
+            imagep2 = new FailureDetector("Detector2");
+            imagep2.SetConsumerQueue(ipQueue2);
+            imagep2.AddSubscriber(mainQueue);
+
+            cam1.StartCamera();
+            imagep1.Start();
+
+            // initialize camera and processor periods
             camera1Period = 0.05;
             camera2Period = 0.05;
             process1Period = 0.05;
             process2Period = 0.05;
-            
-            cam1.StartCamera();
-            imagep1.Start();
-
-            //Thread.Sleep(50);
-
 
             guiSem.Release();
             // setup timer update
@@ -100,20 +106,44 @@ namespace SAF_OpticalFailureDetector
             
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // stop camera and processor threads
+            cam1.StopCamera();
+            cam2.StopCamera();
+            imagep1.Stop();
+            imagep2.Stop();
+        }
+
         private void DisplayImage(object stateInfo)
         {
             List<QueueElement> imageList = new List<QueueElement>();
             if (mainQueue.popAll(ref imageList))
             {
-                guiSem.WaitOne();
-                if (camera1Data != null)
+                if (imageList[imageList.Count - 1].Type.Equals(imagep1.GetName()))
                 {
-                    camera1Data.Dispose();
-                    camera1Data.Unlock();
+                    guiSem.WaitOne();
+                    if (camera1Data != null)
+                    {
+                        camera1Data.Dispose();
+                        camera1Data.Unlock();
+                    }
+                    camera1Data = (IPData)imageList[imageList.Count - 1].Data;
+                    guiSem.Release();
+                    UpdateCamera1Image();
                 }
-                camera1Data = (IPData)imageList[imageList.Count - 1].Data;
-                guiSem.Release();
-                UpdateCamera1Image();
+                else if (imageList[imageList.Count - 1].Type.Equals(imagep2.GetName()))
+                {
+                    guiSem.WaitOne();
+                    if (camera2Data != null)
+                    {
+                        camera2Data.Dispose();
+                        camera2Data.Unlock();
+                    }
+                    camera2Data = (IPData)imageList[imageList.Count - 1].Data;
+                    guiSem.Release();
+                    UpdateCamera2Image();
+                }
 
                 for (int i = 0; i < imageList.Count - 1; i++)
                 {
@@ -147,6 +177,34 @@ namespace SAF_OpticalFailureDetector
                     process1Label.Text = String.Format("{0:0.00}", (1 / process1Period));
                 }
                 
+                guiSem.Release();
+            }
+        }
+
+        private void UpdateCamera2Image()
+        {
+            if (this.camera2ImageBox.InvokeRequired || this.camera2Label.InvokeRequired ||
+                this.process2ImageBox.InvokeRequired || this.process2Label.InvokeRequired)
+            {
+                UpdateCamera2ImageCallback d = new UpdateCamera2ImageCallback(UpdateCamera2Image);
+                this.BeginInvoke(d, null);
+            }
+            else
+            {
+                guiSem.WaitOne();
+
+                if (camera2Data != null)
+                {
+                    camera2ImageBox.Image = camera2Data.GetCameraImage();
+                    process2ImageBox.Image = camera2Data.GetProcessedImage();
+
+                    camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.GetElapsedTime();
+                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.GetProcessTime();
+
+                    camera2Label.Text = String.Format("{0:0.00}", (1 / camera2Period));
+                    process2Label.Text = String.Format("{0:0.00}", (1 / process2Period));
+                }
+
                 guiSem.Release();
             }
         }
@@ -206,6 +264,8 @@ namespace SAF_OpticalFailureDetector
         {
             MessageBox.Show("This feature is not yet implemented.", "Refresh Camera");
         }
+
+        
 
         
     }

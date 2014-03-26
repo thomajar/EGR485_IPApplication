@@ -36,6 +36,15 @@
             this.tsbtn_Stop = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Help = new System.Windows.Forms.ToolStripButton();
             this.tlp_Main = new System.Windows.Forms.TableLayoutPanel();
+            this.process2Panel = new System.Windows.Forms.Panel();
+            this.process2Label = new System.Windows.Forms.Label();
+            this.process2ImageBox = new System.Windows.Forms.PictureBox();
+            this.process1Panel = new System.Windows.Forms.Panel();
+            this.process1Label = new System.Windows.Forms.Label();
+            this.process1ImageBox = new System.Windows.Forms.PictureBox();
+            this.camera2Panel = new System.Windows.Forms.Panel();
+            this.camera2Label = new System.Windows.Forms.Label();
+            this.camera2ImageBox = new System.Windows.Forms.PictureBox();
             this.panel_cntls = new System.Windows.Forms.Panel();
             this.nud_min_contrast = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
@@ -45,28 +54,19 @@
             this.camera1Panel = new System.Windows.Forms.Panel();
             this.camera1Label = new System.Windows.Forms.Label();
             this.camera1ImageBox = new System.Windows.Forms.PictureBox();
-            this.camera2Panel = new System.Windows.Forms.Panel();
-            this.camera2Label = new System.Windows.Forms.Label();
-            this.camera2ImageBox = new System.Windows.Forms.PictureBox();
-            this.process1Panel = new System.Windows.Forms.Panel();
-            this.process1Label = new System.Windows.Forms.Label();
-            this.process1ImageBox = new System.Windows.Forms.PictureBox();
-            this.process2Panel = new System.Windows.Forms.Panel();
-            this.process2Label = new System.Windows.Forms.Label();
-            this.process2ImageBox = new System.Windows.Forms.PictureBox();
             this.toolStrip1.SuspendLayout();
             this.tlp_Main.SuspendLayout();
+            this.process2Panel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).BeginInit();
+            this.process1Panel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).BeginInit();
+            this.camera2Panel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).BeginInit();
             this.panel_cntls.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_min_contrast)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_noise_lvl)).BeginInit();
             this.camera1Panel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.camera1ImageBox)).BeginInit();
-            this.camera2Panel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).BeginInit();
-            this.process1Panel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).BeginInit();
-            this.process2Panel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).BeginInit();
             this.SuspendLayout();
             // 
             // toolStrip1
@@ -157,6 +157,99 @@
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tlp_Main.Size = new System.Drawing.Size(911, 663);
             this.tlp_Main.TabIndex = 2;
+            // 
+            // process2Panel
+            // 
+            this.process2Panel.Controls.Add(this.process2Label);
+            this.process2Panel.Controls.Add(this.process2ImageBox);
+            this.process2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process2Panel.Location = new System.Drawing.Point(388, 334);
+            this.process2Panel.Name = "process2Panel";
+            this.process2Panel.Size = new System.Drawing.Size(379, 326);
+            this.process2Panel.TabIndex = 8;
+            // 
+            // process2Label
+            // 
+            this.process2Label.AutoSize = true;
+            this.process2Label.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process2Label.Location = new System.Drawing.Point(0, 0);
+            this.process2Label.Name = "process2Label";
+            this.process2Label.Size = new System.Drawing.Size(46, 17);
+            this.process2Label.TabIndex = 0;
+            this.process2Label.Text = "FPS : ";
+            // 
+            // process2ImageBox
+            // 
+            this.process2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process2ImageBox.Location = new System.Drawing.Point(0, 0);
+            this.process2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.process2ImageBox.Name = "process2ImageBox";
+            this.process2ImageBox.Size = new System.Drawing.Size(379, 326);
+            this.process2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.process2ImageBox.TabIndex = 1;
+            this.process2ImageBox.TabStop = false;
+            // 
+            // process1Panel
+            // 
+            this.process1Panel.Controls.Add(this.process1Label);
+            this.process1Panel.Controls.Add(this.process1ImageBox);
+            this.process1Panel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process1Panel.Location = new System.Drawing.Point(3, 334);
+            this.process1Panel.Name = "process1Panel";
+            this.process1Panel.Size = new System.Drawing.Size(379, 326);
+            this.process1Panel.TabIndex = 7;
+            // 
+            // process1Label
+            // 
+            this.process1Label.AutoSize = true;
+            this.process1Label.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process1Label.Location = new System.Drawing.Point(0, 0);
+            this.process1Label.Name = "process1Label";
+            this.process1Label.Size = new System.Drawing.Size(46, 17);
+            this.process1Label.TabIndex = 0;
+            this.process1Label.Text = "FPS : ";
+            // 
+            // process1ImageBox
+            // 
+            this.process1ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process1ImageBox.Location = new System.Drawing.Point(0, 0);
+            this.process1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.process1ImageBox.Name = "process1ImageBox";
+            this.process1ImageBox.Size = new System.Drawing.Size(379, 326);
+            this.process1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.process1ImageBox.TabIndex = 1;
+            this.process1ImageBox.TabStop = false;
+            // 
+            // camera2Panel
+            // 
+            this.camera2Panel.Controls.Add(this.camera2Label);
+            this.camera2Panel.Controls.Add(this.camera2ImageBox);
+            this.camera2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.camera2Panel.Location = new System.Drawing.Point(388, 3);
+            this.camera2Panel.Name = "camera2Panel";
+            this.camera2Panel.Size = new System.Drawing.Size(379, 325);
+            this.camera2Panel.TabIndex = 6;
+            // 
+            // camera2Label
+            // 
+            this.camera2Label.AutoSize = true;
+            this.camera2Label.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.camera2Label.Location = new System.Drawing.Point(0, 0);
+            this.camera2Label.Name = "camera2Label";
+            this.camera2Label.Size = new System.Drawing.Size(46, 17);
+            this.camera2Label.TabIndex = 0;
+            this.camera2Label.Text = "FPS : ";
+            // 
+            // camera2ImageBox
+            // 
+            this.camera2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.camera2ImageBox.Location = new System.Drawing.Point(0, 0);
+            this.camera2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.camera2ImageBox.Name = "camera2ImageBox";
+            this.camera2ImageBox.Size = new System.Drawing.Size(379, 325);
+            this.camera2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.camera2ImageBox.TabIndex = 1;
+            this.camera2ImageBox.TabStop = false;
             // 
             // panel_cntls
             // 
@@ -270,99 +363,6 @@
             this.camera1ImageBox.TabIndex = 1;
             this.camera1ImageBox.TabStop = false;
             // 
-            // camera2Panel
-            // 
-            this.camera2Panel.Controls.Add(this.camera2Label);
-            this.camera2Panel.Controls.Add(this.camera2ImageBox);
-            this.camera2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.camera2Panel.Location = new System.Drawing.Point(388, 3);
-            this.camera2Panel.Name = "camera2Panel";
-            this.camera2Panel.Size = new System.Drawing.Size(379, 325);
-            this.camera2Panel.TabIndex = 6;
-            // 
-            // camera2Label
-            // 
-            this.camera2Label.AutoSize = true;
-            this.camera2Label.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.camera2Label.Location = new System.Drawing.Point(0, 0);
-            this.camera2Label.Name = "camera2Label";
-            this.camera2Label.Size = new System.Drawing.Size(46, 17);
-            this.camera2Label.TabIndex = 0;
-            this.camera2Label.Text = "FPS : ";
-            // 
-            // camera2ImageBox
-            // 
-            this.camera2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.camera2ImageBox.Location = new System.Drawing.Point(0, 0);
-            this.camera2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.camera2ImageBox.Name = "camera2ImageBox";
-            this.camera2ImageBox.Size = new System.Drawing.Size(379, 325);
-            this.camera2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.camera2ImageBox.TabIndex = 1;
-            this.camera2ImageBox.TabStop = false;
-            // 
-            // process1Panel
-            // 
-            this.process1Panel.Controls.Add(this.process1Label);
-            this.process1Panel.Controls.Add(this.process1ImageBox);
-            this.process1Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process1Panel.Location = new System.Drawing.Point(3, 334);
-            this.process1Panel.Name = "process1Panel";
-            this.process1Panel.Size = new System.Drawing.Size(379, 326);
-            this.process1Panel.TabIndex = 7;
-            // 
-            // process1Label
-            // 
-            this.process1Label.AutoSize = true;
-            this.process1Label.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process1Label.Location = new System.Drawing.Point(0, 0);
-            this.process1Label.Name = "process1Label";
-            this.process1Label.Size = new System.Drawing.Size(46, 17);
-            this.process1Label.TabIndex = 0;
-            this.process1Label.Text = "FPS : ";
-            // 
-            // process1ImageBox
-            // 
-            this.process1ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process1ImageBox.Location = new System.Drawing.Point(0, 0);
-            this.process1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.process1ImageBox.Name = "process1ImageBox";
-            this.process1ImageBox.Size = new System.Drawing.Size(379, 326);
-            this.process1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.process1ImageBox.TabIndex = 1;
-            this.process1ImageBox.TabStop = false;
-            // 
-            // process2Panel
-            // 
-            this.process2Panel.Controls.Add(this.process2Label);
-            this.process2Panel.Controls.Add(this.process2ImageBox);
-            this.process2Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process2Panel.Location = new System.Drawing.Point(388, 334);
-            this.process2Panel.Name = "process2Panel";
-            this.process2Panel.Size = new System.Drawing.Size(379, 326);
-            this.process2Panel.TabIndex = 8;
-            // 
-            // process2Label
-            // 
-            this.process2Label.AutoSize = true;
-            this.process2Label.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process2Label.Location = new System.Drawing.Point(0, 0);
-            this.process2Label.Name = "process2Label";
-            this.process2Label.Size = new System.Drawing.Size(46, 17);
-            this.process2Label.TabIndex = 0;
-            this.process2Label.Text = "FPS : ";
-            // 
-            // process2ImageBox
-            // 
-            this.process2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.process2ImageBox.Location = new System.Drawing.Point(0, 0);
-            this.process2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.process2ImageBox.Name = "process2ImageBox";
-            this.process2ImageBox.Size = new System.Drawing.Size(379, 326);
-            this.process2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.process2ImageBox.TabIndex = 1;
-            this.process2ImageBox.TabStop = false;
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -373,10 +373,20 @@
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "Form1";
             this.Text = "Optical Failure Detector";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
             this.tlp_Main.ResumeLayout(false);
+            this.process2Panel.ResumeLayout(false);
+            this.process2Panel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).EndInit();
+            this.process1Panel.ResumeLayout(false);
+            this.process1Panel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).EndInit();
+            this.camera2Panel.ResumeLayout(false);
+            this.camera2Panel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).EndInit();
             this.panel_cntls.ResumeLayout(false);
             this.panel_cntls.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_min_contrast)).EndInit();
@@ -384,15 +394,6 @@
             this.camera1Panel.ResumeLayout(false);
             this.camera1Panel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.camera1ImageBox)).EndInit();
-            this.camera2Panel.ResumeLayout(false);
-            this.camera2Panel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).EndInit();
-            this.process1Panel.ResumeLayout(false);
-            this.process1Panel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).EndInit();
-            this.process2Panel.ResumeLayout(false);
-            this.process2Panel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).EndInit();
             this.ResumeLayout(false);
 
         }

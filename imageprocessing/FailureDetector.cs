@@ -182,6 +182,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             sem.Release();
         }
 
+        public String GetName()
+        {
+            return consumerName;
+        }
+
         private void Process()
         {
             Stopwatch sw = new Stopwatch();
