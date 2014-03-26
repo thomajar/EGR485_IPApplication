@@ -259,7 +259,6 @@
             this.btn_LoadImage.TabIndex = 0;
             this.btn_LoadImage.Text = "Load Image";
             this.btn_LoadImage.UseVisualStyleBackColor = true;
-            this.btn_LoadImage.Click += new System.EventHandler(this.btn_LoadImage_Click);
             // 
             // toolStripStatusLabel2
             // 

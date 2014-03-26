@@ -49,6 +49,8 @@ namespace SAF_OpticalFailureDetector
 
         private System.Threading.Timer imageUpdateTimer;
 
+        private delegate void UpdateCameraImageCallback();
+
         public Form1()
         {
             InitializeComponent();
@@ -116,8 +118,6 @@ namespace SAF_OpticalFailureDetector
             }
         }
 
-        private delegate void UpdateCameraImageCallback();
-
         private void UpdateCameraImage()
         {
             if (this.pictureBox1.InvokeRequired || InvokeRequired || statusStrip1.InvokeRequired)
@@ -142,49 +142,14 @@ namespace SAF_OpticalFailureDetector
             }
         }
 
-        private void btn_LoadImage_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "Bitmap (*.bmp)|*.bmp";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                displayBitmap1 = new Bitmap(ofd.FileName);
-                if (displayBitmap1 != null)
-                {
-                    pictureBox1.Image = displayBitmap1;
-                }
-                if (displayBitmap2 != null)
-                {
-                    pictureBox2.Image = displayBitmap2;
-                }
-                image_roi = IP.ROI(displayBitmap1);
-                ProcessImage();
-            }
-            
-        }
-
-        private void ProcessImage()
-        {
-            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-            Bitmap b2 = (Bitmap)displayBitmap1.Clone();
-            IP.readImg(b2,image_roi,Convert.ToInt32(nud_noise_lvl.Value),
-                Convert.ToInt32(nud_min_contrast.Value));
-            pictureBox2.Image = b2;
-            tslbl_Status.Text = "Elapsed Time: " + sw.ElapsedMilliseconds + " ms"; 
-        }
-
         private void nud_noise_lvl_ValueChanged(object sender, EventArgs e)
         {
             imagep1.SetContrast(Convert.ToInt32(nud_noise_lvl.Value));
-            //ProcessImage();
         }
 
         private void nud_min_contrast_ValueChanged(object sender, EventArgs e)
         {
             imagep1.SetRange(Convert.ToInt32(nud_min_contrast.Value));
-            //ProcessImage();
         }
 
         private void tsbtn_Settings_Click(object sender, EventArgs e)

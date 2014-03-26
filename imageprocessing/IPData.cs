@@ -44,9 +44,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         public void Dispose()
         {
-            camImage.Dispose();
-            processedImage.Dispose();
-            ib.Bitmap.Dispose();
+            try
+            {
+                camImage.Dispose();
+                processedImage.Dispose();
+                ib.Bitmap.Dispose();
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            
         }
 
         public void SetCameraImage(Bitmap b)
