@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.tsbtn_Settings = new System.Windows.Forms.ToolStripButton();
+            this.tsbtn_RefreshCamera = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Start = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Stop = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Help = new System.Windows.Forms.ToolStripButton();
@@ -38,24 +39,27 @@
             this.tslbl_Status = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.tlp_Main = new System.Windows.Forms.TableLayoutPanel();
+            this.camera1ImageBox = new System.Windows.Forms.PictureBox();
+            this.process1ImageBox = new System.Windows.Forms.PictureBox();
             this.panel_cntls = new System.Windows.Forms.Panel();
             this.nud_min_contrast = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.nud_noise_lvl = new System.Windows.Forms.NumericUpDown();
             this.label1 = new System.Windows.Forms.Label();
             this.btn_LoadImage = new System.Windows.Forms.Button();
-            this.tsbtn_RefreshCamera = new System.Windows.Forms.ToolStripButton();
+            this.process2ImageBox = new System.Windows.Forms.PictureBox();
+            this.camera2ImageBox = new System.Windows.Forms.PictureBox();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
-            this.tableLayoutPanel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            this.tlp_Main.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.camera1ImageBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).BeginInit();
             this.panel_cntls.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_min_contrast)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_noise_lvl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).BeginInit();
             this.SuspendLayout();
             // 
             // toolStrip1
@@ -83,6 +87,16 @@
             this.tsbtn_Settings.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Settings.Text = "Settings";
             this.tsbtn_Settings.Click += new System.EventHandler(this.tsbtn_Settings_Click);
+            // 
+            // tsbtn_RefreshCamera
+            // 
+            this.tsbtn_RefreshCamera.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_RefreshCamera.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_RefreshCamera.Image")));
+            this.tsbtn_RefreshCamera.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbtn_RefreshCamera.Name = "tsbtn_RefreshCamera";
+            this.tsbtn_RefreshCamera.Size = new System.Drawing.Size(68, 76);
+            this.tsbtn_RefreshCamera.Text = "Refresh Camera";
+            this.tsbtn_RefreshCamera.Click += new System.EventHandler(this.tsbtn_RefreshCamera_Click);
             // 
             // tsbtn_Start
             // 
@@ -145,45 +159,49 @@
             this.toolStripStatusLabel2.Size = new System.Drawing.Size(151, 20);
             this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
             // 
-            // tableLayoutPanel1
+            // tlp_Main
             // 
-            this.tableLayoutPanel1.ColumnCount = 2;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 149F));
-            this.tableLayoutPanel1.Controls.Add(this.pictureBox1, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.pictureBox2, 0, 1);
-            this.tableLayoutPanel1.Controls.Add(this.panel_cntls, 1, 0);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 79);
-            this.tableLayoutPanel1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(911, 638);
-            this.tableLayoutPanel1.TabIndex = 2;
+            this.tlp_Main.ColumnCount = 3;
+            this.tlp_Main.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Main.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Main.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 140F));
+            this.tlp_Main.Controls.Add(this.camera2ImageBox, 1, 0);
+            this.tlp_Main.Controls.Add(this.process2ImageBox, 1, 1);
+            this.tlp_Main.Controls.Add(this.camera1ImageBox, 0, 0);
+            this.tlp_Main.Controls.Add(this.process1ImageBox, 0, 1);
+            this.tlp_Main.Controls.Add(this.panel_cntls, 2, 0);
+            this.tlp_Main.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Main.Location = new System.Drawing.Point(0, 79);
+            this.tlp_Main.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.tlp_Main.Name = "tlp_Main";
+            this.tlp_Main.RowCount = 2;
+            this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tlp_Main.Size = new System.Drawing.Size(911, 638);
+            this.tlp_Main.TabIndex = 2;
             // 
-            // pictureBox1
+            // camera1ImageBox
             // 
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(3, 2);
-            this.pictureBox1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(756, 315);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
+            this.camera1ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.camera1ImageBox.Location = new System.Drawing.Point(3, 2);
+            this.camera1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.camera1ImageBox.Name = "camera1ImageBox";
+            this.camera1ImageBox.Size = new System.Drawing.Size(379, 315);
+            this.camera1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.camera1ImageBox.TabIndex = 0;
+            this.camera1ImageBox.TabStop = false;
             // 
-            // pictureBox2
+            // process1ImageBox
             // 
-            this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox2.Location = new System.Drawing.Point(3, 321);
-            this.pictureBox2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(756, 315);
-            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox2.TabIndex = 1;
-            this.pictureBox2.TabStop = false;
+            this.process1ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process1ImageBox.Location = new System.Drawing.Point(3, 321);
+            this.process1ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.process1ImageBox.Name = "process1ImageBox";
+            this.process1ImageBox.Size = new System.Drawing.Size(379, 315);
+            this.process1ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.process1ImageBox.TabIndex = 1;
+            this.process1ImageBox.TabStop = false;
             // 
             // panel_cntls
             // 
@@ -193,16 +211,16 @@
             this.panel_cntls.Controls.Add(this.label1);
             this.panel_cntls.Controls.Add(this.btn_LoadImage);
             this.panel_cntls.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel_cntls.Location = new System.Drawing.Point(765, 2);
+            this.panel_cntls.Location = new System.Drawing.Point(773, 2);
             this.panel_cntls.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.panel_cntls.Name = "panel_cntls";
-            this.tableLayoutPanel1.SetRowSpan(this.panel_cntls, 2);
-            this.panel_cntls.Size = new System.Drawing.Size(143, 634);
+            this.tlp_Main.SetRowSpan(this.panel_cntls, 2);
+            this.panel_cntls.Size = new System.Drawing.Size(135, 634);
             this.panel_cntls.TabIndex = 2;
             // 
             // nud_min_contrast
             // 
-            this.nud_min_contrast.Location = new System.Drawing.Point(20, 180);
+            this.nud_min_contrast.Location = new System.Drawing.Point(9, 180);
             this.nud_min_contrast.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.nud_min_contrast.Minimum = new decimal(new int[] {
             1,
@@ -222,7 +240,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(17, 159);
+            this.label2.Location = new System.Drawing.Point(6, 159);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(120, 17);
             this.label2.TabIndex = 3;
@@ -230,7 +248,7 @@
             // 
             // nud_noise_lvl
             // 
-            this.nud_noise_lvl.Location = new System.Drawing.Point(20, 107);
+            this.nud_noise_lvl.Location = new System.Drawing.Point(9, 107);
             this.nud_noise_lvl.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.nud_noise_lvl.Minimum = new decimal(new int[] {
             1,
@@ -250,7 +268,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(17, 86);
+            this.label1.Location = new System.Drawing.Point(6, 86);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(82, 17);
             this.label1.TabIndex = 1;
@@ -258,7 +276,7 @@
             // 
             // btn_LoadImage
             // 
-            this.btn_LoadImage.Location = new System.Drawing.Point(13, 17);
+            this.btn_LoadImage.Location = new System.Drawing.Point(773, 2);
             this.btn_LoadImage.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btn_LoadImage.Name = "btn_LoadImage";
             this.btn_LoadImage.Size = new System.Drawing.Size(111, 44);
@@ -266,22 +284,34 @@
             this.btn_LoadImage.Text = "Load Image";
             this.btn_LoadImage.UseVisualStyleBackColor = true;
             // 
-            // tsbtn_RefreshCamera
+            // process2ImageBox
             // 
-            this.tsbtn_RefreshCamera.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_RefreshCamera.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_RefreshCamera.Image")));
-            this.tsbtn_RefreshCamera.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tsbtn_RefreshCamera.Name = "tsbtn_RefreshCamera";
-            this.tsbtn_RefreshCamera.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_RefreshCamera.Text = "Refresh Camera";
-            this.tsbtn_RefreshCamera.Click += new System.EventHandler(this.tsbtn_RefreshCamera_Click);
+            this.process2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.process2ImageBox.Location = new System.Drawing.Point(388, 321);
+            this.process2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.process2ImageBox.Name = "process2ImageBox";
+            this.process2ImageBox.Size = new System.Drawing.Size(379, 315);
+            this.process2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.process2ImageBox.TabIndex = 3;
+            this.process2ImageBox.TabStop = false;
+            // 
+            // camera2ImageBox
+            // 
+            this.camera2ImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.camera2ImageBox.Location = new System.Drawing.Point(388, 2);
+            this.camera2ImageBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.camera2ImageBox.Name = "camera2ImageBox";
+            this.camera2ImageBox.Size = new System.Drawing.Size(379, 315);
+            this.camera2ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.camera2ImageBox.TabIndex = 4;
+            this.camera2ImageBox.TabStop = false;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(911, 742);
-            this.Controls.Add(this.tableLayoutPanel1);
+            this.Controls.Add(this.tlp_Main);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.toolStrip1);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
@@ -292,13 +322,15 @@
             this.toolStrip1.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
-            this.tableLayoutPanel1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            this.tlp_Main.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.camera1ImageBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.process1ImageBox)).EndInit();
             this.panel_cntls.ResumeLayout(false);
             this.panel_cntls.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_min_contrast)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_noise_lvl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.process2ImageBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.camera2ImageBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -309,9 +341,9 @@
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel tslbl_Status;
-        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.PictureBox pictureBox2;
+        private System.Windows.Forms.TableLayoutPanel tlp_Main;
+        private System.Windows.Forms.PictureBox camera1ImageBox;
+        private System.Windows.Forms.PictureBox process1ImageBox;
         private System.Windows.Forms.Panel panel_cntls;
         private System.Windows.Forms.NumericUpDown nud_noise_lvl;
         private System.Windows.Forms.Label label1;
@@ -325,6 +357,8 @@
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
         private System.Windows.Forms.ToolStripButton tsbtn_RefreshCamera;
+        private System.Windows.Forms.PictureBox camera2ImageBox;
+        private System.Windows.Forms.PictureBox process2ImageBox;
     }
 }
 

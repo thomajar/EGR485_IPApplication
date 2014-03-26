@@ -33,6 +33,8 @@ namespace SAF_OpticalFailureDetector
         private FailureDetector imagep1;
         private FailureDetector imagep2;
 
+
+
         //private Messenger messenger;
 
         //private SaveQueue saveQueue;
@@ -118,7 +120,7 @@ namespace SAF_OpticalFailureDetector
 
         private void UpdateCameraImage()
         {
-            if (this.pictureBox1.InvokeRequired || InvokeRequired || statusStrip1.InvokeRequired)
+            if (this.camera1ImageBox.InvokeRequired || InvokeRequired || statusStrip1.InvokeRequired)
             {
                 UpdateCameraImageCallback d = new UpdateCameraImageCallback(UpdateCameraImage);
                 this.BeginInvoke(d, null);
@@ -129,8 +131,8 @@ namespace SAF_OpticalFailureDetector
 
                 if (imageData != null)
                 {
-                    pictureBox1.Image = imageData.GetCameraImage();
-                    pictureBox2.Image = imageData.GetProcessedImage();
+                    camera1ImageBox.Image = imageData.GetCameraImage();
+                    process1ImageBox.Image = imageData.GetProcessedImage();
                     
                     toolStripStatusLabel1.Text = (1 / imageData.GetElapsedTime()).ToString();
                     toolStripStatusLabel2.Text = (1 / imageData.GetProcessTime()).ToString();
