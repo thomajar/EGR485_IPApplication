@@ -24,6 +24,7 @@ namespace SAF_OpticalFailureDetector
         private CircularQueue<QueueElement> mainQueue;
         private CircularQueue<QueueElement> ipQueue1;
         private CircularQueue<QueueElement> ipQueue2;
+        private CircularQueue<QueueElement> save_queue;
 
         // camera and processor 
         private Camera cam1;
@@ -38,6 +39,7 @@ namespace SAF_OpticalFailureDetector
         private Double process2Period;
 
         private Settings program_settings;
+        private SaveQueue save_queue_images;
 
         private System.Threading.Timer imageUpdateTimer;
 
@@ -56,7 +58,8 @@ namespace SAF_OpticalFailureDetector
             mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
             ipQueue1 = new CircularQueue<QueueElement>("IP1",100);
             ipQueue2 = new CircularQueue<QueueElement>("IP2",100);
-            
+            save_queue = new CircularQueue<QueueElement>("save_queue", 100);
+
             // initialize form
             camera1Label.Parent = camera1ImageBox;
             camera1Label.ForeColor = Color.Red;
@@ -81,6 +84,7 @@ namespace SAF_OpticalFailureDetector
             imagep1 = new FailureDetector("Detector1");
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(mainQueue);
+            imagep1.AddSubscriber(save_queue);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -88,10 +92,16 @@ namespace SAF_OpticalFailureDetector
             imagep2 = new FailureDetector("Detector2");
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(mainQueue);
+            imagep2.AddSubscriber(save_queue);
+
+            // sets image queue
+            save_queue_images = new SaveQueue("save_queue_images", program_settings.LogLocation);
+            save_queue_images.SetConsumerQueue(save_queue);
 
             // start the cameras
             cam1.StartCamera(0);
             cam2.StartCamera(1);
+
 
             // initialize camera and processor periods
             camera1Period = 0.05;
@@ -254,6 +264,8 @@ namespace SAF_OpticalFailureDetector
         {
             imagep1.Start();
             imagep2.Start();
+            save_queue_images.Start();
+
             //messenger = new Messenger(program_settings.EmailAddress,
             //    program_settings.TestNumber, program_settings.SampleNumber);
         }
@@ -262,6 +274,7 @@ namespace SAF_OpticalFailureDetector
         {
             imagep1.Stop();
             imagep2.Stop();
+            save_queue_images.Stop();
         }
 
         private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)
