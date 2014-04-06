@@ -91,18 +91,6 @@ namespace SAF_OpticalFailureDetector
         private void btnSave_Click(object sender, EventArgs e)
         {
             bool isFilledOut = true;
-            if (cmboCam1.Text == "Select...")
-            {
-                isFilledOut = false;
-            }
-            if (cmboCam2.Text == "Select...")
-            {
-                isFilledOut = false;
-            }
-            if (txtEmail.Text == "")
-            {
-                isFilledOut = false;
-            }
             if (txtLogFile.Text == "")
             {
                 isFilledOut = false;
@@ -133,12 +121,6 @@ namespace SAF_OpticalFailureDetector
             txtSampleNumber.Text = "";
             txtTestNumber.Text = "";
             txtLogFile.Text = "";
-            txtEmail.Text = "";
-            cmboCam1.Text = "Select...";
-            cmboCam2.Text = "Select...";
-            camera1 = "";
-            camera2 = "";
-            emailAddress = "";
             sampleNumber = "";
             testNumber = "";
             logLocation = "";
@@ -148,21 +130,6 @@ namespace SAF_OpticalFailureDetector
         {
             DialogResult = System.Windows.Forms.DialogResult.Abort;
             Close();
-        }
-
-        private void cmboCam1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            camera1 = cmboCam1.Text;
-        }
-
-        private void cmboCam2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            camera2 = cmboCam2.Text;
-        }
-
-        private void txtEmail_TextChanged(object sender, EventArgs e)
-        {
-            emailAddress = txtEmail.Text;
         }
 
         private void txtSampleNumber_TextChanged(object sender, EventArgs e)
