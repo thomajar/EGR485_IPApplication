@@ -13,6 +13,7 @@ using SAF_OpticalFailureDetector.imageprocessing;
 using SAF_OpticalFailureDetector.messenger;
 using SAF_OpticalFailureDetector.savequeue;
 using System.Threading;
+using System.Drawing.Imaging;
 
 namespace SAF_OpticalFailureDetector
 {
@@ -24,7 +25,7 @@ namespace SAF_OpticalFailureDetector
         private CircularQueue<QueueElement> mainQueue;
         private CircularQueue<QueueElement> ipQueue1;
         private CircularQueue<QueueElement> ipQueue2;
-        private CircularQueue<QueueElement> save_queue;
+        private CircularQueue<QueueElement> saveQueue;
 
         // camera and processor 
         private Camera cam1;
@@ -39,7 +40,7 @@ namespace SAF_OpticalFailureDetector
         private Double process2Period;
 
         private Settings program_settings;
-        private SaveQueue save_queue_images;
+        private SaveQueue saveQueueEnginie;
 
         private System.Threading.Timer imageUpdateTimer;
 
@@ -58,24 +59,7 @@ namespace SAF_OpticalFailureDetector
             mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
             ipQueue1 = new CircularQueue<QueueElement>("IP1",100);
             ipQueue2 = new CircularQueue<QueueElement>("IP2",100);
-            save_queue = new CircularQueue<QueueElement>("save_queue", 100);
-
-            // initialize form
-            camera1Label.Parent = camera1ImageBox;
-            camera1Label.ForeColor = Color.Red;
-            camera1Label.BackColor = Color.Transparent;
-
-            process1Label.Parent = process1ImageBox;
-            process1Label.ForeColor = Color.Red;
-            process1Label.BackColor = Color.Transparent;
-
-            camera2Label.Parent = camera2ImageBox;
-            camera2Label.ForeColor = Color.Red;
-            camera2Label.BackColor = Color.Transparent;
-
-            process2Label.Parent = process2ImageBox;
-            process2Label.ForeColor = Color.Red;
-            process2Label.BackColor = Color.Transparent;
+            saveQueue = new CircularQueue<QueueElement>("save_queue", 100);
             
 
             // initialize camera and processor 1
@@ -84,7 +68,7 @@ namespace SAF_OpticalFailureDetector
             imagep1 = new FailureDetector("Detector1");
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(mainQueue);
-            imagep1.AddSubscriber(save_queue);
+            imagep1.AddSubscriber(saveQueue);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -92,11 +76,11 @@ namespace SAF_OpticalFailureDetector
             imagep2 = new FailureDetector("Detector2");
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(mainQueue);
-            imagep2.AddSubscriber(save_queue);
+            imagep2.AddSubscriber(saveQueue);
 
             // sets image queue
-            save_queue_images = new SaveQueue("save_queue_images", program_settings.LogLocation);
-            save_queue_images.SetConsumerQueue(save_queue);
+            saveQueueEnginie = new SaveQueue("save_queue_images", program_settings.LogLocation);
+            saveQueueEnginie.SetConsumerQueue(saveQueue);
 
             // start the cameras
             cam1.StartCamera(0);
@@ -104,10 +88,10 @@ namespace SAF_OpticalFailureDetector
 
 
             // initialize camera and processor periods
-            camera1Period = 0.05;
-            camera2Period = 0.05;
-            process1Period = 0.05;
-            process2Period = 0.05;
+            camera1Period = 0.03;
+            camera2Period = 0.03;
+            process1Period = 0.03;
+            process2Period = 0.03;
 
             guiSem.Release();
             // setup timer update
@@ -124,6 +108,7 @@ namespace SAF_OpticalFailureDetector
             cam2.StopCamera();
             imagep1.Stop();
             imagep2.Stop();
+            saveQueueEnginie.Stop();
         }
 
         private void DisplayImage(object stateInfo)
@@ -166,8 +151,7 @@ namespace SAF_OpticalFailureDetector
 
         private void UpdateCamera1Image()
         {
-            if (this.camera1ImageBox.InvokeRequired || this.camera1Label.InvokeRequired ||
-                this.process1ImageBox.InvokeRequired || this.process1Label.InvokeRequired)
+            if (Camera1Display.InvokeRequired || Camera1Process.InvokeRequired)
             {
                 UpdateCamera1ImageCallback d = new UpdateCamera1ImageCallback(UpdateCamera1Image);
                 this.BeginInvoke(d, null);
@@ -178,14 +162,16 @@ namespace SAF_OpticalFailureDetector
 
                 if (camera1Data != null)
                 {
-                    camera1ImageBox.Image = camera1Data.GetCameraImage();
-                    process1ImageBox.Image = camera1Data.GetProcessedImage();
+                    Bitmap cameraImage = camera1Data.GetCameraImage();
+                    //camera1ImageBox.Image = ScaleImage(ref cameraImage, new Point(0, 0), new Size(100, 100), 1);
+                    Camera1Display.SetImage(camera1Data.GetCameraImage());
+                    Camera1Process.SetImage(camera1Data.GetProcessedImage());
 
                     camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.GetElapsedTime();
                     process1Period = 0.85 * process1Period + 0.15 * camera1Data.GetProcessTime();
 
-                    camera1Label.Text = String.Format("{0:0.00}",(1 / camera1Period));
-                    process1Label.Text = String.Format("{0:0.00}", (1 / process1Period));
+                    Camera1Display.SetText(String.Format("{0:0.00}",(1 / camera1Period)));
+                    Camera1Process.SetText(String.Format("{0:0.00}", (1 / process1Period)));
                 }
                 
                 guiSem.Release();
@@ -194,8 +180,7 @@ namespace SAF_OpticalFailureDetector
 
         private void UpdateCamera2Image()
         {
-            if (this.camera2ImageBox.InvokeRequired || this.camera2Label.InvokeRequired ||
-                this.process2ImageBox.InvokeRequired || this.process2Label.InvokeRequired)
+            if (Camera2Display.InvokeRequired || Camera2Process.InvokeRequired)
             {
                 UpdateCamera2ImageCallback d = new UpdateCamera2ImageCallback(UpdateCamera2Image);
                 this.BeginInvoke(d, null);
@@ -206,18 +191,67 @@ namespace SAF_OpticalFailureDetector
 
                 if (camera2Data != null)
                 {
-                    camera2ImageBox.Image = camera2Data.GetCameraImage();
-                    process2ImageBox.Image = camera2Data.GetProcessedImage();
+                    Camera2Display.SetImage(camera2Data.GetCameraImage());
+                    Camera2Process.SetImage(camera2Data.GetProcessedImage());
 
                     camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.GetElapsedTime();
                     process2Period = 0.85 * process2Period + 0.15 * camera2Data.GetProcessTime();
 
-                    camera2Label.Text = String.Format("{0:0.00}", (1 / camera2Period));
-                    process2Label.Text = String.Format("{0:0.00}", (1 / process2Period));
+                    Camera2Display.SetText(String.Format("{0:0.00}", (1 / camera2Period)));
+                    Camera2Process.SetText(String.Format("{0:0.00}", (1 / process2Period)));
                 }
 
                 guiSem.Release();
             }
+        }
+
+        /// <summary>
+        /// Scales an image and returns a copy of the image
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="p"></param>
+        /// <param name="s"></param>
+        /// <param name="zoomlvl"></param>
+        /// <returns></returns>
+        private Bitmap ScaleImage(ref Bitmap b, Point p, Size s, int zoomlvl)
+        {
+            Bitmap scaledImage;
+
+            scaledImage = new Bitmap(s.Width, s.Height);
+
+            // apply gain to the image
+
+            float displayGain = 1.0f;
+
+            float[][] matrix = {
+                    new float[] {displayGain, 0, 0, 0, 0},        // red scaling factor of 2
+                    new float[] {0, displayGain, 0, 0, 0},        // green scaling factor of 1
+                    new float[] {0, 0, displayGain, 0, 0},        // blue scaling factor of 1
+                    new float[] {0, 0, 0, displayGain, 0},        // alpha scaling factor of 1
+                    new float[] {0, 0, 0, 0, 1}};    // three translations of 0.2;
+
+            ColorMatrix colorMatrix = new ColorMatrix(matrix);
+
+            ImageAttributes imageAttr = new ImageAttributes();
+            imageAttr.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+
+            Graphics g_scaled = Graphics.FromImage(scaledImage);
+            g_scaled.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+
+            try
+            {
+                g_scaled.DrawImage(b, new Rectangle(0, 0, scaledImage.Width, scaledImage.Height),
+                    0, 0, b.Width, b.Height, GraphicsUnit.Pixel, imageAttr);
+            }
+            catch (Exception)
+            {
+                
+                throw;
+            }
+
+            g_scaled.Dispose();
+            return scaledImage;
+
         }
 
         private void nud_noise_lvl_ValueChanged(object sender, EventArgs e)
@@ -264,7 +298,7 @@ namespace SAF_OpticalFailureDetector
         {
             imagep1.Start();
             imagep2.Start();
-            save_queue_images.Start();
+            saveQueueEnginie.Start();
 
             //messenger = new Messenger(program_settings.EmailAddress,
             //    program_settings.TestNumber, program_settings.SampleNumber);
@@ -274,7 +308,7 @@ namespace SAF_OpticalFailureDetector
         {
             imagep1.Stop();
             imagep2.Stop();
-            save_queue_images.Stop();
+            saveQueueEnginie.Stop();
         }
 
         private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)

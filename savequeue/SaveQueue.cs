@@ -185,7 +185,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                             array_position = 0;
                         }
                     }
-                 if(image.ContainsCrack())
+                 if(!image.ContainsCrack())
                  {
                      for(int counter = array_position + 1; counter <= 100; counter++)
                      {
