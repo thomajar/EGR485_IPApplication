@@ -247,6 +247,56 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        private Bitmap filterImage2(Bitmap b)
+        {
+            int PixelSize = 3;
+            int threshold = noiseRange * 8;
+            int result = 0;
+            int row_count = 0;
+            BitmapData B_data = null;
+            int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
+
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                    ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception)
+            {
+
+                return null;
+            }
+
+            for (int y = 1; y < b.Height - 1; y++)
+            {
+                byte* topRow = (byte*) B_data.Scan0 + ((y-1) * B_data.Stride);
+                byte* middleRow = (byte*) B_data.Scan0 + (y * B_data.Stride);
+                byte* bottomRow = (byte*) B_data.Scan0 + ((y+1) * B_data.Stride);
+                bool Ishot = false;
+                for (int x = 1; x < B_data.Width - 1; x++)
+                {
+                    int d1 = topRow[x * PixelSize - 1 * PixelSize] - bottomRow[x * PixelSize + 1 * PixelSize];
+                    int d2 = topRow[x * PixelSize + 1 * PixelSize] - bottomRow[x * PixelSize - 1 * PixelSize];
+                    result = Math.Abs(d1) + Math.Abs(d2);
+
+                    if (result > 40)
+                    {
+                        Ishot = true;
+                            // color pixel green
+                            middleRow[x * PixelSize] = 0;   //Blue  0-255
+                            middleRow[x * PixelSize + 1] = 255; //Green 0-255
+                            middleRow[x * PixelSize + 2] = 0;   //Red   0-255
+                    }
+                }
+                if (Ishot)
+                {
+                    row_count++;
+                }
+            }
+            b.UnlockBits(B_data);
+            return b;//(double)row_count / (double)R.Height;
+        }
+
         private Bitmap filterImage(Bitmap b)
         {
             int PixelSize = 3;

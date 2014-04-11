@@ -52,8 +52,11 @@
             this.DisplayText.Name = "DisplayText";
             this.DisplayText.Size = new System.Drawing.Size(581, 490);
             this.DisplayText.TabIndex = 2;
-            this.DisplayText.Text = "label1";
+            this.DisplayText.Text = "ZoomImageBoxText";
+            this.DisplayText.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DisplayImageBox_MouseDown);
             this.DisplayText.MouseEnter += new System.EventHandler(this.DisplayText_MouseEnter);
+            this.DisplayText.MouseLeave += new System.EventHandler(this.DisplayImageBox_MouseLeave);
+            this.DisplayText.MouseUp += new System.Windows.Forms.MouseEventHandler(this.DisplayImageBox_MouseUp);
             // 
             // DisplayImageBox
             // 

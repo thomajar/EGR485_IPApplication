@@ -24,6 +24,18 @@ namespace SAF_OpticalFailureDetector.threading
         // image settings
         private int zoomlvl;
         private Point focusPoint;
+        private Point displayImageOffset;
+
+        private MouseState mousestate;
+        private Point mousePointDown;
+        private Point mousePointUp;
+
+
+        private enum MouseState
+        {
+            Released,
+            Pressed
+        }
 
         public ZoomImageBox()
         {
@@ -36,6 +48,10 @@ namespace SAF_OpticalFailureDetector.threading
 
             zoomlvl = 0;
             focusPoint = Point.Empty;
+            displayImageOffset = new Point(0, 0);
+            mousestate = MouseState.Released;
+            mousePointDown = new Point(0, 0);
+            mousePointUp = new Point(0, 0);
 
             ctrlSem.Release();
         }
@@ -50,8 +66,10 @@ namespace SAF_OpticalFailureDetector.threading
             }
 
             // update the zoom lvl and focus point
+            ctrlSem.WaitOne();
             zoomlvl++;
-            focusPoint = p;
+            focusPoint = new Point(p.X + displayImageOffset.X, p.Y + displayImageOffset.Y);
+            ctrlSem.Release();
 
             // attempt to draw the image to DisplayImage
             try
@@ -75,8 +93,10 @@ namespace SAF_OpticalFailureDetector.threading
             }
 
             // update the zoom lvl and focus point
+            ctrlSem.WaitOne();
             zoomlvl--;
-            focusPoint = p;
+            focusPoint = new Point(p.X + displayImageOffset.X, p.Y + displayImageOffset.Y);
+            ctrlSem.Release();
 
             // attempt to draw the image to DisplayImage
             try
@@ -95,7 +115,16 @@ namespace SAF_OpticalFailureDetector.threading
             ctrlSem.WaitOne();
             unscaledImage = b;
             ctrlSem.Release();
-            DrawImage();
+            try
+            {
+                DrawImage();
+            }
+            catch (Exception inner)
+            {
+                ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
+                throw ex;
+            }
+            
         }
 
         public void SetText(String s)
@@ -109,13 +138,27 @@ namespace SAF_OpticalFailureDetector.threading
 
             // store portion to draw in mem bitmap
             Bitmap buffer;
-            Point displayImageOffset = new Point(0, 0);
+
+            int desiredImageWidth;
+            int desiredImageHeight;
 
             // check to see what desired image size is
-            int desiredImageWidth = 
-                Convert.ToInt32(unscaledImage.Width * Math.Pow(2, zoomlvl));
-            int desiredImageHeight = 
-                Convert.ToInt32(unscaledImage.Height * Math.Pow(2,zoomlvl));
+            try
+            {
+                desiredImageWidth =
+                    Convert.ToInt32(unscaledImage.Width * Math.Pow(2, zoomlvl));
+                desiredImageHeight =
+                    Convert.ToInt32(unscaledImage.Height * Math.Pow(2, zoomlvl));
+            }
+            catch (Exception inner)
+            {
+                ZoomImageBoxException ex = new ZoomImageBoxException(
+                    "ZoomImageBox.DrawImage : Error obtaining desired image width/height.",
+                    inner);
+                ctrlSem.Release();
+                throw ex;
+            }
+            
             
             // grab requested output size
             int requestedOutputWidth = DisplayImageBox.Width;
@@ -126,7 +169,16 @@ namespace SAF_OpticalFailureDetector.threading
                 desiredImageHeight > requestedOutputHeight)
             {
                 // use the requested size by user form
-                scaledImage = new Bitmap(requestedOutputWidth, requestedOutputHeight);
+                try
+                {
+                    scaledImage = new Bitmap(requestedOutputWidth, requestedOutputHeight);
+                }
+                catch (Exception inner)
+                {
+                    ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to create scaledImage Bitmap.", inner);
+                    ctrlSem.Release();
+                    throw ex;
+                }
 
                 Point requestedFocusPoint = focusPoint;
 
@@ -188,6 +240,7 @@ namespace SAF_OpticalFailureDetector.threading
                 try
                 {
                     buffer = unscaledImage.Clone(cropRectangle, unscaledImage.PixelFormat);
+                    //buffer.Save("Image.bmp");
                 }
                 catch (Exception inner)
                 {
@@ -200,7 +253,17 @@ namespace SAF_OpticalFailureDetector.threading
             {
                 // use size dictated by zoom lvl, this is smaller than requested size
                 displayImageOffset = new Point(0, 0);
-                scaledImage = new Bitmap(desiredImageWidth, desiredImageHeight);
+                try
+                {
+                    scaledImage = new Bitmap(desiredImageWidth, desiredImageHeight);
+                }
+                catch (Exception inner)
+                {
+                    ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to draw scaled image.", inner);
+                    ctrlSem.Release();
+                    throw ex;
+                }
+                
                 buffer = unscaledImage;
             }
 
@@ -238,58 +301,8 @@ namespace SAF_OpticalFailureDetector.threading
 
             DisplayImageBox.Image = scaledImage;
 
-
+            
             ctrlSem.Release();
-        }
-
-
-        /// <summary>
-        /// Scales an image and returns a copy of the image
-        /// </summary>
-        /// <param name="b"></param>
-        /// <param name="p"></param>
-        /// <param name="s"></param>
-        /// <param name="zoomlvl"></param>
-        /// <returns></returns>
-        private Bitmap ScaleImage(ref Bitmap b, Point p, Size s, int zoomlvl)
-        {
-            Bitmap scaledImage;
-
-            scaledImage = new Bitmap(s.Width, s.Height);
-
-            // apply gain to the image
-
-            float displayGain = 1.0f;
-
-            float[][] matrix = {
-                    new float[] {displayGain, 0, 0, 0, 0},        // red scaling factor of 2
-                    new float[] {0, displayGain, 0, 0, 0},        // green scaling factor of 1
-                    new float[] {0, 0, displayGain, 0, 0},        // blue scaling factor of 1
-                    new float[] {0, 0, 0, displayGain, 0},        // alpha scaling factor of 1
-                    new float[] {0, 0, 0, 0, 1}};    // three translations of 0.2;
-
-            ColorMatrix colorMatrix = new ColorMatrix(matrix);
-
-            ImageAttributes imageAttr = new ImageAttributes();
-            imageAttr.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-
-            Graphics g_scaled = Graphics.FromImage(scaledImage);
-            g_scaled.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-
-            try
-            {
-                g_scaled.DrawImage(b, new Rectangle(0, 0, scaledImage.Width, scaledImage.Height),
-                    0, 0, b.Width, b.Height, GraphicsUnit.Pixel, imageAttr);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-            g_scaled.Dispose();
-            return scaledImage;
-
         }
 
         void DisplayImage_MouseScroll(object sender, MouseEventArgs e)
@@ -297,12 +310,26 @@ namespace SAF_OpticalFailureDetector.threading
             // zoom in
             if (e.Delta > 0)
             {
-                ZoomIn(new Point(e.X, e.Y));
+                try
+                {
+                    ZoomIn(new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl))));
+                }
+                catch (Exception)
+                {
+                }
+                
             }
             // zoom out
             else if(e.Delta < 0)
             {
-                ZoomOut(new Point(e.X, e.Y));
+                try
+                {
+                    ZoomOut(new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl))));
+                }
+                catch (Exception)
+                {
+                }
+                
             }
         }
 
@@ -310,6 +337,56 @@ namespace SAF_OpticalFailureDetector.threading
         {
             this.DisplayText.Focus();
         }
+
+        private void DisplayImageBox_MouseDown(object sender, MouseEventArgs e)
+        {
+            mousePointDown = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
+            mousestate = MouseState.Pressed;
+        }
+
+        private void DisplayImageBox_MouseUp(object sender, MouseEventArgs e)
+        {
+            
+            if (mousestate == MouseState.Pressed)
+            {
+                if (unscaledImage == null)
+                {
+                    mousestate = MouseState.Released;
+                    return;
+                }
+                mousePointUp = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
+                int xCoordinate = focusPoint.X + (mousePointDown.X - mousePointUp.X);
+                int yCoordinate = focusPoint.Y + (mousePointDown.Y - mousePointUp.Y);
+                displayImageOffset = new Point(xCoordinate, yCoordinate);
+                if (xCoordinate < 0)
+                {
+                    xCoordinate = 0;
+                }
+                if (xCoordinate > unscaledImage.Size.Width)
+                {
+                    xCoordinate = unscaledImage.Size.Width;
+                }
+                if (yCoordinate < 0)
+                {
+                    yCoordinate = 0;
+                }
+                if (yCoordinate > unscaledImage.Size.Height)
+                {
+                    yCoordinate = unscaledImage.Size.Height;
+                }
+                ctrlSem.WaitOne();
+                focusPoint = new Point(xCoordinate, yCoordinate);
+                ctrlSem.Release();
+                mousestate = MouseState.Released;
+            }
+        }
+
+        private void DisplayImageBox_MouseLeave(object sender, EventArgs e)
+        {
+            mousestate = MouseState.Released;
+        }
+
+
     }
 
     // A SaveStream exception class
