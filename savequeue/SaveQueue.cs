@@ -179,6 +179,9 @@ namespace SAF_OpticalFailureDetector.savequeue
                     {
                         sw.Restart();
                         Img_Queue[array_position] = image.GetCameraImage();
+                        /*date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
+                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
+                        Img_Queue[array_position].Save(consumerLogFileLocation + "_" + date_time + ".bmp");*/
                         array_position++;
                         if (array_position == 100)
                         {
@@ -187,15 +190,26 @@ namespace SAF_OpticalFailureDetector.savequeue
                     }
                  if(!image.ContainsCrack())
                  {
-                     for(int counter = array_position + 1; counter <= 100; counter++)
+                     for(int counter = array_position; counter < 100; counter++)
                      {
-                         date_time = DateTime.Now.Date.ToString()+ "_"+ DateTime.Now.Hour.ToString() +"_"+ DateTime.Now.Minute.ToString() + DateTime.Now.Second.ToString();
-                         Img_Queue[counter].Save(consumerLogFileLocation + "/" + date_time + ".bmp");
+                         Bitmap tmpBmp = Img_Queue[counter];
+                         if (tmpBmp != null)
+                         {
+                             date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
+                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
+                             tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
+                         }
+                         
                      }
-                     for(int counter = 0; counter <= array_position +1; counter++)
+                     for(int counter = 0; counter < array_position; counter++)
                      {
-                         date_time = DateTime.Now.Date.ToString() + "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + DateTime.Now.Second.ToString();
-                         Img_Queue[counter].Save(consumerLogFileLocation + "/" + DateTime.Now + ".bmp");
+                         Bitmap tmpBmp = Img_Queue[counter];
+                         if (tmpBmp != null)
+                         {
+                             date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
+                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
+                             tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
+                         }
                      }
                  }
    
