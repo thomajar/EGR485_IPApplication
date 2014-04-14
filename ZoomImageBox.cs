@@ -14,38 +14,90 @@ namespace SAF_OpticalFailureDetector.threading
 {
     public partial class ZoomImageBox : UserControl
     {
+        /// <summary>
+        /// Limit user can zoom in is 2 ^ ZOOM_MAX x.
+        /// </summary>
         private const int ZOOM_MAX = 4;
+
+        /// <summary>
+        /// Limit user can zoom out is 2 & ZOOM_MIN x.
+        /// </summary>
         private const int ZOOM_MIN = -4;
 
+        /// <summary>
+        /// Used to synchronize critical sections in class.
+        /// </summary>
         private Semaphore ctrlSem;
+
+        /// <summary>
+        /// Original image is stored in the unscaledImage variable.
+        /// </summary>
         private Bitmap unscaledImage;
+
+        /// <summary>
+        /// The most recently draw image is stored in scaledImage variable.
+        /// </summary>
         private Bitmap scaledImage;
         
-        // image settings
+        /// <summary>
+        /// The current zoom level is 2 ^ zoomlvl.
+        /// </summary>
         private int zoomlvl;
+
+        /// <summary>
+        /// Point in unscaled image to focus on.
+        /// </summary>
         private Point focusPoint;
+
+        /// <summary>
+        /// Offset to top-left corner of display image in unscaled image coordinates.
+        /// </summary>
         private Point displayImageOffset;
 
+        /// <summary>
+        /// Keeps track of the mouse state for panning.
+        /// </summary>
         private MouseState mousestate;
+
+        /// <summary>
+        /// Point on unscaled image where mouse was pressed.
+        /// </summary>
         private Point mousePointDown;
+
+        /// <summary>
+        /// Point on unscaled image where mouse was released.
+        /// </summary>
         private Point mousePointUp;
 
-
+        /// <summary>
+        /// Mouse is either pressed or released.
+        /// </summary>
         private enum MouseState
         {
             Released,
             Pressed
         }
 
+        /// <summary>
+        /// Default constructor for ZoomImageBox.
+        /// </summary>
         public ZoomImageBox()
         {
+            // must be called before editing controls
             InitializeComponent();
+
+            // initialize semaphore and obtain ownership
             ctrlSem = new Semaphore(0, 1);
+
+            // add event handler for mouse wheel events on display text label
             this.DisplayText.MouseWheel += this.DisplayImage_MouseScroll;
+
+            // need to set DisplayText parent to Display Image box in order to have transparent background on label
             DisplayText.Parent = DisplayImageBox;
             DisplayText.ForeColor = Color.Red;
             DisplayText.BackColor = Color.Transparent;
 
+            // default zoom lvl is 0x
             zoomlvl = 0;
             focusPoint = Point.Empty;
             displayImageOffset = new Point(0, 0);
@@ -53,9 +105,14 @@ namespace SAF_OpticalFailureDetector.threading
             mousePointDown = new Point(0, 0);
             mousePointUp = new Point(0, 0);
 
+            // release semaphore allowing control to others
             ctrlSem.Release();
         }
 
+        /// <summary>
+        /// Zooms in on unscaled image at point p.
+        /// </summary>
+        /// <param name="p">Point on unscaled image to focus on.</param>
         public void ZoomIn(Point p)
         {
             // verify image may zoom in
@@ -81,9 +138,12 @@ namespace SAF_OpticalFailureDetector.threading
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomIn : Exception thrown drawing image.", inner);
                 throw ex;
             }
-            
         }
 
+        /// <summary>
+        /// Zooms out on unscaled image at point p.
+        /// </summary>
+        /// <param name="p">Point on unscaled image to focus on.</param>
         public void ZoomOut(Point p)
         {
             // verify image can zoom out
@@ -110,11 +170,18 @@ namespace SAF_OpticalFailureDetector.threading
             }
         }
 
+        /// <summary>
+        /// Sets the unscaled image and draws it with the current zoom level and focus point settings.
+        /// </summary>
+        /// <param name="b">Bitmap to set display image to.</param>
         public void SetImage(Bitmap b)
         {
+            // obtain semaphore control before changing the image
             ctrlSem.WaitOne();
             unscaledImage = b;
             ctrlSem.Release();
+
+            // attempt to draw the image
             try
             {
                 DrawImage();
@@ -124,21 +191,37 @@ namespace SAF_OpticalFailureDetector.threading
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
                 throw ex;
             }
-            
         }
 
+        /// <summary>
+        /// Sets the text on the display text label.
+        /// </summary>
+        /// <param name="s">String to place on display text label.</param>
         public void SetText(String s)
         {
             DisplayText.Text = s;
         }
 
+        /// <summary>
+        /// Draws the image stored in unscaled image and scales it into the scaled image.
+        /// </summary>
         private void DrawImage()
         {
+            // we dont want settings changed while drawing image
             ctrlSem.WaitOne();
+
+            // make sure unscaled image is not null
+            if (unscaledImage == null)
+            {
+                ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unscaled image is null, cannot draw zoomed image.");
+                ctrlSem.Release();
+                throw ex;
+            }
 
             // store portion to draw in mem bitmap
             Bitmap buffer;
 
+            // size the image wants to be
             int desiredImageWidth;
             int desiredImageHeight;
 
@@ -282,7 +365,18 @@ namespace SAF_OpticalFailureDetector.threading
             imageAttr.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 
             // make the scaled bitmap
-            Graphics g = Graphics.FromImage(scaledImage);
+            Graphics g;
+            try
+            {
+                g = Graphics.FromImage(scaledImage);
+            }
+            catch (Exception inner)
+            {
+                ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to get graphics handle for scaled image.", inner);
+                ctrlSem.Release();
+                throw ex;
+            }
+            // grab the nearest pixel for color
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
 
             try
@@ -305,6 +399,11 @@ namespace SAF_OpticalFailureDetector.threading
             ctrlSem.Release();
         }
 
+        /// <summary>
+        /// This event is called when user scrolls mouse on control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void DisplayImage_MouseScroll(object sender, MouseEventArgs e)
         {
             // zoom in
@@ -333,31 +432,50 @@ namespace SAF_OpticalFailureDetector.threading
             }
         }
 
+        /// <summary>
+        /// Event is called when mouse enters the control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DisplayText_MouseEnter(object sender, EventArgs e)
         {
             this.DisplayText.Focus();
         }
 
+        /// <summary>
+        /// Event occurs when user presses the mouse down on control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DisplayImageBox_MouseDown(object sender, MouseEventArgs e)
         {
             mousePointDown = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
             mousestate = MouseState.Pressed;
         }
 
+        /// <summary>
+        /// Event occurs when user releases the mouse on control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DisplayImageBox_MouseUp(object sender, MouseEventArgs e)
         {
-            
+            // mouse needs to be down
             if (mousestate == MouseState.Pressed)
             {
+                // unscaled image must not be null
                 if (unscaledImage == null)
                 {
                     mousestate = MouseState.Released;
                     return;
                 }
+                // set point up in terms of unscaled image.
                 mousePointUp = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
+                // adjust the focuspoint by amount moved from mousePointDown to mousePOintUp
                 int xCoordinate = focusPoint.X + (mousePointDown.X - mousePointUp.X);
                 int yCoordinate = focusPoint.Y + (mousePointDown.Y - mousePointUp.Y);
-                displayImageOffset = new Point(xCoordinate, yCoordinate);
+
+                // make sure point is within image
                 if (xCoordinate < 0)
                 {
                     xCoordinate = 0;
@@ -374,22 +492,27 @@ namespace SAF_OpticalFailureDetector.threading
                 {
                     yCoordinate = unscaledImage.Size.Height;
                 }
+                // edit the display image offset and focus point
                 ctrlSem.WaitOne();
+                displayImageOffset = new Point(xCoordinate, yCoordinate);
                 focusPoint = new Point(xCoordinate, yCoordinate);
                 ctrlSem.Release();
                 mousestate = MouseState.Released;
             }
         }
 
+        /// <summary>
+        /// Event occurs when mouse leaves the control.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DisplayImageBox_MouseLeave(object sender, EventArgs e)
         {
             mousestate = MouseState.Released;
         }
-
-
     }
 
-    // A SaveStream exception class
+    // Use for exceptinos generated in ZoomImageBox class
     public class ZoomImageBoxException : System.Exception
     {
         public ZoomImageBoxException() : base() { }

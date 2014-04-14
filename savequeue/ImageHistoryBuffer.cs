@@ -13,7 +13,7 @@ using SAF_OpticalFailureDetector.imageprocessing;
 
 namespace SAF_OpticalFailureDetector.savequeue
 {
-    class SaveQueue
+    class ImageHistoryBuffer
     {
         // thread synchronization
         private Semaphore sem;
@@ -32,7 +32,7 @@ namespace SAF_OpticalFailureDetector.savequeue
         private Boolean isRunning;
         private Thread processThread;
 
-        public SaveQueue(String name, String LogFileLocation)
+        public ImageHistoryBuffer(String name, String LogFileLocation)
         {
             sem = new Semaphore(0, 1);
 
@@ -156,17 +156,20 @@ namespace SAF_OpticalFailureDetector.savequeue
             }
             return result;
         }
+
+        /// <summary>
+        /// This is the process that is run in a seperate thread
+        /// </summary>
         private void Process()
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            Bitmap[] Img_Queue = new Bitmap[100];
-            int array_position = 0;
+            Bitmap[] bufferImages = new Bitmap[100];
+            int imageIndex = 0;
             string date_time;
             // keep thread running until told to stop or start
             while (isRunning)
             {
-
                 List<QueueElement> imageElements = new List<QueueElement>();
                 IPData image = null;
                 sem.WaitOne();
@@ -178,41 +181,33 @@ namespace SAF_OpticalFailureDetector.savequeue
                     if(sw.ElapsedMilliseconds >= 5000)
                     {
                         sw.Restart();
-                        Img_Queue[array_position] = image.GetCameraImage();
-                        /*date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
-                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
-                        Img_Queue[array_position].Save(consumerLogFileLocation + "_" + date_time + ".bmp");*/
-                        array_position++;
-                        if (array_position == 100)
+                        bufferImages[imageIndex] = image.GetCameraImage();
+                        imageIndex = (imageIndex + 1) % 100;
+                    }
+                    if(!image.ContainsCrack())
+                    {
+                        for(int counter = imageIndex; counter < 100; counter++)
                         {
-                            array_position = 0;
+                             Bitmap tmpBmp = bufferImages[counter];
+                            if (tmpBmp != null)
+                            {
+                                date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
+                                     "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
+                                tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
+                            }
+                         
+                        }
+                        for(int counter = 0; counter < imageIndex; counter++)
+                        {
+                            Bitmap tmpBmp = bufferImages[counter];
+                            if (tmpBmp != null)
+                            {
+                                date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
+                                    "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
+                                tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
+                            }
                         }
                     }
-                 if(!image.ContainsCrack())
-                 {
-                     for(int counter = array_position; counter < 100; counter++)
-                     {
-                         Bitmap tmpBmp = Img_Queue[counter];
-                         if (tmpBmp != null)
-                         {
-                             date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
-                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
-                             tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
-                         }
-                         
-                     }
-                     for(int counter = 0; counter < array_position; counter++)
-                     {
-                         Bitmap tmpBmp = Img_Queue[counter];
-                         if (tmpBmp != null)
-                         {
-                             date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
-                                 "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
-                             tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
-                         }
-                     }
-                 }
-   
                 }
                 sem.Release();
 
@@ -220,5 +215,13 @@ namespace SAF_OpticalFailureDetector.savequeue
             }
         }
 
+    }
+    // Use for exceptinos generated in ImageHistoryBuffer class
+    public class ImageHistoryBufferException : System.Exception
+    {
+        public ImageHistoryBufferException() : base() { }
+        public ImageHistoryBufferException(string message) : base(message) { }
+        public ImageHistoryBufferException(string message, System.Exception inner) : base(message, inner) { }
+        protected ImageHistoryBufferException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
     }
 }

@@ -97,4 +97,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         }
         
     }
+
+    // Use for exceptinos generated in IPData class
+    public class ImageDataException : System.Exception
+    {
+        public ImageDataException() : base() { }
+        public ImageDataException(string message) : base(message) { }
+        public ImageDataException(string message, System.Exception inner) : base(message, inner) { }
+        protected ImageDataException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
+    }
 }

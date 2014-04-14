@@ -236,4 +236,13 @@ namespace SAF_OpticalFailureDetector.camera
             sem.Release();
         }
     }
+
+    // Use for exceptinos generated in Camera class
+    public class CameraException : System.Exception
+    {
+        public CameraException() : base() { }
+        public CameraException(string message) : base(message) { }
+        public CameraException(string message, System.Exception inner) : base(message, inner) { }
+        protected CameraException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
+    }
 }

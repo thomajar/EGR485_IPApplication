@@ -455,4 +455,12 @@ namespace SAF_OpticalFailureDetector.imageprocessing
           
 
     }
+    // Use for exceptinos generated in FailureDetector class
+    public class FailureDetectorException : System.Exception
+    {
+        public FailureDetectorException() : base() { }
+        public FailureDetectorException(string message) : base(message) { }
+        public FailureDetectorException(string message, System.Exception inner) : base(message, inner) { }
+        protected FailureDetectorException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
+    }
 }

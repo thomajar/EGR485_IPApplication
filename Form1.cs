@@ -40,7 +40,7 @@ namespace SAF_OpticalFailureDetector
         private Double process2Period;
 
         private Settings program_settings;
-        private SaveQueue saveQueueEnginie;
+        private ImageHistoryBuffer saveQueueEnginie;
 
         private System.Threading.Timer imageUpdateTimer;
 
@@ -79,7 +79,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.AddSubscriber(saveQueue);
 
             // sets image queue
-            saveQueueEnginie = new SaveQueue("save_queue_images", program_settings.LogLocation);
+            saveQueueEnginie = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
             saveQueueEnginie.SetConsumerQueue(saveQueue);
 
             // start the cameras
@@ -203,65 +203,6 @@ namespace SAF_OpticalFailureDetector
 
                 guiSem.Release();
             }
-        }
-
-        /// <summary>
-        /// Scales an image and returns a copy of the image
-        /// </summary>
-        /// <param name="b"></param>
-        /// <param name="p"></param>
-        /// <param name="s"></param>
-        /// <param name="zoomlvl"></param>
-        /// <returns></returns>
-        private Bitmap ScaleImage(ref Bitmap b, Point p, Size s, int zoomlvl)
-        {
-            Bitmap scaledImage;
-
-            scaledImage = new Bitmap(s.Width, s.Height);
-
-            // apply gain to the image
-
-            float displayGain = 1.0f;
-
-            float[][] matrix = {
-                    new float[] {displayGain, 0, 0, 0, 0},        // red scaling factor of 2
-                    new float[] {0, displayGain, 0, 0, 0},        // green scaling factor of 1
-                    new float[] {0, 0, displayGain, 0, 0},        // blue scaling factor of 1
-                    new float[] {0, 0, 0, displayGain, 0},        // alpha scaling factor of 1
-                    new float[] {0, 0, 0, 0, 1}};    // three translations of 0.2;
-
-            ColorMatrix colorMatrix = new ColorMatrix(matrix);
-
-            ImageAttributes imageAttr = new ImageAttributes();
-            imageAttr.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-
-            Graphics g_scaled = Graphics.FromImage(scaledImage);
-            g_scaled.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-
-            try
-            {
-                g_scaled.DrawImage(b, new Rectangle(0, 0, scaledImage.Width, scaledImage.Height),
-                    0, 0, b.Width, b.Height, GraphicsUnit.Pixel, imageAttr);
-            }
-            catch (Exception)
-            {
-                
-                throw;
-            }
-
-            g_scaled.Dispose();
-            return scaledImage;
-
-        }
-
-        private void nud_noise_lvl_ValueChanged(object sender, EventArgs e)
-        {
-            imagep1.SetContrast(Convert.ToInt32(nud_noise_lvl.Value));
-        }
-
-        private void nud_min_contrast_ValueChanged(object sender, EventArgs e)
-        {
-            imagep1.SetRange(Convert.ToInt32(nud_min_contrast.Value));
         }
 
         private void tsbtn_Settings_Click(object sender, EventArgs e)
