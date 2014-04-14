@@ -14,12 +14,15 @@ using SAF_OpticalFailureDetector.messenger;
 using SAF_OpticalFailureDetector.savequeue;
 using System.Threading;
 using System.Drawing.Imaging;
+using log4net;
 
 namespace SAF_OpticalFailureDetector
 {
     public partial class Form1 : Form
     {
         private Semaphore guiSem;
+
+        private static readonly ILog log = LogManager.GetLogger(typeof(Form1));
 
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
@@ -49,6 +52,11 @@ namespace SAF_OpticalFailureDetector
 
         public Form1()
         {
+            log4net.Config.XmlConfigurator.Configure();
+            log.Debug("Form1.Form1 : Application starting.");
+            log.Info("Form1.info");
+            log.Error("error");
+
             InitializeComponent();
         }
 
