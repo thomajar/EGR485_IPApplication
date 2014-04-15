@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
+
 namespace SAF_OpticalFailureDetector
 {
     static class Program
@@ -16,7 +18,7 @@ namespace SAF_OpticalFailureDetector
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new MainForm());
         }
     }
 }

@@ -150,6 +150,7 @@ namespace SAF_OpticalFailureDetector.threading
             if (zoomlvl - 1 < ZOOM_MIN)
             {
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomOut : Cannot zoom out any further.");
+                throw ex;
             }
 
             // update the zoom lvl and focus point
@@ -251,10 +252,31 @@ namespace SAF_OpticalFailureDetector.threading
             if (desiredImageWidth > requestedOutputWidth ||
                 desiredImageHeight > requestedOutputHeight)
             {
+                int outputWidth;
+                int outputHeight;
+                // get image width to set
+                if (desiredImageWidth > requestedOutputWidth)
+                {
+                    outputWidth = requestedOutputWidth;
+                }
+                else
+                {
+                    outputWidth = desiredImageWidth;
+                }
+                // get image height to set
+                if (desiredImageHeight > requestedOutputHeight )
+                {
+                    outputHeight = requestedOutputHeight;
+                }
+                else
+                {
+                    outputHeight = desiredImageHeight;
+                }
+                
                 // use the requested size by user form
                 try
                 {
-                    scaledImage = new Bitmap(requestedOutputWidth, requestedOutputHeight);
+                    scaledImage = new Bitmap(outputWidth, outputHeight);
                 }
                 catch (Exception inner)
                 {
@@ -267,10 +289,10 @@ namespace SAF_OpticalFailureDetector.threading
 
                 // create a cropping rectanble around the focus point in terms of original unscaled image
                 Rectangle cropRectangle = new Rectangle(
-                    Convert.ToInt32(focusPoint.X - requestedOutputWidth / 2 / Math.Pow(2,zoomlvl)),
-                    Convert.ToInt32(focusPoint.Y - requestedOutputHeight / 2 / Math.Pow(2,zoomlvl)),
-                    Convert.ToInt32(requestedOutputWidth / Math.Pow(2,zoomlvl)),
-                    Convert.ToInt32(requestedOutputHeight / Math.Pow(2,zoomlvl))
+                    Convert.ToInt32(focusPoint.X - outputWidth / 2 / Math.Pow(2, zoomlvl)),
+                    Convert.ToInt32(focusPoint.Y - outputHeight / 2 / Math.Pow(2, zoomlvl)),
+                    Convert.ToInt32(outputWidth / Math.Pow(2, zoomlvl)),
+                    Convert.ToInt32(outputHeight / Math.Pow(2, zoomlvl))
                     );
                 // verify cropping rectangle is within unscaledBitmap's width and height
                 
@@ -353,11 +375,11 @@ namespace SAF_OpticalFailureDetector.threading
             // apply gain to the image
             float displayGain = 1.0f;
             float[][] matrix = {
-                    new float[] {displayGain, 0, 0, 0, 0},        // red scaling factor of 2
-                    new float[] {0, displayGain, 0, 0, 0},        // green scaling factor of 1
-                    new float[] {0, 0, displayGain, 0, 0},        // blue scaling factor of 1
-                    new float[] {0, 0, 0, displayGain, 0},        // alpha scaling factor of 1
-                    new float[] {0, 0, 0, 0, 1}};    // three translations of 0.2;
+                    new float[] {displayGain, 0, 0, 0, 0},
+                    new float[] {0, displayGain, 0, 0, 0},
+                    new float[] {0, 0, displayGain, 0, 0},
+                    new float[] {0, 0, 0, displayGain, 0},
+                    new float[] {0, 0, 0, 0, 1}};
 
             ColorMatrix colorMatrix = new ColorMatrix(matrix);
 
@@ -475,23 +497,32 @@ namespace SAF_OpticalFailureDetector.threading
                 int xCoordinate = focusPoint.X + (mousePointDown.X - mousePointUp.X);
                 int yCoordinate = focusPoint.Y + (mousePointDown.Y - mousePointUp.Y);
 
-                // make sure point is within image
-                if (xCoordinate < 0)
+                try
                 {
-                    xCoordinate = 0;
+                    // make sure point is within image
+                    if (xCoordinate < 0)
+                    {
+                        xCoordinate = 0;
+                    }
+                    if (xCoordinate > unscaledImage.Size.Width)
+                    {
+                        xCoordinate = unscaledImage.Size.Width;
+                    }
+                    if (yCoordinate < 0)
+                    {
+                        yCoordinate = 0;
+                    }
+                    if (yCoordinate > unscaledImage.Size.Height)
+                    {
+                        yCoordinate = unscaledImage.Size.Height;
+                    }
                 }
-                if (xCoordinate > unscaledImage.Size.Width)
+                catch (Exception ex)
                 {
-                    xCoordinate = unscaledImage.Size.Width;
+                    mousestate = MouseState.Released;
+                    return;
                 }
-                if (yCoordinate < 0)
-                {
-                    yCoordinate = 0;
-                }
-                if (yCoordinate > unscaledImage.Size.Height)
-                {
-                    yCoordinate = unscaledImage.Size.Height;
-                }
+                
                 // edit the display image offset and focus point
                 ctrlSem.WaitOne();
                 displayImageOffset = new Point(xCoordinate, yCoordinate);

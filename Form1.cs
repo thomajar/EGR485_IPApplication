@@ -18,11 +18,13 @@ using log4net;
 
 namespace SAF_OpticalFailureDetector
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        private Semaphore guiSem;
+        private const string PROGRAM_NAME = "Optical Failure Detector (V1.0)";
 
-        private static readonly ILog log = LogManager.GetLogger(typeof(Form1));
+        private static readonly ILog log = LogManager.GetLogger(typeof(MainForm));
+
+        private Semaphore guiSem;
 
         // mainQueue is to hold data intended for mainform
         private CircularQueue<QueueElement> mainQueue;
@@ -43,21 +45,20 @@ namespace SAF_OpticalFailureDetector
         private Double process2Period;
 
         private Settings program_settings;
-        private ImageHistoryBuffer saveQueueEnginie;
+        private ImageHistoryBuffer saveQueueEngine;
 
         private System.Threading.Timer imageUpdateTimer;
 
         private delegate void UpdateCamera1ImageCallback();
         private delegate void UpdateCamera2ImageCallback();
 
-        public Form1()
+        public MainForm()
         {
             log4net.Config.XmlConfigurator.Configure();
-            log.Debug("Form1.Form1 : Application starting.");
-            log.Info("Form1.info");
-            log.Error("error");
+            log.Info("MainForm.MainForm : Application opened as " + PROGRAM_NAME);
 
             InitializeComponent();
+            this.Text = PROGRAM_NAME;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -87,8 +88,8 @@ namespace SAF_OpticalFailureDetector
             imagep2.AddSubscriber(saveQueue);
 
             // sets image queue
-            saveQueueEnginie = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
-            saveQueueEnginie.SetConsumerQueue(saveQueue);
+            saveQueueEngine = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
+            saveQueueEngine.SetConsumerQueue(saveQueue);
 
             // start the cameras
             cam1.StartCamera(0);
@@ -111,44 +112,76 @@ namespace SAF_OpticalFailureDetector
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // stop camera and processor threads
+            log.Info("MainForm.Form1_FormClosing : Application is closing, shutting down threads.");
+
+            // stop cameras
             cam1.StopCamera();
             cam2.StopCamera();
+            // stop image processors
             imagep1.Stop();
             imagep2.Stop();
-            saveQueueEnginie.Stop();
+            // stop saveQueue Engine
+            saveQueueEngine.Stop();
+
+            log.Info("MainForm.Form1_FormClosing : All threads shutdown, program terminating.");
         }
 
+        /// <summary>
+        /// Function is called by timer and checks to see what data is available in mainQueue.
+        /// </summary>
+        /// <param name="stateInfo"></param>
         private void DisplayImage(object stateInfo)
         {
+            // make place to store image data and populate
             List<QueueElement> imageList = new List<QueueElement>();
             if (mainQueue.popAll(ref imageList))
             {
+                // check if last element is from image processor 1
                 if (imageList[imageList.Count - 1].Type.Equals(imagep1.GetName()))
                 {
+                    // obtain ownership of gui to enter critical section
                     guiSem.WaitOne();
+                    // verify camera 1 data is not null before disposing
                     if (camera1Data != null)
                     {
                         camera1Data.Dispose();
                         camera1Data.Unlock();
                     }
+                    else
+                    {
+                        log.Error("MainForm.DisplayImage : Camera 1 data is null.");
+                    }
+                    // update camera 1 data to newest data off of imageList
                     camera1Data = (IPData)imageList[imageList.Count - 1].Data;
+                    // release ownership of gui to exit critical section
                     guiSem.Release();
+                    // draw the updated image data for camera 1
                     UpdateCamera1Image();
                 }
+                // check if last element is from image processor 2
                 else if (imageList[imageList.Count - 1].Type.Equals(imagep2.GetName()))
                 {
+                    // obtain ownership of gui to enter critical section
                     guiSem.WaitOne();
+                    // verify camera 2 data is not null before disposing
                     if (camera2Data != null)
                     {
                         camera2Data.Dispose();
                         camera2Data.Unlock();
                     }
+                    else
+                    {
+                        log.Error("MainForm.DisplayImage : Camera 2 data is null.");
+                    }
+                    // update camera 2 data to newest data off of imagelist
                     camera2Data = (IPData)imageList[imageList.Count - 1].Data;
+                    // release ownership of gui to exit critical section
                     guiSem.Release();
+                    // draw the updated image data for camera 2
                     UpdateCamera2Image();
                 }
 
+                // dispose all unused imageList data that we were not able to draw to GUI
                 for (int i = 0; i < imageList.Count - 1; i++)
                 {
                     ((IPData)imageList[i].Data).Dispose();
@@ -157,6 +190,9 @@ namespace SAF_OpticalFailureDetector
             }
         }
 
+        /// <summary>
+        /// Function should be called whenever the data from camera 1 changes.
+        /// </summary>
         private void UpdateCamera1Image()
         {
             if (Camera1Display.InvokeRequired || Camera1Process.InvokeRequired)
@@ -166,26 +202,43 @@ namespace SAF_OpticalFailureDetector
             }
             else
             {
+                // obtain ownership of gui control to enter critical section
                 guiSem.WaitOne();
-
+                // verify camera 1 data is not null
                 if (camera1Data != null)
                 {
-                    Bitmap cameraImage = camera1Data.GetCameraImage();
-                    //camera1ImageBox.Image = ScaleImage(ref cameraImage, new Point(0, 0), new Size(100, 100), 1);
-                    Camera1Display.SetImage(camera1Data.GetCameraImage());
-                    Camera1Process.SetImage(camera1Data.GetProcessedImage());
+                    try
+                    {
+                        Camera1Display.SetImage(camera1Data.GetCameraImage());
+                    }
+                    catch (Exception inner)
+                    {
+                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 display image.", inner);
+                    }
 
+                    try
+                    {
+                        Camera1Process.SetImage(camera1Data.GetProcessedImage());
+                    }
+                    catch (Exception inner)
+                    {
+                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 processed image.", inner);
+                    }
+                    
+                    // update the camera and process frame rates
                     camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.GetElapsedTime();
+                    Camera1Display.SetText(String.Format("{0:0.00}", (1 / camera1Period)));
                     process1Period = 0.85 * process1Period + 0.15 * camera1Data.GetProcessTime();
-
-                    Camera1Display.SetText(String.Format("{0:0.00}",(1 / camera1Period)));
                     Camera1Process.SetText(String.Format("{0:0.00}", (1 / process1Period)));
                 }
-                
+                // release ownership of critical section
                 guiSem.Release();
             }
         }
 
+        /// <summary>
+        /// Function should be called whenever the data from camera 2 changes.
+        /// </summary>
         private void UpdateCamera2Image()
         {
             if (Camera2Display.InvokeRequired || Camera2Process.InvokeRequired)
@@ -195,26 +248,48 @@ namespace SAF_OpticalFailureDetector
             }
             else
             {
+                // obtain ownership of gui control to enter critical section
                 guiSem.WaitOne();
-
+                // verify camera2 data is not null
                 if (camera2Data != null)
                 {
-                    Camera2Display.SetImage(camera2Data.GetCameraImage());
-                    Camera2Process.SetImage(camera2Data.GetProcessedImage());
+                    try
+                    {
+                        Camera2Display.SetImage(camera2Data.GetCameraImage());
+                    }
+                    catch (Exception inner)
+                    {
+                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 2 display image.", inner);
+                    }
 
+                    try
+                    {
+                        Camera2Process.SetImage(camera2Data.GetProcessedImage());
+                    }
+                    catch (Exception inner)
+                    {
+                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 2 processed image.", inner);
+                    }
+
+                    // update the camera and process frame rates
                     camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.GetElapsedTime();
-                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.GetProcessTime();
-
                     Camera2Display.SetText(String.Format("{0:0.00}", (1 / camera2Period)));
+                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.GetProcessTime();
                     Camera2Process.SetText(String.Format("{0:0.00}", (1 / process2Period)));
                 }
-
+                // release ownership of critical section
                 guiSem.Release();
             }
         }
 
+        /// <summary>
+        /// Method is called whenever user presses the settings button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tsbtn_Settings_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_Settings_Click : User pressed settings button.");
             MessageBox.Show("This feature is not yet implemented.", "Settings");
             /*if (program_settings.ShowDialog() == DialogResult.OK)
             {
@@ -222,32 +297,62 @@ namespace SAF_OpticalFailureDetector
             }*/
         }
 
+        /// <summary>
+        /// Method is called whenever user presses the start processing button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tsbtn_Start_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_Start_Click : User pressed start processing button.");
             Start();
             tsbtn_Stop.Enabled = true;
             tsbtn_Start.Enabled = false;
             //tsbtn_Settings.Enabled = false;
         }
 
+        /// <summary>
+        /// Method is called whenever user presses the stop processing button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tsbtn_Stop_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_Stop_Click : User pressed stop processing button.");
             Stop();
             tsbtn_Stop.Enabled = false;
             tsbtn_Start.Enabled = true;
             //tsbtn_Settings.Enabled = true;
         }
 
+        /// <summary>
+        /// Method is called whenever user presses the help button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void tsbtn_Help_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_Help_Click : User pressed help button.");
             MessageBox.Show("This feature is not yet implemented.", "Help");
+        }
+
+        /// <summary>
+        /// Method is called whenever user presses the refresh cameras button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)
+        {
+            log.Info("MainForm.tsbtn_RefreshCamera_Click : User pressed refresh cameras button.");
+            MessageBox.Show("This feature is not yet implemented.", "Refresh Camera");
         }
 
         private void Start()
         {
+            log.Info("MainForm.Start : Starting image processors and save queue engine.");
             imagep1.Start();
             imagep2.Start();
-            saveQueueEnginie.Start();
+            saveQueueEngine.Start();
 
             //messenger = new Messenger(program_settings.EmailAddress,
             //    program_settings.TestNumber, program_settings.SampleNumber);
@@ -255,18 +360,19 @@ namespace SAF_OpticalFailureDetector
 
         private void Stop()
         {
+            log.Info("MainForm.Stop : Stopping image processors and save queue engine.");
             imagep1.Stop();
             imagep2.Stop();
-            saveQueueEnginie.Stop();
+            saveQueueEngine.Stop();
         }
-
-        private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show("This feature is not yet implemented.", "Refresh Camera");
-        }
-
-        
-
-        
+ 
+    }
+    // Use for exceptinos generated in FailureDetector class
+    public class MainFormException : System.Exception
+    {
+        public MainFormException() : base() { }
+        public MainFormException(string message) : base(message) { }
+        public MainFormException(string message, System.Exception inner) : base(message, inner) { }
+        protected MainFormException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
     }
 }

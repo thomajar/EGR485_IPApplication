@@ -60,6 +60,7 @@
             // 
             // DisplayImageBox
             // 
+            this.DisplayImageBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.DisplayImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DisplayImageBox.Location = new System.Drawing.Point(0, 0);
             this.DisplayImageBox.Name = "DisplayImageBox";
