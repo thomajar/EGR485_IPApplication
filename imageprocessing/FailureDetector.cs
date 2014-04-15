@@ -368,13 +368,24 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 FailureDetectorException ex = new FailureDetectorException("FailureDetector.filterImage : Unable to lock bits.", inner);
                 throw ex;
             }
+
+            Rectangle regionToProcess;
+            if (enableROI)
+            {
+                regionToProcess = roi;
+            }
+            else
+            {
+                regionToProcess = new Rectangle(0, 0, b.Width, b.Height);
+            }
+
                 
             // begin filtering of image
-            for (int y = 0; y < b.Height; y++)
+            for (int y = regionToProcess.Top; y < regionToProcess.Bottom; y++)
             {
                 byte* row = (byte*)B_data.Scan0 + (y * B_data.Stride);
                 bool Ishot = false;
-                for (int x = 3; x < B_data.Width - 3; x++)
+                for (int x = regionToProcess.Left + 3; x < regionToProcess.Right - 3; x++)
                 {
                     result = 0;
                     int offset = 3;
@@ -411,7 +422,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 FailureDetectorException ex = new FailureDetectorException("FailureDetector.filterImage : Unable to unlock bits.", inner);
                 throw ex;
             }
-            
             return b;
         }
 
