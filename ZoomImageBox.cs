@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Threading;
+using log4net;
 
 namespace SAF_OpticalFailureDetector.threading
 {
     public partial class ZoomImageBox : UserControl
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(ZoomImageBox));
         /// <summary>
         /// Limit user can zoom in is 2 ^ ZOOM_MAX x.
         /// </summary>
@@ -118,6 +120,7 @@ namespace SAF_OpticalFailureDetector.threading
             // verify image may zoom in
             if (zoomlvl + 1 > ZOOM_MAX)
             {
+                log.Error("ZoomImageBox.ZoomIn : Cannot zoom in any further.");
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomIn : Cannot zoom in any further.");
                 throw ex;
             }
@@ -135,6 +138,7 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
+                log.Error("ZoomImageBox.ZoomIn : Exception thrown drawing image.", inner);
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomIn : Exception thrown drawing image.", inner);
                 throw ex;
             }
@@ -149,6 +153,7 @@ namespace SAF_OpticalFailureDetector.threading
             // verify image can zoom out
             if (zoomlvl - 1 < ZOOM_MIN)
             {
+                log.Error("ZoomImageBox.ZoomOut : Cannot zoom out any further.");
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomOut : Cannot zoom out any further.");
                 throw ex;
             }
@@ -166,6 +171,7 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
+                log.Error("ZoomImageBox.ZoomOut : Exception thrown drawing image.", inner);
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.ZoomOut : Exception thrown drawing image.", inner);
                 throw ex;
             }
@@ -189,6 +195,7 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
+                log.Error("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
                 throw ex;
             }
@@ -214,6 +221,7 @@ namespace SAF_OpticalFailureDetector.threading
             // make sure unscaled image is not null
             if (unscaledImage == null)
             {
+                log.Error("ZoomImageBox.DrawImage : Unscaled image is null, cannot draw zoomed image.");
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unscaled image is null, cannot draw zoomed image.");
                 ctrlSem.Release();
                 throw ex;
@@ -236,9 +244,8 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
-                ZoomImageBoxException ex = new ZoomImageBoxException(
-                    "ZoomImageBox.DrawImage : Error obtaining desired image width/height.",
-                    inner);
+                log.Error("ZoomImageBox.DrawImage : Error obtaining desired image width/height.", inner);
+                ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Error obtaining desired image width/height.", inner);
                 ctrlSem.Release();
                 throw ex;
             }
@@ -280,6 +287,7 @@ namespace SAF_OpticalFailureDetector.threading
                 }
                 catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DrawImage : Unable to create scaledImage Bitmap.", inner);
                     ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to create scaledImage Bitmap.", inner);
                     ctrlSem.Release();
                     throw ex;
@@ -349,6 +357,7 @@ namespace SAF_OpticalFailureDetector.threading
                 }
                 catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DrawImage : Unable to draw scaled image.", inner);
                     ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to draw scaled image.", inner);
                     ctrlSem.Release();
                     throw ex;
@@ -364,6 +373,7 @@ namespace SAF_OpticalFailureDetector.threading
                 }
                 catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DrawImage : Unable to draw scaled image.", inner);
                     ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to draw scaled image.", inner);
                     ctrlSem.Release();
                     throw ex;
@@ -394,6 +404,7 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
+                log.Error("ZoomImageBox.DrawImage : Unable to get graphics handle for scaled image.", inner);
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Unable to get graphics handle for scaled image.", inner);
                 ctrlSem.Release();
                 throw ex;
@@ -408,13 +419,15 @@ namespace SAF_OpticalFailureDetector.threading
             }
             catch (Exception inner)
             {
+                log.Error("ZoomImageBox.DrawImage : Exception redrawing scaled image.", inner);
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.DrawImage : Exception redrawing scaled image.", inner);
                 ctrlSem.Release();
                 throw ex;
             }
-
+            // dispose graphics ~ avoids memory leak
             g.Dispose();
 
+            // update the image shown on ZoomImageBox control
             DisplayImageBox.Image = scaledImage;
 
             
@@ -433,10 +446,12 @@ namespace SAF_OpticalFailureDetector.threading
             {
                 try
                 {
+                    log.Info("ZoomImageBox.DisplayImage_MouseScroll : User scrolled mouse to zoom in.");
                     ZoomIn(new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl))));
                 }
-                catch (Exception)
+                catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DisplayImage_MouseScroll : Unable to zoom in and draw image.", inner);
                 }
                 
             }
@@ -445,12 +460,13 @@ namespace SAF_OpticalFailureDetector.threading
             {
                 try
                 {
+                    log.Info("ZoomImageBox.DisplayImage_MouseScroll : User scrolled mouse to zoom out.");
                     ZoomOut(new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl))));
                 }
-                catch (Exception)
+                catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DisplayImage_MouseScroll : Unable to zoom out and draw image.", inner);
                 }
-                
             }
         }
 
@@ -491,6 +507,8 @@ namespace SAF_OpticalFailureDetector.threading
                     mousestate = MouseState.Released;
                     return;
                 }
+                log.Info("ZoomImageBox.DisplayImageBox_MouseUp : User panned around image.");
+
                 // set point up in terms of unscaled image.
                 mousePointUp = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
                 // adjust the focuspoint by amount moved from mousePointDown to mousePOintUp
@@ -517,8 +535,9 @@ namespace SAF_OpticalFailureDetector.threading
                         yCoordinate = unscaledImage.Size.Height;
                     }
                 }
-                catch (Exception ex)
+                catch (Exception inner)
                 {
+                    log.Error("ZoomImageBox.DisplayImageBox_MouseUp : Exception thrown while panning.", inner);
                     mousestate = MouseState.Released;
                     return;
                 }

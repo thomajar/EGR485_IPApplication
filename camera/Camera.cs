@@ -141,6 +141,7 @@ namespace SAF_OpticalFailureDetector.camera
                 {
                     cam.Device = cam.Devices[camNumber];
                     cam.VideoFormat = cam.VideoFormats[44];
+                    cam.DeviceFrameRate = cam.DeviceFrameRates[8];
                     cam.DeviceLostExecutionMode = EventExecutionMode.AsyncInvoke;
                     cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
                     cam.OverlayBitmapPosition = PathPositions.None;

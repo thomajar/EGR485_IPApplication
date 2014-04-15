@@ -9,6 +9,7 @@ using System.Threading;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using log4net;
 
 namespace SAF_OpticalFailureDetector.imageprocessing
 {
@@ -17,13 +18,19 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         // thread synchronization
         private Semaphore sem;
 
+        private static readonly ILog log = LogManager.GetLogger(typeof(FailureDetector));
+
         // ip variables
         private int minimumContrast;
         private int noiseRange;
         private Boolean enableROI;
+        private int updateROIFrequency;
         private Rectangle roi;
         private Boolean enableAutoExposure;
+        private int updateExposureFrequency;
         private int targetIntesity;
+
+        private const float INTENSITY_GAIN_THRESHOLD = 1.05f;
 
         // consumer queue variables
         private const String CONSUMER_ROOTNAME = "IP_";
@@ -46,6 +53,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             consumerName = CONSUMER_ROOTNAME + name;
             consumerQueue = new CircularQueue<QueueElement>(consumerName,CONSUMER_QUEUE_SIZE);
             subscribers = new List<CircularQueue<QueueElement>>();
+            log.Info("FailureDetector.FailureDetector : Created consumer queue : " + consumerName);
 
             // initialize processing thread variables
             isRunning = false;
@@ -54,7 +62,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             minimumContrast = 15;
             noiseRange = 15;
             enableROI = false;
+            updateROIFrequency = 100;
             enableAutoExposure = false;
+            updateExposureFrequency = 50;
             targetIntesity = 200;
 
             // release control, end of initialization
@@ -94,6 +104,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             // verify subsriber not already in camera queue
             if (doesNotExist)
             {
+                log.Info("FailureDetector.AddSubscriber : Added subscriber: " + subscriber.Name + " to " + consumerName + " queue.");
                 subscribers.Add(subscriber);
             }
             // exit critical section
@@ -128,6 +139,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             // if it exists, remove it
             if (!doesNotExist)
             {
+                log.Info("FailureDetector.AddSubscriber : Removed subscriber: " + subscriber.Name + " from " + consumerName + " queue.");
                 subscribers.RemoveAt(removeIndex);
             }
             // release control, exit critical section
@@ -147,7 +159,16 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 result = true;
                 isRunning = true;
                 processThread = new Thread(new ThreadStart(Process));
-                processThread.Start();
+                try
+                {
+                    processThread.Start();
+                }
+                catch (Exception inner)
+                {
+                    log.Error("FailureDetector.Start : Unable to start process thread.", inner);
+                    FailureDetectorException ex = new FailureDetectorException("FailureDetector.Start : Unable to start process thread.", inner);
+                    throw ex;
+                }
             }
             return result;
 
@@ -164,7 +185,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             {
                 result = true;
                 isRunning = false;
-                processThread.Join();
+                try
+                {
+                    processThread.Join();
+                }
+                catch (Exception inner)
+                {
+                    log.Error("FailureDetector.Start : Unable to stop process thread.", inner);
+                    FailureDetectorException ex = new FailureDetectorException("FailureDetector.Start : Unable to stop process thread.", inner);
+                    throw ex;
+                }
+                
             }
             return result;
         }
@@ -189,6 +220,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         private void Process()
         {
+            int exposureCounter = 0;
+            int roiCounter = 0;
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
@@ -204,30 +238,90 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 {
                     image = (IPData)imageElements[imageElements.Count - 1].Data;
 
-                    Size s = image.GetCameraImage().Size;
-                    Bitmap processImage = image.GetCameraImage();//new Bitmap(s.Width,s.Height);
-                    //Graphics g = Graphics.FromImage(processImage);
-                    //g.DrawImage(image.GetCameraImage(),0,0,s.Width,s.Height);
-                    //g.Dispose();
+                    // get the image to process on
+                    Bitmap processImage = image.GetCameraImage();
 
-                    // update roi
-                    //updateROI(processImage);
+                    // update roi to process
+                    if (enableROI)
+                    {
+                        roiCounter = (roiCounter + 1) % updateROIFrequency;
+                        if (roiCounter == 0)
+                        {
+                            // store old roi incase of an exception
+                            Rectangle oldROI = roi;
+                            try
+                            {
+                                updateROI(processImage);
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("FailureDetetor.Process : Exception thrown while updating ROI, reverting to old ROI.",inner);
+                                roi = oldROI;
+                            }
+                        }
+                    }
+
+                    // update exposure of camera
+                    if (enableAutoExposure)
+                    {
+                        exposureCounter = (exposureCounter + 1) % updateExposureFrequency;
+                        if (exposureCounter == 0)
+                        {
+                            // get histogram from image
+                            int[] hist = null;
+                            try
+                            {
+                                hist = histogram(processImage);
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("FailureDetector.Process : Exception thrown while calculating histogram of iamge.", inner);
+                            }
+
+                            // get center of mass
+                            int imageIntensity = -1;
+                            try
+                            {
+                                imageIntensity = weightedIntensity(hist);
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("FailureDetector.Process : Exception thrown while calculating weighted intensity.", inner);
+                            }
+                            // verify imageIntensity was successfully calculated
+                            if (imageIntensity > -1)
+                            {
+                                // update ROI
+                                float desiredGain = (float)targetIntesity / (float)imageIntensity;
+                                // make sure gain is above change threshold
+                                if (desiredGain > INTENSITY_GAIN_THRESHOLD)
+                                {
+                                    //cam.GainExposure(desiredGain) ~ this needs to be implemented
+                                }
+                                
+                            }
+                        }
+                    }
 
                     // perform image processing
-                    filterImage(processImage);
-                    if (processImage != null)
+                    try
                     {
-                        //processImage.Save("tmp.bmp");
+                        filterImage(processImage);
                     }
+                    catch (Exception inner)
+                    {
+                        log.Error("MainForm.Process : Exception thrown while filtering image.", inner);
+                    }
+                    
+                    // set the processed image after processing
                     image.SetProcessedImage(processImage);
+
+                    // set image to contain crack
                     image.SetContainsCrack(true);
 
+                    // set the amount of time spent processing
                     image.SetProcessTime(((Double)sw.ElapsedMilliseconds) / 1000);
                     sw.Restart();
-
-                    // check histogram update -- feedback to camera
-
-                   
 
                     // pop IPData onward
                     for (int i = 0; i < subscribers.Count; i++)
@@ -235,6 +329,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         subscribers[i].push(new QueueElement(consumerName, image));
                     }
 
+                    // dispose and unlock unused images
                     for (int i = 0; i < imageElements.Count - 1; i++)
                     {
                         ((IPData)imageElements[i].Data).Dispose();
@@ -242,61 +337,15 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     }
                 }
                 sem.Release();
-                
-                
             }
         }
 
-        private Bitmap filterImage2(Bitmap b)
-        {
-            int PixelSize = 3;
-            int threshold = noiseRange * 8;
-            int result = 0;
-            int row_count = 0;
-            BitmapData B_data = null;
-            int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
-
-            try
-            {
-                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
-                    ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-            }
-            catch (Exception)
-            {
-
-                return null;
-            }
-
-            for (int y = 1; y < b.Height - 1; y++)
-            {
-                byte* topRow = (byte*) B_data.Scan0 + ((y-1) * B_data.Stride);
-                byte* middleRow = (byte*) B_data.Scan0 + (y * B_data.Stride);
-                byte* bottomRow = (byte*) B_data.Scan0 + ((y+1) * B_data.Stride);
-                bool Ishot = false;
-                for (int x = 1; x < B_data.Width - 1; x++)
-                {
-                    int d1 = topRow[x * PixelSize - 1 * PixelSize] - bottomRow[x * PixelSize + 1 * PixelSize];
-                    int d2 = topRow[x * PixelSize + 1 * PixelSize] - bottomRow[x * PixelSize - 1 * PixelSize];
-                    result = Math.Abs(d1) + Math.Abs(d2);
-
-                    if (result > 40)
-                    {
-                        Ishot = true;
-                            // color pixel green
-                            middleRow[x * PixelSize] = 0;   //Blue  0-255
-                            middleRow[x * PixelSize + 1] = 255; //Green 0-255
-                            middleRow[x * PixelSize + 2] = 0;   //Red   0-255
-                    }
-                }
-                if (Ishot)
-                {
-                    row_count++;
-                }
-            }
-            b.UnlockBits(B_data);
-            return b;//(double)row_count / (double)R.Height;
-        }
-
+       
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         private Bitmap filterImage(Bitmap b)
         {
             int PixelSize = 3;
@@ -304,21 +353,23 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             int result = 0;
             int row_count = 0;
             BitmapData B_data = null;
+            // filter
             int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
 
+            // attempt to lock bits on bitmap to process
             try
             {
                 B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                     ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             }
-            catch (Exception)
+            catch (Exception inner)
             {
-
-                return null;
+                log.Error("FailureDetector.filterImage : Unable to lock bits.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.filterImage : Unable to lock bits.", inner);
+                throw ex;
             }
                 
-
-
+            // begin filtering of image
             for (int y = 0; y < b.Height; y++)
             {
                 byte* row = (byte*)B_data.Scan0 + (y * B_data.Stride);
@@ -350,29 +401,69 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     row_count++;
                 }
             }
-            b.UnlockBits(B_data);
-            return b;//(double)row_count / (double)R.Height;
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.filterImage : Unable to unlock bits.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.filterImage : Unable to unlock bits.", inner);
+                throw ex;
+            }
+            
+            return b;
         }
 
-        public int updateROI(Bitmap b)
+        /// <summary>
+        /// Function updates the ROI.
+        /// </summary>
+        /// <param name="b"></param>
+        public void updateROI(Bitmap b)
         {
             roi = new Rectangle(0, 0, b.Width, b.Height);
             int percentwhite = 80;
             int PixelSize = 3;
-            int max_index = 0;
 
             BitmapData B_data = null;
 
-            // get histogram of image
-            int[] hist = histogram(b);
+            // try to get histogram of image
+            int[] hist;
+            try
+            {
+                 hist = histogram(b);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Exception generated while making histogram of image.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Exception generated while making histogram of image.", inner);
+                throw ex;
+            }
 
             // get weighted average of image
-            int centerOfMass = weightedIntensity(hist);
+            int centerOfMass;
+            try
+            {
+                centerOfMass = weightedIntensity(hist);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Exception generated while calculating weighted intensity.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Exception generated while calculating weighted intensity.", inner);
+                throw ex;
+            }
 
-
-            B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-
-
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                throw ex;
+            }
+            
             //Find Top Edge
             for (int y = 0; y < B_data.Height; y++)
             {
@@ -413,8 +504,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 }
             }
 
-            b.UnlockBits(B_data);
-            return centerOfMass;
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Unable to unlock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Unable to unlock bits in bitmap.", inner);
+                throw ex;
+            }
+            
         }
 
         private int weightedIntensity(int[] data)
@@ -433,11 +533,18 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         {
             int[] data = new int[256];
             BitmapData B_data = null;
-            int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
 
-            B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.histogram : Unable to lock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.histogram : Unable to lock bits in bitmap.", inner);
+                throw ex;
+            }
 
             for (int y = 0; y < b.Height; y++)
             {
@@ -447,13 +554,21 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     data[row[x]]++;
                 }
             }
-            b.UnlockBits(B_data);
+
+            // unlock bits
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                throw ex;
+            }
+            
             return data;
         }
-
-
-          
-
     }
     // Use for exceptinos generated in FailureDetector class
     public class FailureDetectorException : System.Exception
