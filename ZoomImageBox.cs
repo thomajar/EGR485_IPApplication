@@ -183,6 +183,7 @@ namespace SAF_OpticalFailureDetector.threading
         /// <param name="b">Bitmap to set display image to.</param>
         public void SetImage(Bitmap b)
         {
+            Bitmap currentImage = (Bitmap)this.DisplayImageBox.Image;
             // obtain semaphore control before changing the image
             ctrlSem.WaitOne();
             unscaledImage = b;
@@ -199,6 +200,7 @@ namespace SAF_OpticalFailureDetector.threading
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
                 throw ex;
             }
+            currentImage.Dispose();
         }
 
         /// <summary>

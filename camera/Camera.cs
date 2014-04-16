@@ -228,7 +228,11 @@ namespace SAF_OpticalFailureDetector.camera
                 elapsedTime = time - lastTime;
             }
             lastTime = time;
-            IPData data = new IPData(buff, elapsedTime);
+            buff.Lock();
+            IPData data = new IPData(elapsedTime);
+            data.SetCameraImage(buff.Bitmap);
+            buff.Unlock();
+
             sem.WaitOne();
             for (int i = 0; i < subscribers.Count; i++)
             {

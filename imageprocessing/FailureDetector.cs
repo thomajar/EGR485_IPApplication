@@ -238,8 +238,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 {
                     image = (IPData)imageElements[imageElements.Count - 1].Data;
 
+
                     // get the image to process on
                     Bitmap processImage = image.GetCameraImage();
+                    /*Stopwatch awatch = new Stopwatch();
+                    awatch.Start();
+                    byte[] imageData = image.GetRawData();
+                    long times = awatch.ElapsedMilliseconds;
+                    awatch.Restart();
+                    image.SetProcessedData(imageData);
+                    long times2 = awatch.ElapsedMilliseconds;
+                    awatch.Stop();*/
 
                     // update roi to process
                     if (enableROI)
@@ -328,12 +337,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     {
                         subscribers[i].push(new QueueElement(consumerName, image));
                     }
+                    processImage.Dispose();
 
                     // dispose and unlock unused images
                     for (int i = 0; i < imageElements.Count - 1; i++)
                     {
-                        ((IPData)imageElements[i].Data).Dispose();
-                        ((IPData)imageElements[i].Data).Unlock();
+                        //((IPData)imageElements[i].Data).Dispose();
+                        //((IPData)imageElements[i].Data).Unlock();
                     }
                 }
                 sem.Release();

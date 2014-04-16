@@ -48,6 +48,7 @@ namespace SAF_OpticalFailureDetector
         private ImageHistoryBuffer saveQueueEngine;
 
         private System.Threading.Timer imageUpdateTimer;
+        private System.Threading.Timer garbageCollector;
 
         private delegate void UpdateCamera1ImageCallback();
         private delegate void UpdateCamera2ImageCallback();
@@ -65,11 +66,12 @@ namespace SAF_OpticalFailureDetector
         {
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
-            mainQueue = new CircularQueue<QueueElement>("MAIN", 100);
-            ipQueue1 = new CircularQueue<QueueElement>("IP1",100);
-            ipQueue2 = new CircularQueue<QueueElement>("IP2",100);
-            saveQueue = new CircularQueue<QueueElement>("save_queue", 100);
-            
+            // each change in queue size will allocate 12MB more of RAM
+            int queueSize = 100;
+            mainQueue = new CircularQueue<QueueElement>("MAIN", queueSize);
+            ipQueue1 = new CircularQueue<QueueElement>("IP1", queueSize);
+            ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
+            saveQueue = new CircularQueue<QueueElement>("save_queue", queueSize);
 
             // initialize camera and processor 1
             cam1 = new Camera();
@@ -107,6 +109,11 @@ namespace SAF_OpticalFailureDetector
             TimerCallback tcb = new TimerCallback(DisplayImage);
             imageUpdateTimer = new System.Threading.Timer(tcb, imageUpdateTimer, Timeout.Infinite, Timeout.Infinite);
             imageUpdateTimer.Change(1, 50);
+
+            // setup garbage collector
+            TimerCallback tcb2 = new TimerCallback(GarbageCollector);
+            garbageCollector = new System.Threading.Timer(tcb2, garbageCollector, Timeout.Infinite, Timeout.Infinite);
+            garbageCollector.Change(1, 100);
             
         }
 
@@ -126,6 +133,11 @@ namespace SAF_OpticalFailureDetector
             log.Info("MainForm.Form1_FormClosing : All threads shutdown, program terminating.");
         }
 
+        private void GarbageCollector(object stateInfo)
+        {
+            GC.Collect();
+        }
+
         /// <summary>
         /// Function is called by timer and checks to see what data is available in mainQueue.
         /// </summary>
@@ -141,16 +153,6 @@ namespace SAF_OpticalFailureDetector
                 {
                     // obtain ownership of gui to enter critical section
                     guiSem.WaitOne();
-                    // verify camera 1 data is not null before disposing
-                    if (camera1Data != null)
-                    {
-                        camera1Data.Dispose();
-                        camera1Data.Unlock();
-                    }
-                    else
-                    {
-                        log.Error("MainForm.DisplayImage : Camera 1 data is null.");
-                    }
                     // update camera 1 data to newest data off of imageList
                     camera1Data = (IPData)imageList[imageList.Count - 1].Data;
                     // release ownership of gui to exit critical section
@@ -163,16 +165,6 @@ namespace SAF_OpticalFailureDetector
                 {
                     // obtain ownership of gui to enter critical section
                     guiSem.WaitOne();
-                    // verify camera 2 data is not null before disposing
-                    if (camera2Data != null)
-                    {
-                        camera2Data.Dispose();
-                        camera2Data.Unlock();
-                    }
-                    else
-                    {
-                        log.Error("MainForm.DisplayImage : Camera 2 data is null.");
-                    }
                     // update camera 2 data to newest data off of imagelist
                     camera2Data = (IPData)imageList[imageList.Count - 1].Data;
                     // release ownership of gui to exit critical section
@@ -184,8 +176,8 @@ namespace SAF_OpticalFailureDetector
                 // dispose all unused imageList data that we were not able to draw to GUI
                 for (int i = 0; i < imageList.Count - 1; i++)
                 {
-                    ((IPData)imageList[i].Data).Dispose();
-                    ((IPData)imageList[i].Data).Unlock();
+                    //((IPData)imageList[i].Data).Dispose();
+                    //((IPData)imageList[i].Data).Unlock();
                 }
             }
         }

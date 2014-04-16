@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,70 +11,68 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 {
     class IPData
     {
-        private ImageBuffer ib;
-        private Bitmap camImage;
-        private Bitmap processedImage;
         private Boolean containsCrack;
         private Double camElapsedTime;
         private Double procElapsedTime;
 
+        private DateTime timestamp;
+        private byte[] rawData;
+        private byte[] processedData;
+
         public IPData()
         {
-            camImage = null;
-            processedImage = null;
+            timestamp = DateTime.Now;
             containsCrack = false;
         }
 
-        public IPData(ImageBuffer ib, double elapsedTime)
+        public IPData(double elapsedTime)
         {
-            this.ib = ib;
-            this.ib.Lock();
-            camImage = this.ib.Bitmap;
-            processedImage = null;
+            timestamp = DateTime.Now;
             this.camElapsedTime = elapsedTime;
             containsCrack = false;
         }
 
-        public void Unlock()
+        public byte[] GetRawData()
         {
-            if (this.ib.Locked)
-            {
-                this.ib.ForceUnlock();
-            }
+            return rawData;
         }
 
-        public void Dispose()
+        public void SetProcessedData(byte[] pData)
         {
-            try
-            {
-                camImage.Dispose();
-                processedImage.Dispose();
-                ib.Bitmap.Dispose();
-            }
-            catch (Exception)
-            {
-                return;
-            }
-            
+            processedData = pData;
         }
 
         public void SetCameraImage(Bitmap b)
         {
-            camImage = b;
+            MemoryStream ms = new MemoryStream();
+            b.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+            rawData = ms.ToArray();
+            ms.Dispose();
         }
+
         public Bitmap GetCameraImage()
         {
-            Bitmap b = (Bitmap)camImage.Clone();
+            MemoryStream ms = new MemoryStream(rawData);
+            Bitmap b = (Bitmap) Image.FromStream(ms);
             return b;
         }
         public void SetProcessedImage(Bitmap b)
         {
-            processedImage = b;
+            MemoryStream ms = new MemoryStream();
+            b.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+            processedData = ms.ToArray();
+            ms.Dispose();
         }
         public Bitmap GetProcessedImage()
         {
-            return processedImage;
+            MemoryStream ms = new MemoryStream(processedData);
+            Bitmap b = (Bitmap)Image.FromStream(ms);
+            return b;
         }
+
+
+
+
         public void SetContainsCrack(Boolean b)
         {
             containsCrack = b;
