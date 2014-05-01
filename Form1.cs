@@ -356,7 +356,7 @@ namespace SAF_OpticalFailureDetector
             log.Info("MainForm.Start : Starting image processors and save queue engine.");
             imagep1.Start();
             imagep2.Start();
-            saveQueueEngine.Start();
+            //saveQueueEngine.Start();
 
             //messenger = new Messenger(program_settings.EmailAddress,
             //    program_settings.TestNumber, program_settings.SampleNumber);
