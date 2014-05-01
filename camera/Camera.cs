@@ -141,7 +141,7 @@ namespace SAF_OpticalFailureDetector.camera
                 {
                     cam.Device = cam.Devices[camNumber];
                     cam.VideoFormat = cam.VideoFormats[44];
-                    cam.DeviceFrameRate = cam.DeviceFrameRates[8];
+                    cam.DeviceFrameRate = cam.DeviceFrameRates[6];
                     cam.DeviceLostExecutionMode = EventExecutionMode.AsyncInvoke;
                     cam.ImageAvailableExecutionMode = EventExecutionMode.MultiThreaded;
                     cam.OverlayBitmapPosition = PathPositions.None;
@@ -230,7 +230,7 @@ namespace SAF_OpticalFailureDetector.camera
             lastTime = time;
             buff.Lock();
             IPData data = new IPData(elapsedTime);
-            data.SetCameraImage(buff.Bitmap);
+            data.SetRawDataFromImage(buff.Bitmap);
             buff.Unlock();
 
             sem.WaitOne();

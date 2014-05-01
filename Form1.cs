@@ -66,8 +66,20 @@ namespace SAF_OpticalFailureDetector
         {
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
-            // each change in queue size will allocate 12MB more of RAM
-            int queueSize = 100;
+            // see how much memory is available on computer and take 80% of it
+            float freeMem = 1000;
+            try
+            {
+                System.Diagnostics.PerformanceCounter ramCounter = new System.Diagnostics.PerformanceCounter("Memory", "Available MBytes");
+                freeMem = ramCounter.NextValue();
+            }
+            catch (Exception inner)
+            {
+                log.Error("MainForm.Form1_Load : Unable to retrieve amount of free memory on system, defaulting to 1GB.",inner);
+            }
+            // each queue takes 3 MB per item in it
+            int queueSize = Convert.ToInt32(freeMem * 0.80) / 12;
+
             mainQueue = new CircularQueue<QueueElement>("MAIN", queueSize);
             ipQueue1 = new CircularQueue<QueueElement>("IP1", queueSize);
             ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
@@ -201,7 +213,7 @@ namespace SAF_OpticalFailureDetector
                 {
                     try
                     {
-                        Camera1Display.SetImage(camera1Data.GetCameraImage());
+                        Camera1Display.SetImage(camera1Data.GetRawDataImage());
                     }
                     catch (Exception inner)
                     {
@@ -210,7 +222,7 @@ namespace SAF_OpticalFailureDetector
 
                     try
                     {
-                        Camera1Process.SetImage(camera1Data.GetProcessedImage());
+                        Camera1Process.SetImage(camera1Data.GetProcessedDataImage());
                     }
                     catch (Exception inner)
                     {
@@ -218,9 +230,9 @@ namespace SAF_OpticalFailureDetector
                     }
                     
                     // update the camera and process frame rates
-                    camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.GetElapsedTime();
+                    camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.CameraElapsedTime_s;
                     Camera1Display.SetText(String.Format("{0:0.00}", (1 / camera1Period)));
-                    process1Period = 0.85 * process1Period + 0.15 * camera1Data.GetProcessTime();
+                    process1Period = 0.85 * process1Period + 0.15 * camera1Data.ProcessorElapsedTime_s;
                     Camera1Process.SetText(String.Format("{0:0.00}", (1 / process1Period)));
                 }
                 // release ownership of critical section
@@ -247,7 +259,7 @@ namespace SAF_OpticalFailureDetector
                 {
                     try
                     {
-                        Camera2Display.SetImage(camera2Data.GetCameraImage());
+                        Camera2Display.SetImage(camera2Data.GetRawDataImage());
                     }
                     catch (Exception inner)
                     {
@@ -256,7 +268,7 @@ namespace SAF_OpticalFailureDetector
 
                     try
                     {
-                        Camera2Process.SetImage(camera2Data.GetProcessedImage());
+                        Camera2Process.SetImage(camera2Data.GetProcessedDataImage());
                     }
                     catch (Exception inner)
                     {
@@ -264,9 +276,9 @@ namespace SAF_OpticalFailureDetector
                     }
 
                     // update the camera and process frame rates
-                    camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.GetElapsedTime();
+                    camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.CameraElapsedTime_s;
                     Camera2Display.SetText(String.Format("{0:0.00}", (1 / camera2Period)));
-                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.GetProcessTime();
+                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.ProcessorElapsedTime_s;
                     Camera2Process.SetText(String.Format("{0:0.00}", (1 / process2Period)));
                 }
                 // release ownership of critical section

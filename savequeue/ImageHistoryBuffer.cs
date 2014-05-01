@@ -181,10 +181,10 @@ namespace SAF_OpticalFailureDetector.savequeue
                     if(sw.ElapsedMilliseconds >= 5000)
                     {
                         sw.Restart();
-                        bufferImages[imageIndex] = image.GetCameraImage();
+                        bufferImages[imageIndex] = image.GetRawDataImage();//image.GetCameraImage();
                         imageIndex = (imageIndex + 1) % 100;
                     }
-                    if(!image.ContainsCrack())
+                    if(!image.ContainsCrack)
                     {
                         for(int counter = imageIndex; counter < 100; counter++)
                         {

@@ -240,7 +240,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
 
                     // get the image to process on
-                    Bitmap processImage = image.GetCameraImage();
+                    Bitmap processImage = image.GetRawDataImage();//image.GetCameraImage();
                     /*Stopwatch awatch = new Stopwatch();
                     awatch.Start();
                     byte[] imageData = image.GetRawData();
@@ -315,7 +315,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     // perform image processing
                     try
                     {
-                        filterImage(processImage);
+                        processImage = filterImage(processImage);
                     }
                     catch (Exception inner)
                     {
@@ -323,13 +323,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     }
                     
                     // set the processed image after processing
-                    image.SetProcessedImage(processImage);
+                    image.SetProcessedDataFromImage(processImage);
 
                     // set image to contain crack
-                    image.SetContainsCrack(true);
+                    image.ContainsCrack = true;
 
                     // set the amount of time spent processing
-                    image.SetProcessTime(((Double)sw.ElapsedMilliseconds) / 1000);
+                    image.ProcessorElapsedTime_s = ((Double)sw.ElapsedMilliseconds) / 1000;
                     sw.Restart();
 
                     // pop IPData onward
@@ -337,7 +337,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     {
                         subscribers[i].push(new QueueElement(consumerName, image));
                     }
-                    processImage.Dispose();
+                    //processImage.Dispose();
 
                     // dispose and unlock unused images
                     for (int i = 0; i < imageElements.Count - 1; i++)
@@ -370,7 +370,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             try
             {
                 B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
-                    ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                    ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             }
             catch (Exception inner)
             {

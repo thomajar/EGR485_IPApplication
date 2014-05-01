@@ -15,7 +15,7 @@ namespace SAF_OpticalFailureDetector.threading
         private int removeIndex;
         private int maxSize;
         private int elements;
-        private const int SIZE_LIMIT = 1000;
+        private const int SIZE_LIMIT = 10000;
         private static Semaphore sem;
 
         public String Name
