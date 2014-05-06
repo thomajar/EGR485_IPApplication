@@ -11,6 +11,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 {
     class IPData
     {
+        private const int BYTES_PER_PIXEL = 3;
+        private const int IMAGE_OFFSET = 54;
+
         // image information
         private byte[] rawData;
         private byte[] processedData;
@@ -225,6 +228,22 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             get
             {
                 return imageSize;
+            }
+        }
+
+        public int BytesPerPixel
+        {
+            get
+            {
+                return BYTES_PER_PIXEL;
+            }
+        }
+
+        public int Image_Offset
+        {
+            get
+            {
+                return IMAGE_OFFSET;
             }
         }
     }

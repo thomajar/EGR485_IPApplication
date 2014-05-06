@@ -158,7 +158,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             {
                 result = true;
                 isRunning = true;
-                processThread = new Thread(new ThreadStart(Process));
+                processThread = new Thread(new ThreadStart(Process2));
                 try
                 {
                     processThread.Start();
@@ -350,6 +350,206 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        private void Process2()
+        {
+            int exposureCounter = 0;
+            int roiCounter = 0;
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            // keep thread running until told to stop or start
+            while (isRunning)
+            {
+                List<QueueElement> imageElements = new List<QueueElement>();
+                IPData image = null;
+                sem.WaitOne();
+                // grab all image data off of queue
+                consumerQueue.popAll(ref imageElements);
+                if (imageElements.Count > 0)
+                {
+                    image = (IPData)imageElements[imageElements.Count - 1].Data;
+
+                    Byte[] data = image.GetRawData();
+
+                    if (data != null)
+                    {
+                        if (data.Length > image.Image_Offset)
+                        {
+                            Byte[] processed = null;
+                            // image is valid at this point
+                            try
+                            {
+                                processed = filterImage2(data, image.Image_Offset, image.BytesPerPixel, image.ImageSize);
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("MainForm.Process : Exception thrown while filtering image.", inner);
+                            }
+                            if (processed != null)
+                            {
+                                image.SetProcessedData(processed);
+                            }
+                            
+                        }
+                    }
+
+
+                    //// get the image to process on
+                    //Bitmap processImage = image.GetRawDataImage();//image.GetCameraImage();
+                    ///*Stopwatch awatch = new Stopwatch();
+                    //awatch.Start();
+                    //byte[] imageData = image.GetRawData();
+                    //long times = awatch.ElapsedMilliseconds;
+                    //awatch.Restart();
+                    //image.SetProcessedData(imageData);
+                    //long times2 = awatch.ElapsedMilliseconds;
+                    //awatch.Stop();*/
+
+                    //// update roi to process
+                    //if (enableROI)
+                    //{
+                    //    roiCounter = (roiCounter + 1) % updateROIFrequency;
+                    //    if (roiCounter == 0)
+                    //    {
+                    //        // store old roi incase of an exception
+                    //        Rectangle oldROI = roi;
+                    //        try
+                    //        {
+                    //            //updateROI(processImage);
+                    //        }
+                    //        catch (Exception inner)
+                    //        {
+                    //            log.Error("FailureDetetor.Process : Exception thrown while updating ROI, reverting to old ROI.", inner);
+                    //            roi = oldROI;
+                    //        }
+                    //    }
+                    //}
+
+                    //// update exposure of camera
+                    //if (enableAutoExposure)
+                    //{
+                    //    exposureCounter = (exposureCounter + 1) % updateExposureFrequency;
+                    //    if (exposureCounter == 0)
+                    //    {
+                    //        // get histogram from image
+                    //        int[] hist = null;
+                    //        try
+                    //        {
+                    //            //hist = histogram(processImage);
+                    //        }
+                    //        catch (Exception inner)
+                    //        {
+                    //            log.Error("FailureDetector.Process : Exception thrown while calculating histogram of iamge.", inner);
+                    //        }
+
+                    //        // get center of mass
+                    //        int imageIntensity = -1;
+                    //        try
+                    //        {
+                    //            //imageIntensity = weightedIntensity(hist);
+                    //        }
+                    //        catch (Exception inner)
+                    //        {
+                    //            log.Error("FailureDetector.Process : Exception thrown while calculating weighted intensity.", inner);
+                    //        }
+                    //        // verify imageIntensity was successfully calculated
+                    //        if (imageIntensity > -1)
+                    //        {
+                    //            // update ROI
+                    //            float desiredGain = (float)targetIntesity / (float)imageIntensity;
+                    //            // make sure gain is above change threshold
+                    //            if (desiredGain > INTENSITY_GAIN_THRESHOLD)
+                    //            {
+                    //                //cam.GainExposure(desiredGain) ~ this needs to be implemented
+                    //            }
+
+                    //        }
+                    //    }
+                    //}
+
+                    //// perform image processing
+                    //try
+                    //{
+                    //    processImage = filterImage(processImage);
+                    //}
+                    //catch (Exception inner)
+                    //{
+                    //    log.Error("MainForm.Process : Exception thrown while filtering image.", inner);
+                    //}
+
+                    // set the processed image after processing
+                    //image.SetProcessedDataFromImage(processImage);
+
+                    // set image to contain crack
+                    image.ContainsCrack = true;
+
+                    // set the amount of time spent processing
+                    image.ProcessorElapsedTime_s = ((Double)sw.ElapsedMilliseconds) / 1000;
+                    sw.Restart();
+
+                    // pop IPData onward
+                    for (int i = 0; i < subscribers.Count; i++)
+                    {
+                        subscribers[i].push(new QueueElement(consumerName, image));
+                    }
+                    //processImage.Dispose();
+
+                    // dispose and unlock unused images
+                    for (int i = 0; i < imageElements.Count - 1; i++)
+                    {
+                        //((IPData)imageElements[i].Data).Dispose();
+                        //((IPData)imageElements[i].Data).Unlock();
+                    }
+                }
+                sem.Release();
+            }
+        }
+
+        private Byte[] filterImage2(Byte[] data, int offset, int bpp, Size s)
+        {
+            int threshold = noiseRange * 8;
+            int result = 0;
+            // filter
+            int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
+
+
+            Rectangle regionToProcess;
+            if (enableROI)
+            {
+                regionToProcess = roi;
+            }
+            else
+            {
+                regionToProcess = new Rectangle(0, 0, s.Width, s.Height);
+            }
+
+            for (int y = regionToProcess.Top; y < regionToProcess.Bottom; y++)
+            {
+                for (int x = regionToProcess.Left; x < regionToProcess.Right; x++)
+                {
+                    result = 0;
+                    int filterOffset = 3;
+                    int n = 7;
+                    for (int i = 0; i < n; i++)
+                    {
+                        result += data[(y * s.Width + (x - filterOffset + i)) * bpp + offset] * H[i];
+                    }
+                    if (result > threshold)
+                    {
+                        if (data[(y * s.Width + (x - filterOffset)) * bpp + offset] > data[(y * s.Width + x) * bpp + offset] + minimumContrast &&
+                            data[(y * s.Width + (x + filterOffset)) * bpp + offset] > data[(y * s.Width + x) * bpp + offset] + minimumContrast)
+                        {
+                            // color pixel green
+                            data[(y * s.Width + x) * bpp + offset + 0] = 0;   //Blue  0-255
+                            data[(y * s.Width + x) * bpp + offset + 1] = 255; //Green 0-255
+                            data[(y * s.Width + x) * bpp + offset + 2] = 0;   //Red   0-255
+                        }
+                    }
+                }
+            }
+            return data;
+        }
        
         /// <summary>
         /// 
