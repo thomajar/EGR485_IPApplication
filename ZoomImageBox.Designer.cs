@@ -65,6 +65,7 @@
             this.DisplayImageBox.Location = new System.Drawing.Point(0, 0);
             this.DisplayImageBox.Name = "DisplayImageBox";
             this.DisplayImageBox.Size = new System.Drawing.Size(581, 490);
+            this.DisplayImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.DisplayImageBox.TabIndex = 1;
             this.DisplayImageBox.TabStop = false;
             // 

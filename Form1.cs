@@ -21,6 +21,13 @@ namespace SAF_OpticalFailureDetector
     public partial class MainForm : Form
     {
         private const string PROGRAM_NAME = "Optical Failure Detector (V1.0)";
+        private const String DISPLAY_TYPE_NORMAL = "Camera Image";
+        private const String DISPLAY_TYPE_PROCESSED = "Raw Processed";
+
+        private const string DEFAULT_CAM1_NAME = "Camera1";
+        private const string DEFAULT_CAM2_NAME = "Camera2";
+        private const string DEFAULT_IMAGE_PROCESSOR1_NAME = "ImageProcessor1";
+        private const string DEFAULT_IMAGE_PROCESSOR2_NAME = "ImageProcessor2";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(MainForm));
 
@@ -77,9 +84,13 @@ namespace SAF_OpticalFailureDetector
             {
                 log.Error("MainForm.Form1_Load : Unable to retrieve amount of free memory on system, defaulting to 1GB.",inner);
             }
-            // each queue takes 3 MB per item in it
-            int queueSize = Convert.ToInt32(freeMem * 0.80) / 12;
+            if (freeMem > 2000)
+            {
+                freeMem = 2000;
+            }
 
+            // each queue takes 6 MB per item in it
+            int queueSize = Convert.ToInt32(freeMem * 0.90) / 24;
             mainQueue = new CircularQueue<QueueElement>("MAIN", queueSize);
             ipQueue1 = new CircularQueue<QueueElement>("IP1", queueSize);
             ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
@@ -88,26 +99,37 @@ namespace SAF_OpticalFailureDetector
             // initialize camera and processor 1
             cam1 = new Camera();
             cam1.AddSubscriber(ipQueue1);
-            imagep1 = new FailureDetector("Detector1");
+            cam1.AddSubscriber(mainQueue);
+            imagep1 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR1_NAME);
             imagep1.SetConsumerQueue(ipQueue1);
-            imagep1.AddSubscriber(mainQueue);
             imagep1.AddSubscriber(saveQueue);
+            imagep1.AddSubscriber(mainQueue);
+            //imagep1.EnableAutoExposure(true);
 
             // initialize camera and processor 2
             cam2 = new Camera();
             cam2.AddSubscriber(ipQueue2);
-            imagep2 = new FailureDetector("Detector2");
+            cam2.AddSubscriber(mainQueue);
+            imagep2 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR2_NAME);
             imagep2.SetConsumerQueue(ipQueue2);
-            imagep2.AddSubscriber(mainQueue);
             imagep2.AddSubscriber(saveQueue);
+            imagep2.AddSubscriber(mainQueue);
+            //imagep2.EnableAutoExposure(true);
 
             // sets image queue
             saveQueueEngine = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
             saveQueueEngine.SetConsumerQueue(saveQueue);
 
+            // add thread error handlers
+            cam1.ThreadError += new ThreadErrorHandler(Camera0ThreadError);
+            cam2.ThreadError += new ThreadErrorHandler(Camera1ThreadError);
+            imagep1.ThreadError += new ThreadErrorHandler(ImageProcessor0ThreadError);
+            imagep2.ThreadError += new ThreadErrorHandler(ImageProcessor0ThreadError);
+            saveQueueEngine.ThreadError += new ThreadErrorHandler(SaveQueueThreadError);
+
             // start the cameras
-            cam1.StartCamera(0);
-            cam2.StartCamera(1);
+            cam1.StartCamera(DEFAULT_CAM1_NAME,0);
+            cam2.StartCamera(DEFAULT_CAM2_NAME,1);
 
 
             // initialize camera and processor periods
@@ -116,11 +138,20 @@ namespace SAF_OpticalFailureDetector
             process1Period = 0.03;
             process2Period = 0.03;
 
+            // need to update comboboxes
+            cmboCam1View.Items.Add(DISPLAY_TYPE_NORMAL);
+            cmboCam1View.Items.Add(DISPLAY_TYPE_PROCESSED);
+            cmboCam1View.SelectedIndex = 0;
+
+            cmboCam2View.Items.Add(DISPLAY_TYPE_NORMAL);
+            cmboCam2View.Items.Add(DISPLAY_TYPE_PROCESSED);
+            cmboCam2View.SelectedIndex = 0;
+
             guiSem.Release();
             // setup timer update
             TimerCallback tcb = new TimerCallback(DisplayImage);
             imageUpdateTimer = new System.Threading.Timer(tcb, imageUpdateTimer, Timeout.Infinite, Timeout.Infinite);
-            imageUpdateTimer.Change(1, 50);
+            imageUpdateTimer.Change(1, 100);
 
             // setup garbage collector
             TimerCallback tcb2 = new TimerCallback(GarbageCollector);
@@ -156,42 +187,112 @@ namespace SAF_OpticalFailureDetector
         /// <param name="stateInfo"></param>
         private void DisplayImage(object stateInfo)
         {
-            // make place to store image data and populate
-            List<QueueElement> imageList = new List<QueueElement>();
-            if (mainQueue.popAll(ref imageList))
-            {
-                // check if last element is from image processor 1
-                if (imageList[imageList.Count - 1].Type.Equals(imagep1.GetName()))
+	            /*
+                 * Store all of the inter-thread communication data types into 
+                 * a list of queue elements.  The list will consist of all inter-thread
+                 * messages that have been sent since the last time this function was called.
+                 */
+                List<QueueElement> dataList = new List<QueueElement>();
+                if (mainQueue.popAll(ref dataList))
                 {
-                    // obtain ownership of gui to enter critical section
-                    guiSem.WaitOne();
-                    // update camera 1 data to newest data off of imageList
-                    camera1Data = (IPData)imageList[imageList.Count - 1].Data;
-                    // release ownership of gui to exit critical section
-                    guiSem.Release();
-                    // draw the updated image data for camera 1
-                    UpdateCamera1Image();
-                }
-                // check if last element is from image processor 2
-                else if (imageList[imageList.Count - 1].Type.Equals(imagep2.GetName()))
-                {
-                    // obtain ownership of gui to enter critical section
-                    guiSem.WaitOne();
-                    // update camera 2 data to newest data off of imagelist
-                    camera2Data = (IPData)imageList[imageList.Count - 1].Data;
-                    // release ownership of gui to exit critical section
-                    guiSem.Release();
-                    // draw the updated image data for camera 2
-                    UpdateCamera2Image();
-                }
+                    int cam1Index = -1;
+                    int cam2Index = -1;
+                    int proc1Index = -1;
+                    int proc2Index = -1;
+                    for (int i = dataList.Count - 1; i > -1 && ( cam1Index == -1 || cam2Index == -1 || proc1Index == -1 || proc2Index == -1); i--)
+                    {
+                        if (cam1Index == -1)
+                        {
+                            if (dataList[i].Type.Contains(DEFAULT_CAM1_NAME))
+                            {
+                                cam1Index = i;
+                            }
+                        }
+                        if (cam2Index == -1)
+                        {
+                            if (dataList[i].Type.Contains(DEFAULT_CAM2_NAME))
+                            {
+                                cam2Index = i;
+                            }
+                        }
+                        if (proc1Index == -1)
+                        {
+                            if (dataList[i].Type.Contains(DEFAULT_IMAGE_PROCESSOR1_NAME))
+                            {
+                                proc1Index = i;
+                            }
+                        }
+                        if (proc2Index == -1)
+                        {
+                            if (dataList[i].Type.Contains(DEFAULT_IMAGE_PROCESSOR2_NAME))
+                            {
+                                proc2Index = i;
+                            }
+                        }
+                    
+                    
+                    }
 
-                // dispose all unused imageList data that we were not able to draw to GUI
-                for (int i = 0; i < imageList.Count - 1; i++)
-                {
-                    //((IPData)imageList[i].Data).Dispose();
-                    //((IPData)imageList[i].Data).Unlock();
-                }
-            }
+                    // obtain ownership of GUI thread
+                    guiSem.WaitOne();
+                    if (cam1Index > -1)
+                    {
+                        // update camera 1 data to newest data off of imageList
+                        camera1Data = (IPData)dataList[cam1Index].Data;
+                        UpdateCamera1Image();
+                    }
+                    if (cam2Index > -1)
+                    {
+                        // update camera 2 data to newest data off of imagelist
+                        camera2Data = (IPData)dataList[cam2Index].Data;
+                        UpdateCamera2Image();
+                    }
+
+                    switch (Cam1DisplayType)
+                    {
+                        case DISPLAY_TYPE_NORMAL:
+                            if (cam1Index > -1)
+                            {
+                                // update camera 1 data to newest data off of imageList
+                                camera1Data = (IPData)dataList[cam1Index].Data;
+                                UpdateCamera1Image();
+                            }
+                            break;
+                        case DISPLAY_TYPE_PROCESSED:
+                            if (proc1Index > -1)
+                            {
+                                // update camera 1 data to newest data off of imageList
+                                camera1Data = (IPData)dataList[proc1Index].Data;
+                                UpdateCamera1Image();
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    switch (Cam2DisplayType)
+                    {
+                        case DISPLAY_TYPE_NORMAL:
+                            if (cam2Index > -1)
+                            {
+                                // update camera 2 data to newest data off of imagelist
+                                camera2Data = (IPData)dataList[cam2Index].Data;
+                                UpdateCamera2Image();
+                            }
+                            break;
+                        case DISPLAY_TYPE_PROCESSED:
+                            if (proc2Index > -1)
+                            {
+                                // update camera 2 data to newest data off of imagelist
+                                camera2Data = (IPData)dataList[proc2Index].Data;
+                                UpdateCamera2Image();
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    guiSem.Release();
+                } 
         }
 
         /// <summary>
@@ -199,7 +300,7 @@ namespace SAF_OpticalFailureDetector
         /// </summary>
         private void UpdateCamera1Image()
         {
-            if (Camera1Display.InvokeRequired || Camera1Process.InvokeRequired)
+            if (Camera1Display.InvokeRequired || gbCamera1.InvokeRequired)
             {
                 UpdateCamera1ImageCallback d = new UpdateCamera1ImageCallback(UpdateCamera1Image);
                 this.BeginInvoke(d, null);
@@ -211,29 +312,54 @@ namespace SAF_OpticalFailureDetector
                 // verify camera 1 data is not null
                 if (camera1Data != null)
                 {
-                    try
+                    switch (Cam1DisplayType)
                     {
-                        Camera1Display.SetImage(camera1Data.GetRawDataImage());
-                    }
-                    catch (Exception inner)
-                    {
-                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 display image.", inner);
-                    }
-
-                    try
-                    {
-                        Camera1Process.SetImage(camera1Data.GetProcessedDataImage());
-                    }
-                    catch (Exception inner)
-                    {
-                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 processed image.", inner);
+                        case DISPLAY_TYPE_NORMAL:
+                            try
+                            {
+                                if (!camera1Data.IsProcessed)
+                                {
+                                    Camera1Display.SetImage(camera1Data.GetRawDataImage());
+                                }
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 display image.", inner);
+                            }
+                            break;
+                        case DISPLAY_TYPE_PROCESSED:
+                            try
+                            {
+                                if (camera1Data.IsProcessed)
+                                {
+                                    Camera1Display.SetImage(camera1Data.GetProcessedDataImage());
+                                }
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("MainForm.UpdateCamera1Image : Unable to set camera 1 display image.", inner);
+                            }
+                            break;
+                        default:
+                            break;
                     }
                     
-                    // update the camera and process frame rates
+                    
+                    // update camera 1 information
                     camera1Period = 0.85 * camera1Period + 0.15 * camera1Data.CameraElapsedTime_s;
-                    Camera1Display.SetText(String.Format("{0:0.00}", (1 / camera1Period)));
-                    process1Period = 0.85 * process1Period + 0.15 * camera1Data.ProcessorElapsedTime_s;
-                    Camera1Process.SetText(String.Format("{0:0.00}", (1 / process1Period)));
+                    lblCam1FPS.Text = "Frames Per Second: " + String.Format("{0:0.00}", (1 / camera1Period));
+                    if (camera1Data.ImageProcessorElapsedTime_s != 0)
+                    {
+                        process1Period = 0.95 * process1Period + 0.05 * camera1Data.ImageProcessorElapsedTime_s;
+                        lblCam1IPFPS.Text = "Image Processor FPS: " + String.Format("{0:0.00}", (1 / process1Period));
+                    }
+                    lblCam1Exposure.Text = "Exposure: " + String.Format("{0:0.00}", camera1Data.ImageExposure_s * 1000);
+                    if (camera1Data.IsProcessed)
+                    {
+                        lblCam1Intensity.Text = "Intensity: " + camera1Data.ImageIntensity_lsb.ToString();
+                        lblCam1CracksDetected.Text = "Crack Detected: " + camera1Data.ContainsCrack.ToString();
+                        lblCam1PotentialCracks.Text = "Potential Cracks: " + camera1Data.PotentialCrackCount.ToString();
+                    }
                 }
                 // release ownership of critical section
                 guiSem.Release();
@@ -245,7 +371,7 @@ namespace SAF_OpticalFailureDetector
         /// </summary>
         private void UpdateCamera2Image()
         {
-            if (Camera2Display.InvokeRequired || Camera2Process.InvokeRequired)
+            if (Camera2Display.InvokeRequired || gbCamera2.InvokeRequired)
             {
                 UpdateCamera2ImageCallback d = new UpdateCamera2ImageCallback(UpdateCamera2Image);
                 this.BeginInvoke(d, null);
@@ -257,29 +383,54 @@ namespace SAF_OpticalFailureDetector
                 // verify camera2 data is not null
                 if (camera2Data != null)
                 {
-                    try
+                    switch (Cam2DisplayType)
                     {
-                        Camera2Display.SetImage(camera2Data.GetRawDataImage());
-                    }
-                    catch (Exception inner)
-                    {
-                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 2 display image.", inner);
+                        case DISPLAY_TYPE_NORMAL:
+                            try
+                            {
+                                if (!camera2Data.IsProcessed)
+                                {
+                                    Camera2Display.SetImage(camera2Data.GetRawDataImage());
+                                }
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("MainForm.UpdateCamera2Image : Unable to set camera 2 display image.", inner);
+                            }
+                            break;
+                        case DISPLAY_TYPE_PROCESSED:
+                            try
+                            {
+                                if (camera2Data.IsProcessed)
+                                {
+                                    Camera2Display.SetImage(camera2Data.GetProcessedDataImage());
+                                }
+                            }
+                            catch (Exception inner)
+                            {
+                                log.Error("MainForm.UpdateCamera2Image : Unable to set camera 2 display image.", inner);
+                            }
+                            break;
+                        default:
+                            break;
                     }
 
-                    try
-                    {
-                        Camera2Process.SetImage(camera2Data.GetProcessedDataImage());
-                    }
-                    catch (Exception inner)
-                    {
-                        log.Error("MainForm.UpdateCamera1Image : Unable to set camera 2 processed image.", inner);
-                    }
-
-                    // update the camera and process frame rates
+                    // update camera 2 information
                     camera2Period = 0.85 * camera2Period + 0.15 * camera2Data.CameraElapsedTime_s;
-                    Camera2Display.SetText(String.Format("{0:0.00}", (1 / camera2Period)));
-                    process2Period = 0.85 * process2Period + 0.15 * camera2Data.ProcessorElapsedTime_s;
-                    Camera2Process.SetText(String.Format("{0:0.00}", (1 / process2Period)));
+                    lblCam2FPS.Text = "Frames Per Second: " + String.Format("{0:0.00}", (1 / camera2Period));
+                    if (camera2Data.ImageProcessorElapsedTime_s != 0)
+                    {
+                        process2Period = 0.95 * process2Period + 0.05 * camera2Data.ImageProcessorElapsedTime_s;
+                        lblCam2IPFPS.Text = "Image Processor FPS: " + String.Format("{0:0.00}", (1 / process2Period));
+                    }
+                    
+                    lblCam2Exposure.Text = "Exposure: " + String.Format("{0:0.00}", camera2Data.ImageExposure_s * 1000);
+                    if (camera2Data.IsProcessed)
+                    {
+                        lblCam2Intensity.Text = "Intensity: " + camera2Data.ImageIntensity_lsb.ToString();
+                        lblCam2CracksDetected.Text = "Crack Detected: " + camera2Data.ContainsCrack.ToString();
+                        lblCam2PotentialCracks.Text = "Potential Cracks: " + camera2Data.PotentialCrackCount.ToString();
+                    }
                 }
                 // release ownership of critical section
                 guiSem.Release();
@@ -326,6 +477,8 @@ namespace SAF_OpticalFailureDetector
             Stop();
             tsbtn_Stop.Enabled = false;
             tsbtn_Start.Enabled = true;
+            ipQueue1.reset();
+            ipQueue2.reset();
             //tsbtn_Settings.Enabled = true;
         }
 
@@ -357,9 +510,6 @@ namespace SAF_OpticalFailureDetector
             imagep1.Start();
             imagep2.Start();
             //saveQueueEngine.Start();
-
-            //messenger = new Messenger(program_settings.EmailAddress,
-            //    program_settings.TestNumber, program_settings.SampleNumber);
         }
 
         private void Stop()
@@ -369,6 +519,66 @@ namespace SAF_OpticalFailureDetector
             imagep2.Stop();
             saveQueueEngine.Stop();
         }
+
+        private void Camera0ThreadError( object sender, ThreadErrorEventArgs e)
+        {
+            e.ShowErrorMsgBoxEx();
+            if (e.StoppingThread)
+            {
+                // handle camera 1 shutdown accordingly
+
+            }
+        }
+
+        private void Camera1ThreadError(object sender, ThreadErrorEventArgs e)
+        {
+            e.ShowErrorMsgBoxEx();
+            if (e.StoppingThread)
+            {
+                // handle camera 2 shutdown accordingly
+            }
+        }
+
+        private void ImageProcessor0ThreadError(object sender, ThreadErrorEventArgs e)
+        {
+            e.ShowErrorMsgBoxEx();
+            if (e.StoppingThread)
+            {
+                // handle image processor 1 shutdown accordingly
+            }
+        }
+
+        private void ImageProcessor1ThreadError(object sender, ThreadErrorEventArgs e)
+        {
+            e.ShowErrorMsgBoxEx();
+            if (e.StoppingThread)
+            {
+                // handle image processor 2 shutdown accordingly
+            }
+        }
+
+        private void SaveQueueThreadError(object sender, ThreadErrorEventArgs e)
+        {
+            e.ShowErrorMsgBoxEx();
+            if (e.StoppingThread)
+            {
+                // handle save queue shutdown accordingly
+            }
+        }
+
+        private string Cam1DisplayType;
+        private string Cam2DisplayType;
+
+        private void cmboCam1View_TextChanged(object sender, EventArgs e)
+        {
+            Cam1DisplayType = cmboCam1View.Text;
+        }
+
+        private void cmboCam2View_TextChanged(object sender, EventArgs e)
+        {
+            Cam2DisplayType = cmboCam2View.Text;
+        }
+
  
     }
     // Use for exceptinos generated in FailureDetector class

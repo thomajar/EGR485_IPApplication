@@ -39,6 +39,8 @@ namespace SAF_OpticalFailureDetector.threading
             // initially owned by creating thread.
             sem = new Semaphore(0, 1);
 
+            
+
             this.name = consumer;
             // verify passed max size is less that SIZE_LIMIT
             if (maxSize > SIZE_LIMIT)
@@ -88,7 +90,16 @@ namespace SAF_OpticalFailureDetector.threading
             // verify not popping old object
             if (((removeIndex + 1) % maxSize) != insertIndex)
             {
-                data = queue[((removeIndex + 1) % maxSize)];
+                try
+                {
+                    data = queue[((removeIndex + 1) % maxSize)];
+                }
+                catch (Exception ex)
+                {
+                    sem.Release();
+                    return false;
+                }
+                
                 result = true;
             }
             sem.Release();
@@ -109,7 +120,16 @@ namespace SAF_OpticalFailureDetector.threading
             if (((removeIndex + 1) % maxSize) != insertIndex)
             {
                 removeIndex = (removeIndex + 1) % maxSize;
-                data = queue[removeIndex];
+                try
+                {
+                    data = queue[removeIndex];
+                }
+                catch (Exception ex)
+                {
+                    sem.Release();
+                    return false;
+                }
+                
                 elements--;
                 result = true;
             }
@@ -132,7 +152,16 @@ namespace SAF_OpticalFailureDetector.threading
                 if(((removeIndex + 1) % maxSize) != insertIndex)
                 {
                     removeIndex = (removeIndex + 1) % maxSize;
-                    data.Add(queue[removeIndex]);
+                    try
+                    {
+                        data.Add(queue[removeIndex]);
+                    }
+                    catch (Exception ex)
+                    {
+                        sem.Release();
+                        return false;
+                    }
+                    
                     elements--;
                 }
             }
@@ -159,11 +188,28 @@ namespace SAF_OpticalFailureDetector.threading
             {
                 if (queue.Count < maxSize)
                 {
-                    queue.Insert(queue.Count, data);
+                    try
+                    {
+                        queue.Insert(queue.Count, data);
+                    }
+                    catch (Exception ex)
+                    {
+                        sem.Release();
+                        return false;
+                    }
                 }
                 else
                 {
-                    queue[insertIndex] = data;
+                    try
+                    {
+                        queue[insertIndex] = data;
+                    }
+                    catch (Exception ex)
+                    {
+                        sem.Release();
+                        return false;
+                    }
+                    
                 }
                 
                 elements++;

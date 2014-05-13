@@ -15,6 +15,8 @@ namespace SAF_OpticalFailureDetector.savequeue
 {
     class ImageHistoryBuffer
     {
+
+        public event ThreadErrorHandler ThreadError;
         // thread synchronization
         private Semaphore sem;
 
@@ -39,7 +41,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             // initialize queues
             consumerLogFileLocation = LogFileLocation;
             consumerName = CONSUMER_ROOTNAME + name;
-            consumerQueue = new CircularQueue<QueueElement>(consumerName,CONSUMER_QUEUE_SIZE);
+            //consumerQueue = new CircularQueue<QueueElement>(consumerName,CONSUMER_QUEUE_SIZE);
             subscribers = new List<CircularQueue<QueueElement>>();
 
             // initialize processing thread variables
