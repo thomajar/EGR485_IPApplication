@@ -175,7 +175,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(333, 8);
+            this.cmboCam1View.Location = new System.Drawing.Point(333, 7);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(324, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -199,7 +199,7 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(993, 8);
+            this.cmboCam2View.Location = new System.Drawing.Point(993, 7);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(326, 24);
             this.cmboCam2View.TabIndex = 3;
@@ -376,7 +376,6 @@
             this.Name = "MainForm";
             this.Text = "Optical Failure Detector";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
             this.tlp_Main.ResumeLayout(false);

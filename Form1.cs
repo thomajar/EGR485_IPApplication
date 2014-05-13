@@ -52,7 +52,7 @@ namespace SAF_OpticalFailureDetector
         private Double process2Period;
 
         private Settings program_settings;
-        private ImageHistoryBuffer saveQueueEngine;
+        private ImageHistoryBuffer saveEngine;
 
         private System.Threading.Timer imageUpdateTimer;
         private System.Threading.Timer garbageCollector;
@@ -67,10 +67,7 @@ namespace SAF_OpticalFailureDetector
 
             InitializeComponent();
             this.Text = PROGRAM_NAME;
-        }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
             // see how much memory is available on computer and take 80% of it
@@ -82,7 +79,7 @@ namespace SAF_OpticalFailureDetector
             }
             catch (Exception inner)
             {
-                log.Error("MainForm.Form1_Load : Unable to retrieve amount of free memory on system, defaulting to 1GB.",inner);
+                log.Error("MainForm.Form1_Load : Unable to retrieve amount of free memory on system, defaulting to 1GB.", inner);
             }
             if (freeMem > 2000)
             {
@@ -117,19 +114,18 @@ namespace SAF_OpticalFailureDetector
             //imagep2.EnableAutoExposure(true);
 
             // sets image queue
-            saveQueueEngine = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
-            saveQueueEngine.SetConsumerQueue(saveQueue);
+            saveEngine = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
+            saveEngine.SetConsumerQueue(saveQueue);
 
             // add thread error handlers
             cam1.ThreadError += new ThreadErrorHandler(Camera0ThreadError);
             cam2.ThreadError += new ThreadErrorHandler(Camera1ThreadError);
             imagep1.ThreadError += new ThreadErrorHandler(ImageProcessor0ThreadError);
             imagep2.ThreadError += new ThreadErrorHandler(ImageProcessor0ThreadError);
-            saveQueueEngine.ThreadError += new ThreadErrorHandler(SaveQueueThreadError);
+            saveEngine.ThreadError += new ThreadErrorHandler(SaveQueueThreadError);
 
             // start the cameras
-            cam1.StartCamera(DEFAULT_CAM1_NAME,0);
-            cam2.StartCamera(DEFAULT_CAM2_NAME,1);
+            RefreshCameras();
 
 
             // initialize camera and processor periods
@@ -157,7 +153,6 @@ namespace SAF_OpticalFailureDetector
             TimerCallback tcb2 = new TimerCallback(GarbageCollector);
             garbageCollector = new System.Threading.Timer(tcb2, garbageCollector, Timeout.Infinite, Timeout.Infinite);
             garbageCollector.Change(1, 100);
-            
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -165,13 +160,73 @@ namespace SAF_OpticalFailureDetector
             log.Info("MainForm.Form1_FormClosing : Application is closing, shutting down threads.");
 
             // stop cameras
-            cam1.StopCamera();
-            cam2.StopCamera();
+            if (cam1.Running)
+            {
+                try
+                {
+                    cam1.StopCamera();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "MainForm.Form1_FormClosing : Unable to stop camera 1.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                } 
+            }
+            if (cam2.Running)
+            {
+                try
+                {
+                    cam2.StopCamera();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "MainForm.Form1_FormClosing : Unable to stop camera 2.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                } 
+            }
             // stop image processors
-            imagep1.Stop();
-            imagep2.Stop();
+            if (imagep1.Running)
+            {
+                try
+                {
+                    imagep1.Stop();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "MainForm.Form1_FormClosing : Unable to stop image processor 1.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                }
+            }
+            if (imagep2.Running)
+            {
+                try
+                {
+                    imagep2.Stop();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "MainForm.Form1_FormClosing : Unable to stop image processor 2.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                }
+            }
             // stop saveQueue Engine
-            saveQueueEngine.Stop();
+            if (saveEngine.Running)
+            {
+                try
+                {
+                    saveEngine.Stop();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "MainForm.Form1_FormClosing : Unable to stop save engine.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                }
+            }
 
             log.Info("MainForm.Form1_FormClosing : All threads shutdown, program terminating.");
         }
@@ -501,23 +556,153 @@ namespace SAF_OpticalFailureDetector
         private void tsbtn_RefreshCamera_Click(object sender, EventArgs e)
         {
             log.Info("MainForm.tsbtn_RefreshCamera_Click : User pressed refresh cameras button.");
-            MessageBox.Show("This feature is not yet implemented.", "Refresh Camera");
+            RefreshCameras();
         }
 
-        private void Start()
+        private void DisplayError(string errMsg, Exception ex)
+        {
+            MessageBox.Show(errMsg + Environment.NewLine + ex.ToString(), "Error");
+        }
+
+        private void RefreshCameras()
+        {
+            // make sure camera 1 is shutdown
+            if (cam1.Running)
+            {
+                try
+                {
+                    cam1.StopCamera();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Form1.RefreshCameras : Unable to stop camera 1.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    DisplayError(errMsg, ex);
+                    return;
+                }
+            }
+            // attempt to start camera 1
+            try
+            {
+                cam1.StartCamera(DEFAULT_CAM1_NAME, 0);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "Form1.RefreshCameras : Unable to start camera 1.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
+
+            // make sure camera 2 is shutdown
+            if (cam2.Running)
+            {
+                try
+                {
+                    cam2.StopCamera();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Form1.RefreshCameras : Unable to stop camera 2.";
+                    MainFormException ex = new MainFormException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    DisplayError(errMsg, ex);
+                    return;
+                }
+            }
+            // attempt to start camera 2
+            try
+            {
+                cam2.StartCamera(DEFAULT_CAM2_NAME, 1);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "Form1.RefreshCameras : Unable to start camera 2.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
+        }
+
+        private bool Start()
         {
             log.Info("MainForm.Start : Starting image processors and save queue engine.");
-            imagep1.Start();
-            imagep2.Start();
-            //saveQueueEngine.Start();
+            try
+            {
+                imagep1.Start();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Start : Error starting image processor 1.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+                return false;
+            }
+            try
+            {
+                imagep2.Start();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Start : Error starting image processor 2.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+                return false;
+            }
+            try
+            {
+                saveEngine.Start();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Start : Error starting save engine.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+                return false;
+            }
+            return true;
         }
 
         private void Stop()
         {
             log.Info("MainForm.Stop : Stopping image processors and save queue engine.");
-            imagep1.Stop();
-            imagep2.Stop();
-            saveQueueEngine.Stop();
+            try
+            {
+                imagep1.Stop();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Stop : Error stopping image processor 1.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
+            try
+            {
+                imagep2.Stop();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Stop : Error stopping image processor 2.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
+            try
+            {
+                saveEngine.Stop();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.Stop : Error stopping save engine.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
         }
 
         private void Camera0ThreadError( object sender, ThreadErrorEventArgs e)

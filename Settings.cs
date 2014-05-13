@@ -84,25 +84,25 @@ namespace SAF_OpticalFailureDetector
             if(fbd.ShowDialog() == DialogResult.OK)
             {
                 logLocation = fbd.SelectedPath;
-                txtLogFile.Text = logLocation;
+                //txtLogFile.Text = logLocation;
             }
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
             bool isFilledOut = true;
-            if (txtLogFile.Text == "")
-            {
-                isFilledOut = false;
-            }
-            if (txtSampleNumber.Text == "")
-            {
-                isFilledOut = false;
-            }
-            if (txtTestNumber.Text == "")
-            {
-                isFilledOut = false;
-            }
+            //if (txtLogFile.Text == "")
+            //{
+            //    isFilledOut = false;
+            //}
+            //if (txtSampleNumber.Text == "")
+            //{
+            //    isFilledOut = false;
+            //}
+            //if (txtTestNumber.Text == "")
+            //{
+            //    isFilledOut = false;
+            //}
             if (!isFilledOut)
             {
                 MessageBox.Show("Please fill in all fields.");
@@ -118,9 +118,9 @@ namespace SAF_OpticalFailureDetector
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
-            txtSampleNumber.Text = "";
-            txtTestNumber.Text = "";
-            txtLogFile.Text = "";
+            //txtSampleNumber.Text = "";
+            //txtTestNumber.Text = "";
+            //txtLogFile.Text = "";
             sampleNumber = "";
             testNumber = "";
             logLocation = "";
@@ -134,12 +134,12 @@ namespace SAF_OpticalFailureDetector
 
         private void txtSampleNumber_TextChanged(object sender, EventArgs e)
         {
-            sampleNumber = txtSampleNumber.Text;
+            //sampleNumber = txtSampleNumber.Text;
         }
 
         private void txtTestNumber_TextChanged(object sender, EventArgs e)
         {
-            testNumber = txtTestNumber.Text;
+            //testNumber = txtTestNumber.Text;
         }
     }
 }

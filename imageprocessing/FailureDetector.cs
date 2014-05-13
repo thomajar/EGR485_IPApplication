@@ -55,6 +55,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_EXPOSURE_UPDATE_FREQUENCY = 50;
         private const int DEFAULT_TARGET_INTENSITY = 200;
 
+        public bool Running { get { return isRunning; } }
+
         /// <summary>
         /// 
         /// </summary>

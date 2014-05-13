@@ -28,190 +28,296 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.label6 = new System.Windows.Forms.Label();
-            this.txtSampleNumber = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.txtTestNumber = new System.Windows.Forms.TextBox();
-            this.txtLogFile = new System.Windows.Forms.TextBox();
-            this.btnLogFileBrowse = new System.Windows.Forms.Button();
+            this.tlpMain = new System.Windows.Forms.TableLayoutPanel();
+            this.gbTestSettings = new System.Windows.Forms.GroupBox();
+            this.gbRelayController = new System.Windows.Forms.GroupBox();
+            this.gbImageProcessorSettings = new System.Windows.Forms.GroupBox();
+            this.btnClear = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.btnRefresh = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
-            this.tableLayoutPanel1.SuspendLayout();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDown4 = new System.Windows.Forms.NumericUpDown();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.tlpMain.SuspendLayout();
+            this.gbTestSettings.SuspendLayout();
+            this.gbRelayController.SuspendLayout();
+            this.gbImageProcessorSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).BeginInit();
             this.SuspendLayout();
             // 
-            // tableLayoutPanel1
+            // tlpMain
             // 
-            this.tableLayoutPanel1.ColumnCount = 3;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33332F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
-            this.tableLayoutPanel1.Controls.Add(this.label6, 0, 1);
-            this.tableLayoutPanel1.Controls.Add(this.txtSampleNumber, 1, 0);
-            this.tableLayoutPanel1.Controls.Add(this.label5, 0, 0);
-            this.tableLayoutPanel1.Controls.Add(this.label4, 0, 2);
-            this.tableLayoutPanel1.Controls.Add(this.txtTestNumber, 1, 1);
-            this.tableLayoutPanel1.Controls.Add(this.txtLogFile, 1, 2);
-            this.tableLayoutPanel1.Controls.Add(this.btnLogFileBrowse, 2, 2);
-            this.tableLayoutPanel1.Controls.Add(this.btnSave, 1, 3);
-            this.tableLayoutPanel1.Controls.Add(this.btnRefresh, 0, 3);
-            this.tableLayoutPanel1.Controls.Add(this.btnClose, 2, 3);
-            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-            this.tableLayoutPanel1.RowCount = 5;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(333, 341);
-            this.tableLayoutPanel1.TabIndex = 0;
+            this.tlpMain.ColumnCount = 3;
+            this.tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.tlpMain.Controls.Add(this.gbTestSettings, 0, 0);
+            this.tlpMain.Controls.Add(this.gbRelayController, 0, 1);
+            this.tlpMain.Controls.Add(this.gbImageProcessorSettings, 0, 2);
+            this.tlpMain.Controls.Add(this.btnSave, 1, 3);
+            this.tlpMain.Controls.Add(this.btnClose, 2, 3);
+            this.tlpMain.Controls.Add(this.btnClear, 0, 3);
+            this.tlpMain.Location = new System.Drawing.Point(12, 1);
+            this.tlpMain.Name = "tlpMain";
+            this.tlpMain.RowCount = 4;
+            this.tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25.00062F));
+            this.tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25.00063F));
+            this.tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25.00063F));
+            this.tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 24.99813F));
+            this.tlpMain.Size = new System.Drawing.Size(419, 514);
+            this.tlpMain.TabIndex = 1;
             // 
-            // label6
+            // gbTestSettings
             // 
-            this.label6.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(10, 119);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(90, 17);
-            this.label6.TabIndex = 14;
-            this.label6.Text = "Test Number";
+            this.tlpMain.SetColumnSpan(this.gbTestSettings, 3);
+            this.gbTestSettings.Controls.Add(this.checkBox1);
+            this.gbTestSettings.Controls.Add(this.label6);
+            this.gbTestSettings.Controls.Add(this.label5);
+            this.gbTestSettings.Controls.Add(this.label4);
+            this.gbTestSettings.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gbTestSettings.Location = new System.Drawing.Point(3, 3);
+            this.gbTestSettings.Name = "gbTestSettings";
+            this.gbTestSettings.Size = new System.Drawing.Size(413, 122);
+            this.gbTestSettings.TabIndex = 0;
+            this.gbTestSettings.TabStop = false;
+            this.gbTestSettings.Text = "Test Settings";
             // 
-            // txtSampleNumber
+            // gbRelayController
             // 
-            this.txtSampleNumber.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.txtSampleNumber, 2);
-            this.txtSampleNumber.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtSampleNumber.Location = new System.Drawing.Point(113, 31);
-            this.txtSampleNumber.Name = "txtSampleNumber";
-            this.txtSampleNumber.Size = new System.Drawing.Size(217, 23);
-            this.txtSampleNumber.TabIndex = 15;
-            this.txtSampleNumber.TextChanged += new System.EventHandler(this.txtSampleNumber_TextChanged);
+            this.tlpMain.SetColumnSpan(this.gbRelayController, 3);
+            this.gbRelayController.Controls.Add(this.button2);
+            this.gbRelayController.Controls.Add(this.button1);
+            this.gbRelayController.Controls.Add(this.numericUpDown4);
+            this.gbRelayController.Controls.Add(this.label1);
+            this.gbRelayController.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gbRelayController.Location = new System.Drawing.Point(3, 131);
+            this.gbRelayController.Name = "gbRelayController";
+            this.gbRelayController.Size = new System.Drawing.Size(413, 122);
+            this.gbRelayController.TabIndex = 1;
+            this.gbRelayController.TabStop = false;
+            this.gbRelayController.Text = "Relay Controller";
             // 
-            // label5
+            // gbImageProcessorSettings
             // 
-            this.label5.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label5.Location = new System.Drawing.Point(25, 25);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(59, 34);
-            this.label5.TabIndex = 12;
-            this.label5.Text = "Sample Number";
+            this.tlpMain.SetColumnSpan(this.gbImageProcessorSettings, 3);
+            this.gbImageProcessorSettings.Controls.Add(this.numericUpDown3);
+            this.gbImageProcessorSettings.Controls.Add(this.numericUpDown2);
+            this.gbImageProcessorSettings.Controls.Add(this.numericUpDown1);
+            this.gbImageProcessorSettings.Controls.Add(this.label7);
+            this.gbImageProcessorSettings.Controls.Add(this.label3);
+            this.gbImageProcessorSettings.Controls.Add(this.label2);
+            this.gbImageProcessorSettings.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gbImageProcessorSettings.Location = new System.Drawing.Point(3, 259);
+            this.gbImageProcessorSettings.Name = "gbImageProcessorSettings";
+            this.gbImageProcessorSettings.Size = new System.Drawing.Size(413, 122);
+            this.gbImageProcessorSettings.TabIndex = 2;
+            this.gbImageProcessorSettings.TabStop = false;
+            this.gbImageProcessorSettings.Text = "Image Processing Settings";
             // 
-            // label4
+            // btnClear
             // 
-            this.label4.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(24, 195);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(62, 34);
-            this.label4.TabIndex = 6;
-            this.label4.Text = "Log File Location";
-            // 
-            // txtTestNumber
-            // 
-            this.txtTestNumber.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.tableLayoutPanel1.SetColumnSpan(this.txtTestNumber, 2);
-            this.txtTestNumber.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTestNumber.Location = new System.Drawing.Point(113, 116);
-            this.txtTestNumber.Name = "txtTestNumber";
-            this.txtTestNumber.Size = new System.Drawing.Size(217, 23);
-            this.txtTestNumber.TabIndex = 13;
-            this.txtTestNumber.TextChanged += new System.EventHandler(this.txtTestNumber_TextChanged);
-            // 
-            // txtLogFile
-            // 
-            this.txtLogFile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLogFile.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtLogFile.Location = new System.Drawing.Point(113, 201);
-            this.txtLogFile.Name = "txtLogFile";
-            this.txtLogFile.ReadOnly = true;
-            this.txtLogFile.Size = new System.Drawing.Size(105, 23);
-            this.txtLogFile.TabIndex = 8;
-            // 
-            // btnLogFileBrowse
-            // 
-            this.btnLogFileBrowse.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnLogFileBrowse.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnLogFileBrowse.Location = new System.Drawing.Point(224, 173);
-            this.btnLogFileBrowse.Name = "btnLogFileBrowse";
-            this.btnLogFileBrowse.Size = new System.Drawing.Size(106, 79);
-            this.btnLogFileBrowse.TabIndex = 7;
-            this.btnLogFileBrowse.Text = "...";
-            this.btnLogFileBrowse.UseVisualStyleBackColor = true;
-            this.btnLogFileBrowse.Click += new System.EventHandler(this.btnLogFileBrowse_Click);
+            this.btnClear.Location = new System.Drawing.Point(3, 387);
+            this.btnClear.Name = "btnClear";
+            this.btnClear.Size = new System.Drawing.Size(75, 23);
+            this.btnClear.TabIndex = 3;
+            this.btnClear.Text = "Clear";
+            this.btnClear.UseVisualStyleBackColor = true;
             // 
             // btnSave
             // 
-            this.btnSave.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnSave.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSave.Location = new System.Drawing.Point(113, 258);
+            this.btnSave.Location = new System.Drawing.Point(142, 387);
             this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(105, 79);
-            this.btnSave.TabIndex = 10;
+            this.btnSave.Size = new System.Drawing.Size(75, 23);
+            this.btnSave.TabIndex = 4;
             this.btnSave.Text = "Save";
             this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
-            // 
-            // btnRefresh
-            // 
-            this.btnRefresh.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnRefresh.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnRefresh.Location = new System.Drawing.Point(3, 258);
-            this.btnRefresh.Name = "btnRefresh";
-            this.btnRefresh.Size = new System.Drawing.Size(104, 79);
-            this.btnRefresh.TabIndex = 9;
-            this.btnRefresh.Text = "Refresh";
-            this.btnRefresh.UseVisualStyleBackColor = true;
-            this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
             // 
             // btnClose
             // 
-            this.btnClose.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnClose.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnClose.Location = new System.Drawing.Point(224, 258);
+            this.btnClose.Location = new System.Drawing.Point(281, 387);
             this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(106, 79);
-            this.btnClose.TabIndex = 11;
+            this.btnClose.Size = new System.Drawing.Size(75, 23);
+            this.btnClose.TabIndex = 5;
             this.btnClose.Text = "Close";
             this.btnClose.UseVisualStyleBackColor = true;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(9, 32);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(88, 17);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Port Number";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(9, 29);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(91, 17);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Imager Noise";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(9, 59);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(120, 17);
+            this.label3.TabIndex = 1;
+            this.label3.Text = "Minimum Contrast";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(9, 87);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(94, 17);
+            this.label7.TabIndex = 2;
+            this.label7.Text = "Minimum Line";
+            // 
+            // numericUpDown1
+            // 
+            this.numericUpDown1.Location = new System.Drawing.Point(157, 29);
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Size = new System.Drawing.Size(122, 22);
+            this.numericUpDown1.TabIndex = 3;
+            // 
+            // numericUpDown2
+            // 
+            this.numericUpDown2.Location = new System.Drawing.Point(157, 59);
+            this.numericUpDown2.Name = "numericUpDown2";
+            this.numericUpDown2.Size = new System.Drawing.Size(120, 22);
+            this.numericUpDown2.TabIndex = 4;
+            // 
+            // numericUpDown3
+            // 
+            this.numericUpDown3.Location = new System.Drawing.Point(157, 87);
+            this.numericUpDown3.Name = "numericUpDown3";
+            this.numericUpDown3.Size = new System.Drawing.Size(120, 22);
+            this.numericUpDown3.TabIndex = 5;
+            // 
+            // numericUpDown4
+            // 
+            this.numericUpDown4.Location = new System.Drawing.Point(157, 30);
+            this.numericUpDown4.Name = "numericUpDown4";
+            this.numericUpDown4.Size = new System.Drawing.Size(120, 22);
+            this.numericUpDown4.TabIndex = 1;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(27, 64);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 2;
+            this.button1.Text = "Test On";
+            this.button1.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(118, 64);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.TabIndex = 3;
+            this.button2.Text = "Test Off";
+            this.button2.UseVisualStyleBackColor = true;
+            // 
+            // label4
+            // 
+            this.label4.Location = new System.Drawing.Point(9, 18);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(138, 17);
+            this.label4.TabIndex = 0;
+            this.label4.Text = "Sample Number";
+            // 
+            // label5
+            // 
+            this.label5.Location = new System.Drawing.Point(9, 41);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(104, 17);
+            this.label5.TabIndex = 0;
+            this.label5.Text = "Test Number";
+            // 
+            // label6
+            // 
+            this.label6.Location = new System.Drawing.Point(9, 66);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(104, 17);
+            this.label6.TabIndex = 0;
+            this.label6.Text = "Save Location";
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(12, 95);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(167, 21);
+            this.checkBox1.TabIndex = 1;
+            this.checkBox1.Text = "Enable Debug Saving";
+            this.checkBox1.UseVisualStyleBackColor = true;
             // 
             // Settings
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(333, 341);
-            this.Controls.Add(this.tableLayoutPanel1);
+            this.ClientSize = new System.Drawing.Size(442, 528);
+            this.Controls.Add(this.tlpMain);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "Settings";
             this.Text = "Settings";
-            this.tableLayoutPanel1.ResumeLayout(false);
-            this.tableLayoutPanel1.PerformLayout();
+            this.tlpMain.ResumeLayout(false);
+            this.gbTestSettings.ResumeLayout(false);
+            this.gbTestSettings.PerformLayout();
+            this.gbRelayController.ResumeLayout(false);
+            this.gbRelayController.PerformLayout();
+            this.gbImageProcessorSettings.ResumeLayout(false);
+            this.gbImageProcessorSettings.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).EndInit();
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Button btnLogFileBrowse;
-        private System.Windows.Forms.TextBox txtLogFile;
-        private System.Windows.Forms.Button btnSave;
-        private System.Windows.Forms.Button btnRefresh;
+        private System.Windows.Forms.TableLayoutPanel tlpMain;
+        private System.Windows.Forms.GroupBox gbTestSettings;
+        private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.TextBox txtSampleNumber;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.TextBox txtTestNumber;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.GroupBox gbRelayController;
+        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.NumericUpDown numericUpDown4;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.GroupBox gbImageProcessorSettings;
+        private System.Windows.Forms.NumericUpDown numericUpDown3;
+        private System.Windows.Forms.NumericUpDown numericUpDown2;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnClose;
+        private System.Windows.Forms.Button btnClear;
+
     }
 }

@@ -39,6 +39,8 @@ namespace SAF_OpticalFailureDetector.camera
         private const double DEFAULT_GAIN_DB = 0.0;
         private const int DEFAULT_IMAGE_BUFFER_SIZE = 50;
 
+        public bool Running { get { return isRunning; } }
+
         /// <summary>
         /// Constructor for Camera
         /// </summary>

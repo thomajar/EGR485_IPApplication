@@ -34,6 +34,8 @@ namespace SAF_OpticalFailureDetector.savequeue
         private Boolean isRunning;
         private Thread processThread;
 
+        public bool Running { get { return isRunning; } }
+
         public ImageHistoryBuffer(String name, String LogFileLocation)
         {
             sem = new Semaphore(0, 1);
