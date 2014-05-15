@@ -500,7 +500,8 @@ namespace SAF_OpticalFailureDetector
         private void tsbtn_Settings_Click(object sender, EventArgs e)
         {
             log.Info("MainForm.tsbtn_Settings_Click : User pressed settings button.");
-            MessageBox.Show("This feature is not yet implemented.", "Settings");
+            program_settings.ShowDialog();
+            //MessageBox.Show("This feature is not yet implemented.", "Settings");
             /*if (program_settings.ShowDialog() == DialogResult.OK)
             {
                 tsbtn_Start.Enabled = true;

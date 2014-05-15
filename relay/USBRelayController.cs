@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ConsoleApplication1
+namespace SAF_OpticalFailureDetector.relay
 {
     class USBRelayController
     {
@@ -37,6 +37,30 @@ namespace ConsoleApplication1
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
                 throw ex;
             }
+        }
+
+        public void Open(int portNum)
+        {
+
+            sp = new SerialPort();
+            sp.PortName = "COM" + portNum.ToString();
+            sp.BaudRate = 9600;
+            sp.DataBits = 8;
+            try
+            {
+                sp.Open();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "USBRelayController.USBRelayController : Unable to open serial port.";
+                RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                throw ex;
+            }
+        }
+
+        public void Close()
+        {
+            sp.Close();
         }
 
         /// <summary>

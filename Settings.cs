@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using SAF_OpticalFailureDetector.relay;
+
 namespace SAF_OpticalFailureDetector
 {
     public partial class Settings : Form
@@ -18,6 +20,8 @@ namespace SAF_OpticalFailureDetector
         private String sampleNumber;
         private String testNumber;
         private String logLocation;
+
+        private USBRelayController ctrl;
 
         public String Camera1Name
         {
@@ -140,6 +144,69 @@ namespace SAF_OpticalFailureDetector
         private void txtTestNumber_TextChanged(object sender, EventArgs e)
         {
             //testNumber = txtTestNumber.Text;
+        }
+
+        private void btnTestRelayOn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                ctrl.SetRelay0Status(true);
+                ctrl.SetRelay1Status(true);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Error turning on.");
+            }
+            
+        }
+
+        private void btnTestRelayOff_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                ctrl.SetRelay0Status(false);
+                ctrl.SetRelay1Status(false);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Error shutting off.");
+            }
+            
+        }
+
+
+        private void Settings_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                ctrl = new USBRelayController(3);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Error loading rleay.");
+            }
+            
+        }
+
+        private void btnOpenRelay_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                ctrl.Close();
+            }
+            catch (Exception)
+            {
+
+            }
+            try
+            {
+                ctrl.Open(Convert.ToInt32(nudPortNum.Value));
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Unable to open.");
+            }
+            
         }
     }
 }
