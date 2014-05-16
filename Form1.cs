@@ -114,7 +114,7 @@ namespace SAF_OpticalFailureDetector
             //imagep2.EnableAutoExposure(true);
 
             // sets image queue
-            saveEngine = new ImageHistoryBuffer("save_queue_images", program_settings.LogLocation);
+            saveEngine = new ImageHistoryBuffer("save_queue_images", "alocation");
             saveEngine.SetConsumerQueue(saveQueue);
 
             // add thread error handlers

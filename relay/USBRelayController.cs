@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
@@ -14,35 +15,56 @@ namespace SAF_OpticalFailureDetector.relay
         private const char CARRIAGE_RETURN = (char)13;
 
         // private vars
+        private Semaphore sem;
+        private static readonly ILog log = LogManager.GetLogger(typeof(USBRelayController));
         private SerialPort sp;
+        private bool isOpen;
 
-        /// <summary>
-        /// Opens up a serial port to communicate with USB Relay Board.
-        /// </summary>
-        /// <param name="portNum">Com port board is on.</param>
-        /// <exception cref="RelayControllerException"></exception>
-        public USBRelayController(int portNum)
+        public bool IsOpen
         {
-            sp = new SerialPort();
-            sp.PortName = "COM" + portNum.ToString();
-            sp.BaudRate = 9600;
-            sp.DataBits = 8;
-            try
+            get
             {
-                sp.Open();
-            }
-            catch (Exception inner)
-            {
-                string errMsg = "USBRelayController.USBRelayController : Unable to open serial port.";
-                RelayControllerException ex = new RelayControllerException(errMsg, inner);
-                throw ex;
+                return isOpen;
             }
         }
 
+        private static USBRelayController instance;
+
+        /// <summary>
+        /// Retrieves an instance of the singleton.
+        /// </summary>
+        public static USBRelayController Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new USBRelayController();
+                }
+                return instance;
+            }
+        }
+
+        /// <summary>
+        /// Creates the singleton Relay controller.
+        /// </summary>
+        private USBRelayController()
+        {
+            sem = new Semaphore(0, 1);
+            isOpen = false;
+            sp = new SerialPort();
+            sem.Release();
+        }
+
+
+        /// <summary>
+        /// Attempts to open up serial port connection to com port specified by portNum.
+        /// </summary>
+        /// <param name="portNum">Com port to connect to.</param>
+        /// <exception cref="RelayControllerException"></exception>
         public void Open(int portNum)
         {
-
-            sp = new SerialPort();
+            sem.WaitOne();
             sp.PortName = "COM" + portNum.ToString();
             sp.BaudRate = 9600;
             sp.DataBits = 8;
@@ -54,22 +76,40 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.USBRelayController : Unable to open serial port.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
+            isOpen = true;
+            sem.Release();
         }
 
         public void Close()
         {
-            sp.Close();
+            sem.WaitOne();
+            try
+            {
+                sp.Close();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "USBRelayController.Close : Unable to close serial port.";
+                RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
+                throw ex;
+            }
+            sem.Release();
         }
 
         /// <summary>
         /// Reads relay status of port 0.
         /// </summary>
-        /// <exception cref="FailureDetectorException"></exception>
+        /// <exception cref="RelayControllerException"></exception>
         /// <returns>True if on, False if off.</returns>
         public bool ReadRelay0Status()
         {
+            sem.WaitOne();
             try
             {
                 sp.DiscardInBuffer();
@@ -78,6 +118,8 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay0Status : Unable to discard input buffer.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
 
@@ -89,6 +131,8 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay0Status : Unable to write command.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
             // wait a bit for response from relay board
@@ -102,6 +146,8 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay0Status : Unable to read response from controller.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
             bool status;
@@ -113,18 +159,22 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay0Status : Received null response from controller.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
+            sem.Release();
             return status;
         }
 
         /// <summary>
         /// Reads relay status of port 1
         /// </summary>
-        /// <exception cref="FailureDetectorException"></exception>
+        /// <exception cref="RelayControllerException"></exception>
         /// <returns>True if on, False if off.</returns>
         public bool ReadRelay1Status()
         {
+            sem.WaitOne();
             try
             {
                 sp.DiscardInBuffer();
@@ -133,6 +183,8 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay1Status : Unable to discard input buffer.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
 
@@ -144,11 +196,13 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay1Status : Unable to write command.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
 
             // sleep a bit to wait for response
-            Thread.Sleep(10);
+            Thread.Sleep(15);
             String message;
             try
             {
@@ -158,6 +212,8 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay1Status : Unable to read response from controller.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
             bool status;
@@ -169,8 +225,11 @@ namespace SAF_OpticalFailureDetector.relay
             {
                 string errMsg = "USBRelayController.ReadRelay1Status : Received null response from controller.";
                 RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                sem.Release();
                 throw ex;
             }
+            sem.Release();
             return status;
         }
 
@@ -178,9 +237,10 @@ namespace SAF_OpticalFailureDetector.relay
         /// Turns port 0 on or off.
         /// </summary>
         /// <param name="status">True to turn on, False to turn off.</param>
-        /// <exception cref="FailureDetectorException"></exception>
+        /// <exception cref="RelayControllerException"></exception>
         public void SetRelay0Status(bool status)
         {
+            sem.WaitOne();
             if (status)
             {
                 try
@@ -191,6 +251,8 @@ namespace SAF_OpticalFailureDetector.relay
                 {
                     string errMsg = "USBRelayController.SetRelay0Status : Unable to write command to relay board.";
                     RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    sem.Release();
                     throw ex;
                 }
             }
@@ -204,9 +266,12 @@ namespace SAF_OpticalFailureDetector.relay
                 {
                     string errMsg = "USBRelayController.SetRelay0Status : Unable to write command to relay board.";
                     RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    sem.Release();
                     throw ex;
                 }
             }
+            sem.Release();
         }
 
         /// <summary>
@@ -216,6 +281,7 @@ namespace SAF_OpticalFailureDetector.relay
         /// <exception cref="FailureDetectorException"></exception>
         public void SetRelay1Status(bool status)
         {
+            sem.WaitOne();
             if (status)
             {
                 try
@@ -226,6 +292,8 @@ namespace SAF_OpticalFailureDetector.relay
                 {
                     string errMsg = "USBRelayController.SetRelay1Status : Unable to write command to relay board.";
                     RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    sem.Release();
                     throw ex;
                 }
             }
@@ -239,9 +307,12 @@ namespace SAF_OpticalFailureDetector.relay
                 {
                     string errMsg = "USBRelayController.SetRelay1Status : Unable to write command to relay board.";
                     RelayControllerException ex = new RelayControllerException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    sem.Release();
                     throw ex;
                 }
             }
+            sem.Release();
         }
     }
     public class RelayControllerException : System.Exception

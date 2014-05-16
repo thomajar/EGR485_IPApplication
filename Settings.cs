@@ -9,204 +9,160 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using SAF_OpticalFailureDetector.relay;
+using log4net;
+using SAF_OpticalFailureDetector.savequeue;
 
 namespace SAF_OpticalFailureDetector
 {
     public partial class Settings : Form
     {
-        private String camera1;
-        private String camera2;
-        private String emailAddress;
-        private String sampleNumber;
-        private String testNumber;
-        private String logLocation;
-
-        private USBRelayController ctrl;
-
-        public String Camera1Name
-        {
-            get
-            {
-                return camera1;
-            }
-        }
-
-        public String Camera2Name
-        {
-            get
-            {
-                return camera2;
-            }
-        }
-
-        public String EmailAddress
-        {
-            get
-            {
-                return emailAddress;
-            }
-        }
-
-        public String SampleNumber
-        {
-            get
-            {
-                return sampleNumber;
-            }
-        }
-
-        public String TestNumber
-        {
-            get
-            {
-                return testNumber;
-            }
-        }
-
-        public String LogLocation
-        {
-            get
-            {
-                return logLocation;
-            }
-        }
+        private static readonly ILog log = LogManager.GetLogger(typeof(Settings));
+        private USBRelayController relayCtrl;
+        private MetaData metadata;
 
         public Settings()
         {
-            InitializeComponent();
-            camera1 = "";
-            camera2 = "";
-            emailAddress = "";
-            sampleNumber = "";
-            testNumber = "";
-            logLocation = "";
+            this.InitializeComponent();
         }
-
-        private void btnLogFileBrowse_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog fbd = new FolderBrowserDialog();
-            if(fbd.ShowDialog() == DialogResult.OK)
-            {
-                logLocation = fbd.SelectedPath;
-                //txtLogFile.Text = logLocation;
-            }
-        }
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            bool isFilledOut = true;
-            //if (txtLogFile.Text == "")
-            //{
-            //    isFilledOut = false;
-            //}
-            //if (txtSampleNumber.Text == "")
-            //{
-            //    isFilledOut = false;
-            //}
-            //if (txtTestNumber.Text == "")
-            //{
-            //    isFilledOut = false;
-            //}
-            if (!isFilledOut)
-            {
-                MessageBox.Show("Please fill in all fields.");
-            }
-
-            else
-            {
-                DialogResult = DialogResult.OK;
-                Close();
-                
-            }
-        }
-
-        private void btnRefresh_Click(object sender, EventArgs e)
-        {
-            //txtSampleNumber.Text = "";
-            //txtTestNumber.Text = "";
-            //txtLogFile.Text = "";
-            sampleNumber = "";
-            testNumber = "";
-            logLocation = "";
-        }
-
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            DialogResult = System.Windows.Forms.DialogResult.Abort;
-            Close();
-        }
-
-        private void txtSampleNumber_TextChanged(object sender, EventArgs e)
-        {
-            //sampleNumber = txtSampleNumber.Text;
-        }
-
-        private void txtTestNumber_TextChanged(object sender, EventArgs e)
-        {
-            //testNumber = txtTestNumber.Text;
-        }
-
-        private void btnTestRelayOn_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                ctrl.SetRelay0Status(true);
-                ctrl.SetRelay1Status(true);
-            }
-            catch (Exception)
-            {
-                MessageBox.Show("Error turning on.");
-            }
-            
-        }
-
-        private void btnTestRelayOff_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                ctrl.SetRelay0Status(false);
-                ctrl.SetRelay1Status(false);
-            }
-            catch (Exception)
-            {
-                MessageBox.Show("Error shutting off.");
-            }
-            
-        }
-
 
         private void Settings_Load(object sender, EventArgs e)
         {
-            try
+            relayCtrl = USBRelayController.Instance;
+            metadata = MetaData.Instance;
+        }
+
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            log.Info("Settings.btnBrowse_Click : User attempted to browse for log file save location.");
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
             {
-                ctrl = new USBRelayController(3);
+                txtSaveLocation.Text = fbd.SelectedPath;
             }
-            catch (Exception)
+            else
             {
-                MessageBox.Show("Error loading rleay.");
+                string errMsg = "Settings.btnBrowse_Click : Invalid save folder chosen.";
+                log.Error(errMsg);
+                MessageBox.Show(errMsg,"Error");
             }
-            
         }
 
         private void btnOpenRelay_Click(object sender, EventArgs e)
         {
+            int portNum;
             try
             {
-                ctrl.Close();
+                portNum = Convert.ToInt32(nudPortNum.Value);
             }
-            catch (Exception)
+            catch (Exception inner)
             {
+                string errMsg = "Settings.btnOpenRelay_Click : Exception thrown converting nudPortNum.Value to integer.";
+                SettingsException ex = new SettingsException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+                return;
+            }
 
-            }
             try
             {
-                ctrl.Open(Convert.ToInt32(nudPortNum.Value));
+                relayCtrl.Open(portNum);
             }
-            catch (Exception)
+            catch (Exception inner)
             {
-                MessageBox.Show("Unable to open.");
+                string errMsg = "Settings.btnOpenRelay_Click : Error connecting to relay controller.";
+                SettingsException ex = new SettingsException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+                return;
             }
-            
+                
         }
+
+        private void btnTestRelayOn_Click(object sender, EventArgs e)
+        {
+            if (relayCtrl.IsOpen)
+            {
+                try
+                {
+                    relayCtrl.SetRelay0Status(true);
+                    relayCtrl.SetRelay1Status(true);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Settings.btnTestRelayOn_Click : Unable to turn relay on.";
+                    SettingsException ex = new SettingsException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    DisplayError(errMsg, ex);
+                }
+            }
+            else
+            {
+                string errMsg = "Settings.btnTestRelayOn_Click : Relay controller connection is not opened.";
+                SettingsException ex = new SettingsException(errMsg);
+                log.Error(errMsg,ex);
+                DisplayError(errMsg, ex);
+            }
+        }
+
+        private void btnTestRelayOff_Click(object sender, EventArgs e)
+        {
+            if (relayCtrl.IsOpen)
+            {
+                try
+                {
+                    relayCtrl.SetRelay0Status(false);
+                    relayCtrl.SetRelay1Status(false);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Settings.btnTestRelayOff_Click : Unable to turn relay off.";
+                    SettingsException ex = new SettingsException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    DisplayError(errMsg, ex);
+                }
+            }
+            else
+            {
+                string errMsg = "Settings.btnTestRelayOff_Click : Relay controller connection is not opened.";
+                SettingsException ex = new SettingsException(errMsg);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            metadata.ResetData();
+            ResetForm();
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ResetForm()
+        {
+        }
+
+        private void DisplayError(string errMsg, Exception ex)
+        {
+            MessageBox.Show(errMsg + Environment.NewLine + ex.ToString(), "Error");
+        }
+
+        
+    }
+
+    public class SettingsException : System.Exception
+    {
+        public SettingsException() : base() { }
+        public SettingsException(string message) : base(message) { }
+        public SettingsException(string message, System.Exception inner) : base(message, inner) { }
+        protected SettingsException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
     }
 }
