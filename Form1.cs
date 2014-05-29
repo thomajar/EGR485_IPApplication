@@ -562,7 +562,7 @@ namespace SAF_OpticalFailureDetector
 
         private void DisplayError(string errMsg, Exception ex)
         {
-            MessageBox.Show(errMsg + Environment.NewLine + ex.ToString(), "Error");
+            MessageBox.Show(errMsg + Environment.NewLine + "Detailed Error: " + Environment.NewLine + ex.ToString(), "Error");
         }
 
         private void RefreshCameras()

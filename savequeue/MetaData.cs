@@ -21,6 +21,78 @@ namespace SAF_OpticalFailureDetector.savequeue
         private int ip_targetIntensity;
         private int ip_minLineLength;
 
+        public String SampleNumber
+        {
+            get
+            {
+                return settings_sampleNumber;
+            }
+        }
+
+        public String TestNumber
+        {
+            get
+            {
+                return settings_testNumber;
+            }
+        }
+
+        public String SaveLocation
+        {
+            get
+            {
+                return settings_saveLocation;
+            }
+        }
+
+        public bool EnableDebugSaving
+        {
+            get
+            {
+                return settings_enableDebugSaving;
+            }
+        }
+
+        public int DebugSaveFrequency
+        {
+            get
+            {
+                return settings_debugSavingFrequency;
+            }
+        }
+
+        public int ImagerNoise
+        {
+            get
+            {
+                return ip_imagerNoise;
+            }
+        }
+
+        public int MinimumContrast
+        {
+            get
+            {
+                return ip_imagerContrast;
+            }
+        }
+
+        public int TargetIntenstiy
+        {
+            get
+            {
+                return ip_targetIntensity;
+            }
+        }
+
+        public int MinimumLineLength
+        {
+            get
+            {
+                return ip_minLineLength;
+            }
+        }
+
         private static MetaData instance;
         public static MetaData Instance
         {
@@ -41,8 +113,8 @@ namespace SAF_OpticalFailureDetector.savequeue
         private void initData()
         {
             // metadata general settings
-            settings_sampleNumber = "na";
-            settings_testNumber = "na";
+            settings_sampleNumber = "";
+            settings_testNumber = "";
             settings_saveLocation = "C:\\temp";
             settings_enableDebugSaving = true;
             settings_debugSavingFrequency = 450;
@@ -60,13 +132,12 @@ namespace SAF_OpticalFailureDetector.savequeue
         }
 
         public void SetGeneralSettings(string sampleNumber, string testNumber, string saveLocation,
-            bool enableDebugSave, int debugSaveFrequency)
+            bool enableDebugSave)
         {
             this.settings_sampleNumber = sampleNumber;
             this.settings_testNumber = testNumber;
             this.settings_saveLocation = saveLocation;
             this.settings_enableDebugSaving = enableDebugSave;
-            this.settings_debugSavingFrequency = debugSaveFrequency;
         }
 
         public void SetIPSettings(int imagerNoise, int imagerContrast, int imagerTargetIntensity, int minLineLength)

@@ -29,6 +29,7 @@ namespace SAF_OpticalFailureDetector
         {
             relayCtrl = USBRelayController.Instance;
             metadata = MetaData.Instance;
+            DisplayMetadata();
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -134,25 +135,88 @@ namespace SAF_OpticalFailureDetector
         {
             metadata.ResetData();
             ResetForm();
+            DisplayMetadata();
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-
+            SaveMetaData();
         }
 
         private void btnClose_Click(object sender, EventArgs e)
         {
+            // validate form is setup correctly
+            if (isMetaDataValid())
+            {
+                DialogResult = DialogResult.OK;
+            }
+            else
+            {
+                DialogResult = DialogResult.Ignore;
+                MessageBox.Show("Cannot begin testing until all fields are filled in and connection to relay controller is opened.", "Warning");
+            }
+            SaveMetaData();
             this.Close();
+        }
+
+        private bool isMetaDataValid()
+        {
+            if (txtSampleNumber.Text == "")
+            {
+                return false;
+            }
+            if (txtTestNumber.Text == "")
+            {
+                return false;
+            }
+            if (txtSaveLocation.Text == "")
+            {
+                return false;
+            }
+            if (!relayCtrl.IsOpen)
+            {
+                return false;
+            }
+
+            return true;
+
+        }
+
+        private void DisplayMetadata()
+        {
+            txtSampleNumber.Text = metadata.SampleNumber;
+            txtTestNumber.Text = metadata.TestNumber;
+            txtSaveLocation.Text = metadata.SaveLocation;
+            cbEnableDebugSaving.Checked = metadata.EnableDebugSaving;
+            nudImagerNoise.Value = metadata.ImagerNoise;
+            nudMinContrast.Value = metadata.MinimumContrast;
+            nudTargetIntensity.Value = metadata.TargetIntenstiy;
+            nudMinLineLength.Value = metadata.MinimumLineLength;
         }
 
         private void ResetForm()
         {
+            metadata.ResetData();
+            DisplayMetadata();
+        }
+
+        private void SaveMetaData()
+        {
+            metadata.SetGeneralSettings(
+                txtSampleNumber.Text,
+                txtTestNumber.Text,
+                txtSaveLocation.Text,
+                cbEnableDebugSaving.Checked);
+            metadata.SetIPSettings(
+                Convert.ToInt32(nudImagerNoise.Value),
+                Convert.ToInt32(nudMinContrast.Value),
+                Convert.ToInt32(nudTargetIntensity.Value),
+                Convert.ToInt32(nudMinLineLength.Value));
         }
 
         private void DisplayError(string errMsg, Exception ex)
         {
-            MessageBox.Show(errMsg + Environment.NewLine + ex.ToString(), "Error");
+            MessageBox.Show(errMsg + Environment.NewLine + "Detailed Error: " + Environment.NewLine + ex.ToString(), "Error");
         }
 
         

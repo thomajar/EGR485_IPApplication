@@ -161,10 +161,82 @@ namespace SAF_OpticalFailureDetector.savequeue
             return result;
         }
 
+        private int DEFAULT_SAVE_FRAME_COUNT = 100;
+        private int DEFAULT_SAVE_FRAME_FREQUENCY = 5;
+
+        private void Process()
+        {
+            while (isRunning)
+            {
+                List<QueueElement> imageElements = new List<QueueElement>();
+                IPData image = null;
+                sem.WaitOne();
+
+                MetaData metadata = MetaData.Instance;
+
+                List<IPData> CameraOneHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
+                List<IPData> CameraTwoHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
+                int camOneCounter = 0;
+                int camTwoCounter = 0;
+                int camOneIndex = 0;
+                int camTwoIndex = 0;
+                
+                consumerQueue.popAll(ref imageElements);
+                if (imageElements.Count > 0)
+                {
+                    for (int i = 0; i < imageElements.Count; i++)
+                    {
+                        //figure our where the iamge is coming from
+                        IPData data = (IPData)imageElements[i].Data;
+                        if(imageElements[i].Type.Contains("1"))
+                        {
+                            // see if image needs to be stored in recent history buffer 1
+                            if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camOneCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
+                            {
+                                // requires a slot in buffer
+                                CameraOneHistory.Insert(camOneIndex, data);
+                                camOneIndex = (camOneIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
+                            }
+                            if (metadata.EnableDebugSaving)
+                            {
+                                if (data.ImageNumber % metadata.DebugSaveFrequency != camOneCounter % metadata.DebugSaveFrequency)
+                                {
+                                    // need to save image to debug slot
+                                }
+                            }
+                            camOneCounter = data.ImageNumber;
+                        }
+                        else if (imageElements[i].Type.Contains("2"))
+                        {
+                            // see if image needs to be stored in recent history buffer 2
+                            if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camTwoCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
+                            {
+                                // requires a slot in buffer
+                                CameraTwoHistory.Insert(camTwoIndex, data);
+                                camTwoIndex = (camTwoIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
+                            }
+                            if (metadata.EnableDebugSaving)
+                            {
+                                if (data.ImageNumber % metadata.DebugSaveFrequency != camTwoCounter % metadata.DebugSaveFrequency)
+                                {
+                                    // need to save image to debug slot
+                                }
+                            }
+                            camTwoCounter = data.ImageNumber;
+                        }
+                        else
+                        {
+                            // unknown data type
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// This is the process that is run in a seperate thread
         /// </summary>
-        private void Process()
+        private void Process2()
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();

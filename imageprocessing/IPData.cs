@@ -14,6 +14,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
     {
         // image information
         private byte[] rawData;
+        private int imageNumber;
         private Size imageSize;
         private Double exposure_s;
         private int intensity_lsb;
@@ -48,7 +49,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// <param name="exposure_s">Amount of time exposure is set to.</param>
         /// <param name="isProcessed">States whether the data has been passed through image processor.</param>
         /// This information is used for calculating the frame rate.</param>
-        public IPData(double elapsedTime, double exposure_s, Boolean isProcessed)
+        public IPData(double elapsedTime, double exposure_s, Boolean isProcessed, int imageNumber)
         {
             initData();
             this.cameraElapsedTime_s = elapsedTime;
@@ -219,6 +220,14 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
             return b;
+        }
+
+        public int ImageNumber
+        {
+            get
+            {
+                return imageNumber;
+            }
         }
 
         public Size ImageSize

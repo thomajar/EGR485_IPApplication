@@ -27,6 +27,7 @@ namespace SAF_OpticalFailureDetector.camera
         private ICImagingControl cam;
         private Boolean isRunning;
         private double lastTime;
+        private int imageNumber;
         private String cameraName;
         private double exposure_s;
 
@@ -54,6 +55,7 @@ namespace SAF_OpticalFailureDetector.camera
             cam = new ICImagingControl();
             isRunning = false;
             lastTime = -1;
+            imageNumber = 0;
             cameraName = "";
             exposure_s = 0;
 
@@ -504,7 +506,8 @@ namespace SAF_OpticalFailureDetector.camera
             // lock the image buffer so that it is not overwritten while we are saving it.
             buff.Lock();
             bool isImageSet = true;
-            IPData data = new IPData(elapsedTime,exposure_s, false);
+            imageNumber++;
+            IPData data = new IPData(elapsedTime,exposure_s, false, imageNumber);
             try
             {
                 data.SetRawDataFromImage(buff.Bitmap);
