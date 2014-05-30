@@ -10,6 +10,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using SAF_OpticalFailureDetector.imageprocessing;
+using log4net;
+using System.IO;
 
 namespace SAF_OpticalFailureDetector.savequeue
 {
@@ -18,7 +20,8 @@ namespace SAF_OpticalFailureDetector.savequeue
 
         public event ThreadErrorHandler ThreadError;
         // thread synchronization
-        private Semaphore sem;
+        private object _saveLock;
+        private static readonly ILog log = LogManager.GetLogger(typeof(ImageHistoryBuffer));
 
         // consumer queue variables
         private const String CONSUMER_ROOTNAME = "SAVE_";
@@ -38,7 +41,7 @@ namespace SAF_OpticalFailureDetector.savequeue
 
         public ImageHistoryBuffer(String name, String LogFileLocation)
         {
-            sem = new Semaphore(0, 1);
+            _saveLock = new object();
 
             // initialize queues
             consumerLogFileLocation = LogFileLocation;
@@ -50,7 +53,6 @@ namespace SAF_OpticalFailureDetector.savequeue
             isRunning = false;
 
             // release control, end of initialization
-            sem.Release();
         }
 
         /// <summary>
@@ -72,24 +74,25 @@ namespace SAF_OpticalFailureDetector.savequeue
         public bool AddSubscriber(CircularQueue<QueueElement> subscriber)
         {
             bool doesNotExist = true;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            // loop through all subscribers and check if subscriber exists
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_saveLock)
             {
-                // only care if the names match
-                if (test.Name == subscriber.Name)
+                // loop through all subscribers and check if subscriber exists
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
+                    // only care if the names match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                    }
                 }
+                // verify subsriber not already in camera queue
+                if (doesNotExist)
+                {
+                    subscribers.Add(subscriber);
+                } 
             }
-            // verify subsriber not already in camera queue
-            if (doesNotExist)
-            {
-                subscribers.Add(subscriber);
-            }
-            // exit critical section
-            sem.Release();
+
             return doesNotExist;
         }
 
@@ -104,26 +107,27 @@ namespace SAF_OpticalFailureDetector.savequeue
             bool doesNotExist = true;
             int removeIndex = -1;
             int i = 0;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_saveLock)
             {
-                // only name needs to match
-                if (test.Name == subscriber.Name)
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
-                    // take note of what index subsriber located at
-                    removeIndex = i;
+                    // only name needs to match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                        // take note of what index subsriber located at
+                        removeIndex = i;
+                    }
+                    i++;
                 }
-                i++;
+                // if it exists, remove it
+                if (!doesNotExist)
+                {
+                    subscribers.RemoveAt(removeIndex);
+                } 
             }
-            // if it exists, remove it
-            if (!doesNotExist)
-            {
-                subscribers.RemoveAt(removeIndex);
-            }
-            // release control, exit critical section
-            sem.Release();
+
             return !doesNotExist;
         }
 
@@ -164,15 +168,99 @@ namespace SAF_OpticalFailureDetector.savequeue
         private int DEFAULT_SAVE_FRAME_COUNT = 100;
         private int DEFAULT_SAVE_FRAME_FREQUENCY = 5;
 
+        private void SaveIPData(string rootLocation, string camera, ref IPData data)
+        {
+            DateTime time = DateTime.Now;
+            string directory = camera + "_" +
+                time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
+                time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2") + "_" +
+                "image" + data.ImageNumber.ToString("D8");
+            rootLocation = rootLocation + "//" + directory;
+            if (!Directory.Exists(rootLocation))
+            {
+                Directory.CreateDirectory(rootLocation);
+            } 
+
+            // save raw
+            Bitmap rawBitmap = null;
+            bool isValid = true;
+            try
+            {
+                rawBitmap = data.GetRawDataImage();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to retrieve raw data image for saving.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg,ex);
+                isValid = false;
+            }
+            if (isValid)
+            {
+                string fileName = rootLocation + "//rawimage_" + data.ImageNumber.ToString("D4") + ".bmp";
+                try
+                {
+                    rawBitmap.Save(fileName);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to save raw data image.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                }
+            }
+            // save processed
+            Bitmap processedBitmap = null;
+            isValid = true;
+            try
+            {
+                processedBitmap = data.GetProcessedDataImage();
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to retrieve processed data image for saving.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg, ex);
+                isValid = false;
+            }
+            if (isValid)
+            {
+                string fileName = rootLocation + "//procimage" + data.ImageNumber.ToString("D4") + ".bmp";
+                try
+                {
+                    processedBitmap.Save(fileName);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to save processed data image.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                }
+            }
+            // save metadata
+        }
+
         private void Process()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            bool saveImage1 = true;
+            bool saveImage2 = true;
+
             while (isRunning)
             {
+                
                 Thread.Sleep(5);
                 List<QueueElement> imageElements = new List<QueueElement>();
-                IPData image = null;
 
                 MetaData metadata = MetaData.Instance;
+
+                if (sw.ElapsedMilliseconds >= metadata.DebugSaveFrequency * 1000)
+                {
+                    saveImage1 = true;
+                    saveImage2 = true;
+                    sw.Restart();
+                }
 
                 List<IPData> CameraOneHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
                 List<IPData> CameraTwoHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
@@ -188,7 +276,8 @@ namespace SAF_OpticalFailureDetector.savequeue
                     {
                         //figure our where the iamge is coming from
                         IPData data = (IPData)imageElements[i].Data;
-                        if(imageElements[i].Type.Contains("1"))
+                        string type = imageElements[i].Type;
+                        if (type.Contains("1"))
                         {
                             // see if image needs to be stored in recent history buffer 1
                             if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camOneCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
@@ -199,14 +288,16 @@ namespace SAF_OpticalFailureDetector.savequeue
                             }
                             if (metadata.EnableDebugSaving)
                             {
-                                if (data.ImageNumber % metadata.DebugSaveFrequency != camOneCounter % metadata.DebugSaveFrequency)
+                                if (saveImage1)
                                 {
                                     // need to save image to debug slot
+                                    SaveIPData(metadata.SaveLocation, type,  ref data);
+                                    saveImage1 = false;
                                 }
                             }
                             camOneCounter = data.ImageNumber;
                         }
-                        else if (imageElements[i].Type.Contains("2"))
+                        else if (type.Contains("2"))
                         {
                             // see if image needs to be stored in recent history buffer 2
                             if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camTwoCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
@@ -217,9 +308,11 @@ namespace SAF_OpticalFailureDetector.savequeue
                             }
                             if (metadata.EnableDebugSaving)
                             {
-                                if (data.ImageNumber % metadata.DebugSaveFrequency != camTwoCounter % metadata.DebugSaveFrequency)
+                                if (saveImage2)
                                 {
                                     // need to save image to debug slot
+                                    SaveIPData(metadata.SaveLocation, type, ref data);
+                                    saveImage2 = false;
                                 }
                             }
                             camTwoCounter = data.ImageNumber;
@@ -249,7 +342,6 @@ namespace SAF_OpticalFailureDetector.savequeue
             {
                 List<QueueElement> imageElements = new List<QueueElement>();
                 IPData image = null;
-                sem.WaitOne();
                 // grab all image data off of queue
                 consumerQueue.popAll(ref imageElements);
                 if (imageElements.Count > 0)
@@ -286,7 +378,6 @@ namespace SAF_OpticalFailureDetector.savequeue
                         }
                     }
                 }
-                sem.Release();
 
 
             }

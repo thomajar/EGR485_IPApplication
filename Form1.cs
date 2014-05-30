@@ -24,10 +24,10 @@ namespace SAF_OpticalFailureDetector
         private const String DISPLAY_TYPE_NORMAL = "Camera Image";
         private const String DISPLAY_TYPE_PROCESSED = "Raw Processed";
 
-        private const string DEFAULT_CAM1_NAME = "Camera1";
-        private const string DEFAULT_CAM2_NAME = "Camera2";
-        private const string DEFAULT_IMAGE_PROCESSOR1_NAME = "ImageProcessor1";
-        private const string DEFAULT_IMAGE_PROCESSOR2_NAME = "ImageProcessor2";
+        private const string DEFAULT_CAM1_NAME = "cam1";
+        private const string DEFAULT_CAM2_NAME = "cam2";
+        private const string DEFAULT_IMAGE_PROCESSOR1_NAME = "camproc1";
+        private const string DEFAULT_IMAGE_PROCESSOR2_NAME = "camproc2";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(MainForm));
 

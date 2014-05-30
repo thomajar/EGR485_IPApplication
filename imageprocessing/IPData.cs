@@ -55,6 +55,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             this.cameraElapsedTime_s = elapsedTime;
             this.exposure_s = exposure_s;
             this.isProcessed = isProcessed;
+            this.imageNumber = imageNumber;
         }
 
         /// <summary>

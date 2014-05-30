@@ -117,7 +117,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             settings_testNumber = "";
             settings_saveLocation = "C:\\temp";
             settings_enableDebugSaving = true;
-            settings_debugSavingFrequency = 450;
+            settings_debugSavingFrequency = 10;
 
             // metadata image processing settings
             ip_imagerNoise = 12;
