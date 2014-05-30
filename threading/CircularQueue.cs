@@ -9,6 +9,7 @@ namespace SAF_OpticalFailureDetector.threading
 {
     public class CircularQueue<T>
     {
+        private object _queueLock;
         private String name = "";
         private List<T> queue;
         private int insertIndex;
@@ -16,7 +17,6 @@ namespace SAF_OpticalFailureDetector.threading
         private int maxSize;
         private int elements;
         private const int SIZE_LIMIT = 10000;
-        private static Semaphore sem;
 
         public String Name
         {
@@ -34,12 +34,6 @@ namespace SAF_OpticalFailureDetector.threading
         /// queue.</param>
         public CircularQueue(String consumer, int maxSize)
         {
-            // create a thread safe synchronization method that only allows
-            // one thread to access the circular queue at once. It is 
-            // initially owned by creating thread.
-            sem = new Semaphore(0, 1);
-
-            
 
             this.name = consumer;
             // verify passed max size is less that SIZE_LIMIT
@@ -61,8 +55,7 @@ namespace SAF_OpticalFailureDetector.threading
             removeIndex = this.maxSize-1;
             elements = 0;
 
-            // exit critical section
-            sem.Release();
+            _queueLock = new object();
         }
 
         /// <summary>
@@ -85,24 +78,23 @@ namespace SAF_OpticalFailureDetector.threading
         public Boolean peek(ref T data)
         {
             Boolean result = false;
-            // wait for ownership of thread object
-            sem.WaitOne();
-            // verify not popping old object
-            if (((removeIndex + 1) % maxSize) != insertIndex)
+            // lock is used to ensure that only thread attempts to modify the queue at once
+            lock (_queueLock)
             {
-                try
+                // verify not popping old object
+                if (((removeIndex + 1) % maxSize) != insertIndex)
                 {
-                    data = queue[((removeIndex + 1) % maxSize)];
+                    try
+                    {
+                        data = queue[((removeIndex + 1) % maxSize)];
+                    }
+                    catch (Exception ex)
+                    {
+                        return false;
+                    }
+                    result = true;
                 }
-                catch (Exception ex)
-                {
-                    sem.Release();
-                    return false;
-                }
-                
-                result = true;
             }
-            sem.Release();
             return result;
         }
 
@@ -114,26 +106,26 @@ namespace SAF_OpticalFailureDetector.threading
         public Boolean pop(ref T data)
         {
             Boolean result = false;
-            // wait for ownership of thread object
-            sem.WaitOne();
-            // verify not popping old object
-            if (((removeIndex + 1) % maxSize) != insertIndex)
+            // lock is used to ensure that only thread attempts to modify the queue at once
+            lock (_queueLock)
             {
-                removeIndex = (removeIndex + 1) % maxSize;
-                try
+                // verify not popping old object
+                if (((removeIndex + 1) % maxSize) != insertIndex)
                 {
-                    data = queue[removeIndex];
+                    removeIndex = (removeIndex + 1) % maxSize;
+                    try
+                    {
+                        data = queue[removeIndex];
+                    }
+                    catch (Exception ex)
+                    {
+                        return false;
+                    }
+
+                    elements--;
+                    result = true;
                 }
-                catch (Exception ex)
-                {
-                    sem.Release();
-                    return false;
-                }
-                
-                elements--;
-                result = true;
             }
-            sem.Release();
             return result;
         }
 
@@ -146,30 +138,34 @@ namespace SAF_OpticalFailureDetector.threading
         public Boolean popAll(ref List<T> data)
         {
             Boolean result = false;
-            sem.WaitOne();
-            while (elements > 0)
+
+            // lock is used to ensure that only thread attempts to modify the queue at once
+            lock (_queueLock)
             {
-                if(((removeIndex + 1) % maxSize) != insertIndex)
+                while (elements > 0)
                 {
-                    removeIndex = (removeIndex + 1) % maxSize;
-                    try
+                    if (((removeIndex + 1) % maxSize) != insertIndex)
                     {
-                        data.Add(queue[removeIndex]);
+                        removeIndex = (removeIndex + 1) % maxSize;
+                        try
+                        {
+                            data.Add(queue[removeIndex]);
+                        }
+                        catch (Exception ex)
+                        {
+
+                            return false;
+                        }
+
+                        elements--;
                     }
-                    catch (Exception ex)
-                    {
-                        sem.Release();
-                        return false;
-                    }
-                    
-                    elements--;
                 }
+                if (data.Count > 0)
+                {
+                    result = true;
+                }
+                
             }
-            if (data.Count > 0)
-            {
-                result = true;
-            }
-            sem.Release();
             return result;
         }
 
@@ -181,42 +177,51 @@ namespace SAF_OpticalFailureDetector.threading
         public Boolean push(T data)
         {
             Boolean result = false;
-            // wait for ownership of thread object
-            sem.WaitOne();
-            // verify not inserting into object that has not been removed
-            if(insertIndex != removeIndex)
+            // lock is used to ensure that only thread attempts to modify the queue at once
+            lock (_queueLock)
             {
-                if (queue.Count < maxSize)
+                // verify that inserting into empty index
+                if (insertIndex != removeIndex)
                 {
-                    try
+                    // queue has not been populated all the way yet, need to fill
+                    if (queue.Count < maxSize)
                     {
-                        queue.Insert(queue.Count, data);
+                        try
+                        {
+                            queue.Insert(queue.Count, data);
+                        }
+                        catch (Exception ex)
+                        {
+                            return false;
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        sem.Release();
-                        return false;
+                        try
+                        {
+                            queue[insertIndex] = data;
+                        }
+                        catch (Exception ex)
+                        {
+                            return false;
+                        }
+
                     }
+
+                    elements++;
+                    insertIndex = (insertIndex + 1) % maxSize;
+                    result = true;
                 }
                 else
                 {
-                    try
+                    string error = "Something went wrong.";
+                    if (elements >= 75)
                     {
-                        queue[insertIndex] = data;
+                        elements = maxSize - 1;
                     }
-                    catch (Exception ex)
-                    {
-                        sem.Release();
-                        return false;
-                    }
-                    
+                    result = false;
                 }
-                
-                elements++;
-                result = true;
             }
-            insertIndex = (insertIndex + 1) % maxSize;
-            sem.Release();
             return result;
         }
 
@@ -225,10 +230,12 @@ namespace SAF_OpticalFailureDetector.threading
         /// </summary>
         public void reset()
         {
-            sem.WaitOne();
-            insertIndex = 0;
-            removeIndex = maxSize - 1;
-            sem.Release();
+            lock (_queueLock)
+            {
+                insertIndex = 0;
+                elements = 0;
+                removeIndex = maxSize - 1;
+            }
         }
     }    
 }

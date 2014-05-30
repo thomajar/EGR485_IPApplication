@@ -54,6 +54,9 @@ namespace SAF_OpticalFailureDetector
         private Settings program_settings;
         private ImageHistoryBuffer saveEngine;
 
+        private string Cam1DisplayType;
+        private string Cam2DisplayType;
+
         private System.Threading.Timer imageUpdateTimer;
         private System.Threading.Timer garbageCollector;
 
@@ -81,9 +84,9 @@ namespace SAF_OpticalFailureDetector
             {
                 log.Error("MainForm.Form1_Load : Unable to retrieve amount of free memory on system, defaulting to 1GB.", inner);
             }
-            if (freeMem > 2000)
+            if (freeMem > 2100)
             {
-                freeMem = 2000;
+                freeMem = 2100;
             }
 
             // each queue takes 6 MB per item in it
@@ -101,7 +104,7 @@ namespace SAF_OpticalFailureDetector
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
-            //imagep1.EnableAutoExposure(true);
+            imagep1.EnableAutoExposure(true);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -111,7 +114,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
-            //imagep2.EnableAutoExposure(true);
+            imagep2.EnableAutoExposure(true);
 
             // sets image queue
             saveEngine = new ImageHistoryBuffer("save_queue_images", "alocation");
@@ -641,6 +644,7 @@ namespace SAF_OpticalFailureDetector
                 DisplayError(errMsg, ex);
                 return false;
             }
+            Thread.Sleep(100);
             try
             {
                 imagep2.Start();
@@ -752,9 +756,6 @@ namespace SAF_OpticalFailureDetector
                 // handle save queue shutdown accordingly
             }
         }
-
-        private string Cam1DisplayType;
-        private string Cam2DisplayType;
 
         private void cmboCam1View_TextChanged(object sender, EventArgs e)
         {

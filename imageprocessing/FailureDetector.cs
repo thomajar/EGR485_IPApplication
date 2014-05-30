@@ -18,7 +18,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         public event ThreadErrorHandler ThreadError;
 
         // thread synchronization
-        private Semaphore sem;
+        private object _ipLock;
 
         private static readonly ILog log = LogManager.GetLogger(typeof(FailureDetector));
 
@@ -63,7 +63,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// <param name="name"></param>
         public FailureDetector(String name)
         {
-            sem = new Semaphore(0, 1);
+            _ipLock = new object();
 
             this.imageProcessorName = name;
             subscribers = new List<CircularQueue<QueueElement>>();
@@ -80,8 +80,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             updateExposureFrequency = DEFAULT_EXPOSURE_UPDATE_FREQUENCY;
             targetIntesity = DEFAULT_TARGET_INTENSITY;
 
-            // release control, end of initialization
-            sem.Release();
         }
 
         /// <summary>
@@ -103,25 +101,25 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         public bool AddSubscriber(CircularQueue<QueueElement> subscriber)
         {
             bool doesNotExist = true;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            // loop through all subscribers and check if subscriber exists
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_ipLock)
             {
-                // only care if the names match
-                if (test.Name == subscriber.Name)
+                // loop through all subscribers and check if subscriber exists
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
+                    // only care if the names match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                    }
+                }
+                // verify subsriber not already in camera queue
+                if (doesNotExist)
+                {
+                    log.Info("FailureDetector.AddSubscriber : Added subscriber: " + subscriber.Name + ".");
+                    subscribers.Add(subscriber);
                 }
             }
-            // verify subsriber not already in camera queue
-            if (doesNotExist)
-            {
-                log.Info("FailureDetector.AddSubscriber : Added subscriber: " + subscriber.Name + ".");
-                subscribers.Add(subscriber);
-            }
-            // exit critical section
-            sem.Release();
             return doesNotExist;
         }
 
@@ -136,27 +134,28 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             bool doesNotExist = true;
             int removeIndex = -1;
             int i = 0;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_ipLock)
             {
-                // only name needs to match
-                if (test.Name == subscriber.Name)
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
-                    // take note of what index subsriber located at
-                    removeIndex = i;
+                    // only name needs to match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                        // take note of what index subsriber located at
+                        removeIndex = i;
+                    }
+                    i++;
                 }
-                i++;
+                // if it exists, remove it
+                if (!doesNotExist)
+                {
+                    log.Info("FailureDetector.AddSubscriber : Removed subscriber: " + subscriber.Name + ".");
+                    subscribers.RemoveAt(removeIndex);
+                }
+                
             }
-            // if it exists, remove it
-            if (!doesNotExist)
-            {
-                log.Info("FailureDetector.AddSubscriber : Removed subscriber: " + subscriber.Name + ".");
-                subscribers.RemoveAt(removeIndex);
-            }
-            // release control, exit critical section
-            sem.Release();
             return !doesNotExist;
         }
 
@@ -166,33 +165,33 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// <exception cref="FailureDetectorException"></exception>
         public void Start()
         {
-            sem.WaitOne();
-            if (!isRunning)
+            lock (_ipLock)
             {
-                processThread = new Thread(new ThreadStart(Process));
-                try
+                if (!isRunning)
                 {
-                    processThread.Start();
+                    processThread = new Thread(new ThreadStart(Process));
+                    try
+                    {
+                        processThread.Start();
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "FailureDetector.Start : Unable to start process thread.";
+                        FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    isRunning = true;
                 }
-                catch (Exception inner)
+                else
                 {
-                    sem.Release();
-                    string errMsg = "FailureDetector.Start : Unable to start process thread.";
-                    FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
-                    log.Error(errMsg, ex);
+                    string errMsg = "FailureDetector.Start : Processor thread is already running.";
+                    FailureDetectorException ex = new FailureDetectorException(errMsg);
+                    log.Error(errMsg);
                     throw ex;
                 }
-                isRunning = true;
+                
             }
-            else
-            {
-                sem.Release();
-                string errMsg = "FailureDetector.Start : Processor thread is already running.";
-                FailureDetectorException ex = new FailureDetectorException(errMsg);
-                log.Error(errMsg);
-                throw ex;
-            }
-            sem.Release();
         }
 
         /// <summary>
@@ -227,22 +226,25 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         public void SetRange(int range)
         {
-            sem.WaitOne();
-            this.noiseRange = range;
-            sem.Release();
+            lock (_ipLock)
+            {
+                this.noiseRange = range;
+            }
         }
         public void SetContrast(int contrast)
         {
-            sem.WaitOne();
-            this.minimumContrast = contrast;
-            sem.Release();
+            lock (_ipLock)
+            {
+                this.minimumContrast = contrast; 
+            }
         }
 
         public void EnableAutoExposure(bool enable)
         {
-            sem.WaitOne();
-            this.enableAutoExposure = enable;
-            sem.Release();
+            lock (_ipLock)
+            {
+                this.enableAutoExposure = enable; 
+            }
         }
 
         private void Process()
@@ -258,13 +260,14 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             while (isRunning)
             {
                 Thread.Sleep(2);
-                sw.Restart();
+                
                 List<QueueElement> imageElements = new List<QueueElement>();
                 IPData image = null;
                 // grab all image data off of queue
                 consumerQueue.popAll(ref imageElements);
                 if (imageElements.Count > 0)
                 {
+                    
                     image = (IPData)imageElements[imageElements.Count - 1].Data;
 
                     // get the image to process on
@@ -389,6 +392,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 isIPDataSet = false;
                             }
                             image.SetIPMetaData(((Double)sw.ElapsedMilliseconds) / 1000, roi, imageIntensity, 0, false, true);
+                            sw.Restart();
 
                             if (isIPDataSet)
                             {

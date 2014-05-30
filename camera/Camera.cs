@@ -17,7 +17,7 @@ namespace SAF_OpticalFailureDetector.camera
     class Camera
     {
         // thread synchronization, thread error, and logger
-        private Semaphore sem;
+        private object _camLock;
         public event ThreadErrorHandler ThreadError;
         private static readonly ILog log = LogManager.GetLogger(typeof(Camera));
 
@@ -31,10 +31,6 @@ namespace SAF_OpticalFailureDetector.camera
         private int imageNumber;
         private String cameraName;
         private double exposure_s;
-
-        // keep track of time elapsed for custom frame rates
-        private int captureFrameRate;
-        private Stopwatch timer;
 
         // default settings
         private const float DEFAULT_FRAME_RATE = 15.0f;
@@ -53,7 +49,7 @@ namespace SAF_OpticalFailureDetector.camera
         public Camera()
         {
             // create camera lock so only one thread can enter at a time
-            sem = new Semaphore(0, 1);
+            _camLock = new object();
 
             // initialize variables
             subscribers = new List<CircularQueue<QueueElement>>();
@@ -63,13 +59,6 @@ namespace SAF_OpticalFailureDetector.camera
             imageNumber = 0;
             cameraName = "";
             exposure_s = 0;
-            captureFrameRate = 20;
-
-            timer = new Stopwatch();
-            timer.Start();
-
-            // unlock critical section
-            sem.Release();
         }
 
         /// <summary>
@@ -81,24 +70,25 @@ namespace SAF_OpticalFailureDetector.camera
         public bool AddSubscriber(CircularQueue<QueueElement> subscriber)
         {
             bool doesNotExist = true;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            // loop through all subscribers and check if subscriber exists
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_camLock)
             {
-                // only care if the names match
-                if(test.Name == subscriber.Name)
+                // loop through all subscribers and check if subscriber exists
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
+                    // only care if the names match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                    }
                 }
+                // verify subsriber not already in camera queue
+                if (doesNotExist)
+                {
+                    subscribers.Add(subscriber);
+                }
+                
             }
-            // verify subsriber not already in camera queue
-            if (doesNotExist)
-            {
-                subscribers.Add(subscriber);
-            }
-            // exit critical section
-            sem.Release();
             return doesNotExist;
         }
 
@@ -113,26 +103,27 @@ namespace SAF_OpticalFailureDetector.camera
             bool doesNotExist = true;
             int removeIndex = -1;
             int i = 0;
-            // wait for sem control to enter critical section
-            sem.WaitOne();
-            foreach (CircularQueue<QueueElement> test in subscribers)
+
+            lock (_camLock)
             {
-                // only name needs to match
-                if (test.Name == subscriber.Name)
+                foreach (CircularQueue<QueueElement> test in subscribers)
                 {
-                    doesNotExist = false;
-                    // take note of what index subsriber located at
-                    removeIndex = i;
+                    // only name needs to match
+                    if (test.Name == subscriber.Name)
+                    {
+                        doesNotExist = false;
+                        // take note of what index subsriber located at
+                        removeIndex = i;
+                    }
+                    i++;
                 }
-                i++;
+                // if it exists, remove it
+                if (!doesNotExist)
+                {
+                    subscribers.RemoveAt(removeIndex);
+                }
+                
             }
-            // if it exists, remove it
-            if (!doesNotExist)
-            {
-                subscribers.RemoveAt(removeIndex);
-            }
-            // release control, exit critical section
-            sem.Release();
             return !doesNotExist;
         }
 
@@ -252,25 +243,28 @@ namespace SAF_OpticalFailureDetector.camera
         /// <returns>True if successful, False otherwise.</returns>
         public void StopCamera()
         {
-            sem.WaitOne();
-            // verify camera is not already stopped
-            if(isRunning)
+
+            lock (_camLock)
             {
-                isRunning = false;
-                cam.ImageAvailable -= new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
-                cam.DeviceLost -= new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraLost);
-                try
+                // verify camera is not already stopped
+                if (isRunning)
                 {
-                    cam.LiveStop();
-                }
-                catch (Exception inner)
-                {
-                    string errMsg = "Camera.StopCamera : Unable to execute live stop.";
-                    CameraException ex = new CameraException(errMsg, inner);
-                    log.Error(errMsg, ex);
-                }
+                    isRunning = false;
+                    cam.ImageAvailable -= new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
+                    cam.DeviceLost -= new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraLost);
+                    try
+                    {
+                        cam.LiveStop();
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "Camera.StopCamera : Unable to execute live stop.";
+                        CameraException ex = new CameraException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                    }
+                } 
             }
-            sem.Release();
+
         }
 
         /// <summary>
@@ -280,44 +274,42 @@ namespace SAF_OpticalFailureDetector.camera
         /// <exception cref="CameraException"></exception>
         public void SetExposureAuto( Boolean enable)
         {
-            sem.WaitOne();
-            // check that device is valid before attempting to change it.
-            if (!cam.DeviceValid)
+            lock (_camLock)
             {
-                sem.Release();
-                string errMsg = "Camera.SetExposureAuto : Camera is not valid, cannot change auto exposure state.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
+                // check that device is valid before attempting to change it.
+                if (!cam.DeviceValid)
+                {
+                    string errMsg = "Camera.SetExposureAuto : Camera is not valid, cannot change auto exposure state.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
 
-            VCDSwitchProperty autoExposureInterface;
-            try
-            {
-                autoExposureInterface = (VCDSwitchProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Exposure +
-                    ":" + VCDIDs.VCDElement_Auto + ":" + VCDIDs.VCDInterface_Switch);
+                VCDSwitchProperty autoExposureInterface;
+                try
+                {
+                    autoExposureInterface = (VCDSwitchProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Exposure +
+                        ":" + VCDIDs.VCDElement_Auto + ":" + VCDIDs.VCDInterface_Switch);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Camera.SetExposureAuto : Unable to obtain auto exposure interface.";
+                    CameraException ex = new CameraException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+                if (autoExposureInterface != null && autoExposureInterface.Available)
+                {
+                    autoExposureInterface.Switch = enable;
+                }
+                else
+                {
+                    string errMsg = "Camera.SetExposureAuto : Error setting auto exposure value -- parameter not available.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                } 
             }
-            catch (Exception inner)
-            {
-                sem.Release();
-                string errMsg = "Camera.SetExposureAuto : Unable to obtain auto exposure interface.";
-                CameraException ex = new CameraException(errMsg, inner);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            if (autoExposureInterface != null && autoExposureInterface.Available)
-            {
-                autoExposureInterface.Switch = enable;
-            }
-            else
-            {
-                sem.Release();
-                string errMsg = "Camera.SetExposureAuto : Error setting auto exposure value -- parameter not available.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            sem.Release();
         }
 
         /// <summary>
@@ -327,45 +319,47 @@ namespace SAF_OpticalFailureDetector.camera
         /// <exception cref="CameraException"></exception>
         public void SetExposure(double exposure_ms)
         {
-            sem.WaitOne();
-            // check that device is valid before attempting to change it.
-            if (!cam.DeviceValid)
+            lock (_camLock)
             {
-                sem.Release();
-                string errMsg = "Camera.SetExposure : Camera is not valid, cannot change exposure.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
+                // check that device is valid before attempting to change it.
+                if (!cam.DeviceValid)
+                {
 
-            VCDAbsoluteValueProperty exposureInterface;
-            try
-            {
-                exposureInterface = (VCDAbsoluteValueProperty)cam.VCDPropertyItems.FindInterface( VCDIDs.VCDID_Exposure +
-                    ":" + VCDIDs.VCDElement_Value + ":" + VCDIDs.VCDInterface_AbsoluteValue );
+                    string errMsg = "Camera.SetExposure : Camera is not valid, cannot change exposure.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+
+                VCDAbsoluteValueProperty exposureInterface;
+                try
+                {
+                    exposureInterface = (VCDAbsoluteValueProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Exposure +
+                        ":" + VCDIDs.VCDElement_Value + ":" + VCDIDs.VCDInterface_AbsoluteValue);
+                }
+                catch (Exception inner)
+                {
+
+                    string errMsg = "Camera.SetExposure : Unable to obtain exposure interface.";
+                    CameraException ex = new CameraException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+                if (exposureInterface != null && exposureInterface.Available)
+                {
+                    exposureInterface.Value = exposure_ms / 1000.0;
+                    exposure_s = Convert.ToDouble(exposureInterface.Value);
+                }
+                else
+                {
+
+                    string errMsg = "Camera.SetExposure : Error setting exposure value -- parameter not available.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+                
             }
-            catch (Exception inner)
-            {
-                sem.Release();
-                string errMsg = "Camera.SetExposure : Unable to obtain exposure interface.";
-                CameraException ex = new CameraException(errMsg,inner);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            if (exposureInterface != null && exposureInterface.Available)
-            {
-                exposureInterface.Value = exposure_ms / 1000.0;
-                exposure_s = Convert.ToDouble(exposureInterface.Value);
-            }
-            else
-            {
-                sem.Release();
-                string errMsg = "Camera.SetExposure : Error setting exposure value -- parameter not available.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            sem.Release();
         }
 
         /// <summary>
@@ -375,44 +369,42 @@ namespace SAF_OpticalFailureDetector.camera
         /// <exception cref="CameraException"></exception>
         public void SetGainAuto(Boolean enable)
         {
-            sem.WaitOne();
-            // check that device is valid before attempting to change it.
-            if (!cam.DeviceValid)
+            lock (_camLock)
             {
-                sem.Release();
-                string errMsg = "Camera.SetGainAuto : Camera is not valid, cannot change auto gain status.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
+                // check that device is valid before attempting to change it.
+                if (!cam.DeviceValid)
+                {
+                    string errMsg = "Camera.SetGainAuto : Camera is not valid, cannot change auto gain status.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
 
-            VCDSwitchProperty exposureInterface;
-            try
-            {
-                exposureInterface = (VCDSwitchProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Gain +
-                    ":" + VCDIDs.VCDElement_Auto + ":" + VCDIDs.VCDInterface_Switch);
+                VCDSwitchProperty exposureInterface;
+                try
+                {
+                    exposureInterface = (VCDSwitchProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Gain +
+                        ":" + VCDIDs.VCDElement_Auto + ":" + VCDIDs.VCDInterface_Switch);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Camera.SetGainAuto : Unable to obtain auto gain interface.";
+                    CameraException ex = new CameraException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+                if (exposureInterface != null && exposureInterface.Available)
+                {
+                    exposureInterface.Switch = enable;
+                }
+                else
+                {
+                    string errMsg = "Camera.SetGainAuto : Error setting auto gain status -- parameter not available.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                } 
             }
-            catch (Exception inner)
-            {
-                sem.Release();
-                string errMsg = "Camera.SetGainAuto : Unable to obtain auto gain interface.";
-                CameraException ex = new CameraException(errMsg, inner);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            if (exposureInterface != null && exposureInterface.Available)
-            {
-                exposureInterface.Switch = enable;
-            }
-            else
-            {
-                sem.Release();
-                string errMsg = "Camera.SetGainAuto : Error setting auto gain status -- parameter not available.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            sem.Release();
         }
 
         /// <summary>
@@ -422,44 +414,42 @@ namespace SAF_OpticalFailureDetector.camera
         /// <exception cref="CameraException"></exception>
         public void SetGain(double gain_dB)
         {
-            sem.WaitOne();
-            // check that device is valid before attempting to change it.
-            if (!cam.DeviceValid)
+            lock (_camLock)
             {
-                sem.Release();
-                string errMsg = "Camera.SetGain : Camera is not valid, cannot change gain.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
+                // check that device is valid before attempting to change it.
+                if (!cam.DeviceValid)
+                {
+                    string errMsg = "Camera.SetGain : Camera is not valid, cannot change gain.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
 
-            VCDAbsoluteValueProperty exposureInterface;
-            try
-            {
-                exposureInterface = (VCDAbsoluteValueProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Gain +
-                    ":" + VCDIDs.VCDElement_Value + ":" + VCDIDs.VCDInterface_AbsoluteValue);
+                VCDAbsoluteValueProperty exposureInterface;
+                try
+                {
+                    exposureInterface = (VCDAbsoluteValueProperty)cam.VCDPropertyItems.FindInterface(VCDIDs.VCDID_Gain +
+                        ":" + VCDIDs.VCDElement_Value + ":" + VCDIDs.VCDInterface_AbsoluteValue);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Camera.SetGain : Unable to obtain gain interface.";
+                    CameraException ex = new CameraException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+                if (exposureInterface != null && exposureInterface.Available)
+                {
+                    exposureInterface.Value = gain_dB;
+                }
+                else
+                {
+                    string errMsg = "Camera.SetGain : Error setting gain value -- parameter not available.";
+                    CameraException ex = new CameraException(errMsg);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                } 
             }
-            catch (Exception inner)
-            {
-                sem.Release();
-                string errMsg = "Camera.SetGain : Unable to obtain gain interface.";
-                CameraException ex = new CameraException(errMsg, inner);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            if (exposureInterface != null && exposureInterface.Available)
-            {
-                exposureInterface.Value = gain_dB;
-            }
-            else
-            {
-                sem.Release();
-                string errMsg = "Camera.SetGain : Error setting gain value -- parameter not available.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
-            }
-            sem.Release();
         }
 
         /// <summary>
@@ -480,12 +470,10 @@ namespace SAF_OpticalFailureDetector.camera
                 log.Error(ex);
             }
 
-            // shutdown camera.
-            sem.WaitOne();
+
             isRunning = false;
             cam.ImageAvailable -= new EventHandler<ICImagingControl.ImageAvailableEventArgs>(ImageAvailable);
             cam.DeviceLost -= new EventHandler<ICImagingControl.DeviceLostEventArgs>(CameraLost);
-            sem.Release();
 
             // generate exception to pass to any subscribers of the ThreadError event
             string errMsg2 = "Camera.CameraLost : Camera disconnected from system.";
@@ -502,17 +490,6 @@ namespace SAF_OpticalFailureDetector.camera
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
-
-            long timeSinceLastCapture = timer.ElapsedMilliseconds;
-
-            if (timeSinceLastCapture < 1000 / captureFrameRate)
-	        {
-                return;
-	        }
-            else
-            {
-                timer.Restart();
-            }
 
             double elapsedTime = -1.0;
             double time = cam.ReferenceTimeCurrent;
@@ -541,16 +518,19 @@ namespace SAF_OpticalFailureDetector.camera
             }
             buff.Unlock();
 
-            sem.WaitOne();
-            // only push the image if stored successfully
-            if (isImageSet)
+
+            lock (_camLock)
             {
-                for (int i = 0; i < subscribers.Count; i++)
+                // only push the image if stored successfully
+                if (isImageSet)
                 {
-                    subscribers[i].push(new QueueElement(cameraName, data));
-                }
+                    for (int i = 0; i < subscribers.Count; i++)
+                    {
+                        subscribers[i].push(new QueueElement(cameraName, data));
+                    }
+                } 
             }
-            sem.Release();
+            
         }
     }
 
