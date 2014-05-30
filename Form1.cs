@@ -704,6 +704,7 @@ namespace SAF_OpticalFailureDetector
                 log.Error(errMsg, ex);
                 DisplayError(errMsg, ex);
             }
+            return;
         }
 
         private void Camera0ThreadError( object sender, ThreadErrorEventArgs e)

@@ -9,6 +9,7 @@ using TIS.Imaging;
 using SAF_OpticalFailureDetector.imageprocessing;
 using System.Drawing;
 using log4net;
+using System.Diagnostics;
 
 
 namespace SAF_OpticalFailureDetector.camera
@@ -30,6 +31,10 @@ namespace SAF_OpticalFailureDetector.camera
         private int imageNumber;
         private String cameraName;
         private double exposure_s;
+
+        // keep track of time elapsed for custom frame rates
+        private int captureFrameRate;
+        private Stopwatch timer;
 
         // default settings
         private const float DEFAULT_FRAME_RATE = 15.0f;
@@ -58,6 +63,10 @@ namespace SAF_OpticalFailureDetector.camera
             imageNumber = 0;
             cameraName = "";
             exposure_s = 0;
+            captureFrameRate = 20;
+
+            timer = new Stopwatch();
+            timer.Start();
 
             // unlock critical section
             sem.Release();
@@ -493,6 +502,17 @@ namespace SAF_OpticalFailureDetector.camera
         private void ImageAvailable(object sender, ICImagingControl.ImageAvailableEventArgs e)
         {
             ImageBuffer buff = cam.ImageBuffers[e.bufferIndex];
+
+            long timeSinceLastCapture = timer.ElapsedMilliseconds;
+
+            if (timeSinceLastCapture < 1000 / captureFrameRate)
+	        {
+                return;
+	        }
+            else
+            {
+                timer.Restart();
+            }
 
             double elapsedTime = -1.0;
             double time = cam.ReferenceTimeCurrent;

@@ -168,9 +168,9 @@ namespace SAF_OpticalFailureDetector.savequeue
         {
             while (isRunning)
             {
+                Thread.Sleep(5);
                 List<QueueElement> imageElements = new List<QueueElement>();
                 IPData image = null;
-                sem.WaitOne();
 
                 MetaData metadata = MetaData.Instance;
 
@@ -231,6 +231,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                     }
                 }
             }
+            return;
         }
 
         /// <summary>
