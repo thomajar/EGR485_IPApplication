@@ -445,6 +445,11 @@ namespace SAF_OpticalFailureDetector.savequeue
                         // save data in buffer
                         if (camCracked)
                         {
+                            // trigger the USB Relay
+                            USBRelayController usb_relay = USBRelayController.Instance;
+                            usb_relay.SetRelay0Status(true);
+                            usb_relay.SetRelay1Status(true);
+
                             for (int j = camOneIndex; j < DEFAULT_SAVE_FRAME_COUNT && j < CameraOneHistory.Count; j++)
                             {
                                 IPData ipdata = CameraOneHistory[j];
@@ -465,10 +470,6 @@ namespace SAF_OpticalFailureDetector.savequeue
                                 IPData ipdata = CameraTwoHistory[j];
                                 SaveIPData(cam2CrackedRootLocation, ref ipdata);
                             }
-                            // trigger the USB Relay
-                            USBRelayController usb_relay = USBRelayController.Instance;
-                            usb_relay.SetRelay0Status(true);
-                            usb_relay.SetRelay1Status(true);
                             break;
                         }
 
