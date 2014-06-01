@@ -175,7 +175,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(333, 7);
+            this.cmboCam1View.Location = new System.Drawing.Point(333, 8);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(324, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -199,7 +199,7 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(993, 7);
+            this.cmboCam2View.Location = new System.Drawing.Point(993, 8);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(326, 24);
             this.cmboCam2View.TabIndex = 3;
@@ -248,6 +248,7 @@
             this.lblCam1PotentialCracks.Size = new System.Drawing.Size(138, 17);
             this.lblCam1PotentialCracks.TabIndex = 5;
             this.lblCam1PotentialCracks.Text = "Potential Cracks: n/a";
+            this.lblCam1PotentialCracks.Visible = false;
             // 
             // lblCam1CracksDetected
             // 
@@ -319,6 +320,7 @@
             this.lblCam2PotentialCracks.Size = new System.Drawing.Size(138, 17);
             this.lblCam2PotentialCracks.TabIndex = 11;
             this.lblCam2PotentialCracks.Text = "Potential Cracks: n/a";
+            this.lblCam2PotentialCracks.Visible = false;
             // 
             // lblCam2CracksDetected
             // 

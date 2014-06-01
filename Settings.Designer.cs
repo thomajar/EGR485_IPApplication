@@ -283,6 +283,7 @@
             this.nudMinLineLength.Name = "nudMinLineLength";
             this.nudMinLineLength.Size = new System.Drawing.Size(100, 26);
             this.nudMinLineLength.TabIndex = 7;
+            this.nudMinLineLength.Visible = false;
             // 
             // label8
             // 
@@ -293,6 +294,7 @@
             this.label8.Size = new System.Drawing.Size(114, 20);
             this.label8.TabIndex = 6;
             this.label8.Text = "Minimum Line";
+            this.label8.Visible = false;
             // 
             // nudTargetIntensity
             // 

@@ -239,11 +239,35 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        public void SetTargetIntensity(int intensity)
+        {
+            lock (_ipLock)
+            {
+                if (intensity > 255)
+                {
+                    intensity = 255;
+                }
+                if (intensity < 0)
+                {
+                    intensity = 0;
+                }
+                targetIntesity = intensity;
+            }
+        }
+
         public void EnableAutoExposure(bool enable)
         {
             lock (_ipLock)
             {
                 this.enableAutoExposure = enable; 
+            }
+        }
+
+        public void EnableAutoROI(bool enable)
+        {
+            lock (_ipLock)
+            {
+                this.enableROI = enable;
             }
         }
 
@@ -357,7 +381,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                     if (desiredGain > 1.0f + INTENSITY_GAIN_THRESHOLD || desiredGain < 1.0f - INTENSITY_GAIN_THRESHOLD)
                                     {
                                         //cam.GainExposure(desiredGain) ~ this needs to be implemented
-                                        exposureCounter -= 1;
+                                        exposureCounter -= 20;
                                     }
                                 }
                             }
@@ -365,9 +389,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                         // perform image processing
                         Boolean isImageFiltered = true;
+                        int crackConfidence = 0;
                         try
                         {
-                            processImage = filterImage(processImage);
+                            crackConfidence = filterImage(ref processImage);
                         }
                         catch (Exception inner)
                         {
@@ -377,8 +402,29 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                             isImageFiltered = false;
                         }
 
+                        if (enableROI)
+                        {
+                            try
+                            {
+                                DrawROI(ref processImage);
+                            }
+                            catch (Exception inner)
+                            {
+                                string errMsg = "FailureDetector.Process : Exception thrown while drawing roi.";
+                                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                                log.Error(errMsg, ex);
+                                isImageFiltered = false;
+                                
+                            }
+                        }
+
                         if (isImageFiltered)
                         {
+                            bool isCracked = false;
+                            if (crackConfidence > 80)
+                            {
+                                isCracked = true;
+                            }
                             Boolean isIPDataSet = true;
                             try
                             {
@@ -391,7 +437,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 log.Error(errMsg, ex);
                                 isIPDataSet = false;
                             }
-                            image.SetIPMetaData(((Double)sw.ElapsedMilliseconds) / 1000, roi, imageIntensity, 0, false, true);
+                            image.SetIPMetaData(((Double)sw.ElapsedMilliseconds) / 1000, roi, imageIntensity, 0, isCracked, true);
                             sw.Restart();
 
                             if (isIPDataSet)
@@ -413,7 +459,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// </summary>
         /// <param name="b"></param>
         /// <returns></returns>
-        private Bitmap filterImage(Bitmap b)
+        private int filterImage(ref Bitmap b)
         {
             int PixelSize = 3;
             int threshold = noiseRange * 8;
@@ -489,7 +535,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 FailureDetectorException ex = new FailureDetectorException("FailureDetector.filterImage : Unable to unlock bits.", inner);
                 throw ex;
             }
-            return b;
+            int percentCrack = 100 * row_count / roi.Height;
+            return percentCrack;
         }
 
         /// <summary>
@@ -549,7 +596,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                 for (int x = 0; x < B_data.Width; x++)
                 {
-                    if (row[x * PixelSize] > centerOfMass * 0.5)
+                    int value = row[x * PixelSize];
+                    if (value > centerOfMass * 0.9)
                     {
                         count++;
                     }
@@ -569,7 +617,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                 for (int x = 0; x < B_data.Width; x++)
                 {
-                    if (row[x * PixelSize] > centerOfMass * 0.5)
+                    if (row[x * PixelSize] > centerOfMass * 0.9)
                     {
                         count++;
                     }
@@ -645,6 +693,62 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
             
             return data;
+        }
+
+        private void DrawROI(ref Bitmap b)
+        {
+            int percentwhite = 80;
+            int PixelSize = 3;
+
+            BitmapData B_data = null;
+
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                throw ex;
+            }
+
+            byte* topRow1 = (byte*)B_data.Scan0 + (roi.Top * B_data.Stride);
+            byte* topRow2 = (byte*)B_data.Scan0 + ((roi.Top + 1) * B_data.Stride);
+            byte* bottomRow1 = (byte*)B_data.Scan0 + ((roi.Bottom - 1) * B_data.Stride);
+            byte* bottomRow2 = (byte*)B_data.Scan0 + ((roi.Bottom - 2) * B_data.Stride);
+
+            for (int x = 0; x < B_data.Width; x++)
+            {
+                if ((x % 8) / 2 == 1)
+                {
+                    topRow1[x * PixelSize] = 0;   //Blue  0-255
+                    topRow1[x * PixelSize + 1] = 0; //Green 0-255
+                    topRow1[x * PixelSize + 2] = 255;   //Red   0-255
+                    bottomRow1[x * PixelSize] = 0;   //Blue  0-255
+                    bottomRow1[x * PixelSize + 1] = 0; //Green 0-255
+                    bottomRow1[x * PixelSize + 2] = 255;   //Red   0-255
+                    topRow2[x * PixelSize] = 0;   //Blue  0-255
+                    topRow2[x * PixelSize + 1] = 0; //Green 0-255
+                    topRow2[x * PixelSize + 2] = 255;   //Red   0-255
+                    bottomRow2[x * PixelSize] = 0;   //Blue  0-255
+                    bottomRow2[x * PixelSize + 1] = 0; //Green 0-255
+                    bottomRow2[x * PixelSize + 2] = 255;   //Red   0-255
+                }
+                
+            }
+
+            // unlock bits
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                throw ex;
+            }
         }
     }
     // Use for exceptinos generated in FailureDetector class

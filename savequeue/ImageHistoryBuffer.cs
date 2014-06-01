@@ -168,10 +168,10 @@ namespace SAF_OpticalFailureDetector.savequeue
         private int DEFAULT_SAVE_FRAME_COUNT = 100;
         private int DEFAULT_SAVE_FRAME_FREQUENCY = 5;
 
-        private void SaveIPData(string rootLocation, string camera, ref IPData data)
+        private void SaveIPData(string rootLocation, ref IPData data)
         {
             DateTime time = DateTime.Now;
-            string directory = camera + "_" +
+            string directory = 
                 time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
                 time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2") + "_" +
                 "image" + data.ImageNumber.ToString("D8");
@@ -197,7 +197,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             }
             if (isValid)
             {
-                string fileName = rootLocation + "//rawimage_" + data.ImageNumber.ToString("D4") + ".bmp";
+                string fileName = rootLocation + "//rawimage_" + data.ImageNumber.ToString("D8") + ".bmp";
                 try
                 {
                     rawBitmap.Save(fileName);
@@ -225,7 +225,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             }
             if (isValid)
             {
-                string fileName = rootLocation + "//procimage" + data.ImageNumber.ToString("D4") + ".bmp";
+                string fileName = rootLocation + "//procimage_" + data.ImageNumber.ToString("D8") + ".bmp";
                 try
                 {
                     processedBitmap.Save(fileName);
@@ -238,6 +238,25 @@ namespace SAF_OpticalFailureDetector.savequeue
                 }
             }
             // save metadata
+            StreamWriter write = new StreamWriter(rootLocation + "//info" + data.ImageNumber.ToString("D8") + ".txt");
+            MetaData metadata = MetaData.Instance;
+            write.WriteLine("General Settings: ");
+            write.WriteLine("Sample Number: " + metadata.SampleNumber);
+            write.WriteLine("Test Number: " + metadata.TestNumber);
+            write.WriteLine("Imager Noise: " + metadata.ImagerNoise.ToString("D3"));
+            write.WriteLine("Minimum Contrast: " + metadata.MinimumContrast.ToString("D3"));
+            write.WriteLine("Target Intensity: " + metadata.TargetIntenstiy.ToString("D3"));
+            write.WriteLine("Minimum Line Length: " + metadata.MinimumLineLength.ToString("D3"));
+            write.WriteLine();
+            write.WriteLine("Camera Information: ");
+            write.WriteLine("Timestamp: " + data.TimeStamp.ToLongTimeString());
+            write.WriteLine("Image Number: " + data.ImageNumber.ToString("D8"));
+            write.WriteLine("Image Size: " + data.ImageSize.Width.ToString("D4") + "x" + data.ImageSize.Height.ToString("D4"));
+            write.WriteLine("Exposure (s): " + data.ImageExposure_s.ToString());
+            write.WriteLine("Intensity (lsb): " + data.ImageIntensity_lsb.ToString("D3"));
+            write.WriteLine("Potential Cracks: " + data.PotentialCrackCount.ToString("D2"));
+            write.WriteLine("Contains Crack: " + data.ContainsCrack.ToString());
+            write.Close();
         }
 
         private void Process()
@@ -246,6 +265,61 @@ namespace SAF_OpticalFailureDetector.savequeue
             sw.Start();
             bool saveImage1 = true;
             bool saveImage2 = true;
+
+            // setup directories
+            string rootLocation = MetaData.Instance.SaveLocation;
+            if (!Directory.Exists(rootLocation))
+            {
+                Directory.CreateDirectory(rootLocation);
+            }
+            DateTime time = DateTime.Now;
+            // add a date and time of test to test
+            string folderName = "//Test" + MetaData.Instance.TestNumber + "_Sample" +
+                MetaData.Instance.SampleNumber + "_" +
+                time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
+                time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2");
+            rootLocation += folderName;
+            if (!Directory.Exists(rootLocation))
+            {
+                Directory.CreateDirectory(rootLocation);
+            }
+            // crack detected folder --> cam1 /cam2
+            string crackedRootLocation = rootLocation + "//cracked";
+            string cam1CrackedRootLocation = crackedRootLocation + "//cam1";
+            string cam2CrackedRootLocation = crackedRootLocation + "//cam2";
+            if (!Directory.Exists(crackedRootLocation))
+            {
+                Directory.CreateDirectory(crackedRootLocation);
+            }
+            if (!Directory.Exists(cam1CrackedRootLocation))
+            {
+                Directory.CreateDirectory(cam1CrackedRootLocation);
+            }
+            if (!Directory.Exists(cam2CrackedRootLocation))
+            {
+                Directory.CreateDirectory(cam2CrackedRootLocation);
+            }
+
+            // debug folder --> cam1 / cam2
+            string debugLocation = rootLocation + "//debug";
+            string cam1DebugRootLocation = debugLocation + "//cam1";
+            string cam2DebugRootLocation = debugLocation + "//cam2";
+            if (MetaData.Instance.EnableDebugSaving)
+            {
+                if (!Directory.Exists(debugLocation))
+                {
+                    Directory.CreateDirectory(debugLocation);
+                }
+                if (!Directory.Exists(cam1DebugRootLocation))
+                {
+                    Directory.CreateDirectory(cam1DebugRootLocation);
+                }
+                if (!Directory.Exists(cam2DebugRootLocation))
+                {
+                    Directory.CreateDirectory(cam2DebugRootLocation);
+                }
+            }
+            
 
             while (isRunning)
             {
@@ -291,7 +365,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                                 if (saveImage1)
                                 {
                                     // need to save image to debug slot
-                                    SaveIPData(metadata.SaveLocation, type,  ref data);
+                                    SaveIPData(cam1DebugRootLocation,  ref data);
                                     saveImage1 = false;
                                 }
                             }
@@ -311,7 +385,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                                 if (saveImage2)
                                 {
                                     // need to save image to debug slot
-                                    SaveIPData(metadata.SaveLocation, type, ref data);
+                                    SaveIPData(cam2DebugRootLocation, ref data);
                                     saveImage2 = false;
                                 }
                             }

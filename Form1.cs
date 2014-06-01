@@ -105,6 +105,7 @@ namespace SAF_OpticalFailureDetector
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
             imagep1.EnableAutoExposure(true);
+            imagep1.EnableAutoROI(false);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -115,6 +116,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
             imagep2.EnableAutoExposure(true);
+            imagep2.EnableAutoROI(true);
 
             // sets image queue
             saveEngine = new ImageHistoryBuffer("save_queue_images", "alocation");
@@ -632,6 +634,14 @@ namespace SAF_OpticalFailureDetector
         private bool Start()
         {
             log.Info("MainForm.Start : Starting image processors and save queue engine.");
+            // set parameters for image processors
+            MetaData metadata = MetaData.Instance;
+            imagep1.SetContrast(metadata.MinimumContrast);
+            imagep1.SetRange(metadata.ImagerNoise);
+            imagep1.SetTargetIntensity(metadata.TargetIntenstiy);
+            imagep2.SetContrast(metadata.MinimumContrast);
+            imagep2.SetRange(metadata.ImagerNoise);
+            imagep2.SetTargetIntensity(metadata.TargetIntenstiy);
             try
             {
                 imagep1.Start();
