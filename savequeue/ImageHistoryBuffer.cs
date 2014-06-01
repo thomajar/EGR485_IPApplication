@@ -262,9 +262,13 @@ namespace SAF_OpticalFailureDetector.savequeue
         private void Process()
         {
             Stopwatch sw = new Stopwatch();
+            Stopwatch sw_Crack = new Stopwatch();
             sw.Start();
+            sw_Crack.Start();
             bool saveImage1 = true;
             bool saveImage2 = true;
+            bool updateImage1 = true;
+            bool updateImage2 = true;
 
             // setup directories
             string rootLocation = MetaData.Instance.SaveLocation;
@@ -319,7 +323,19 @@ namespace SAF_OpticalFailureDetector.savequeue
                     Directory.CreateDirectory(cam2DebugRootLocation);
                 }
             }
-            
+
+
+            List<IPData> CameraOneHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
+            List<IPData> CameraTwoHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
+            int camOneCounter = 0;
+            int camTwoCounter = 0;
+            int camOneIndex = 0;
+            int camTwoIndex = 0;
+            int camOneCrackCount = 0;
+            int camTwoCrackCount = 0;
+
+            bool camCracked = false;
+            int crackCountdown = 10;
 
             while (isRunning)
             {
@@ -336,12 +352,14 @@ namespace SAF_OpticalFailureDetector.savequeue
                     sw.Restart();
                 }
 
-                List<IPData> CameraOneHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
-                List<IPData> CameraTwoHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
-                int camOneCounter = 0;
-                int camTwoCounter = 0;
-                int camOneIndex = 0;
-                int camTwoIndex = 0;
+                if (sw_Crack.ElapsedMilliseconds >= 250)
+                {
+                    updateImage1 = true;
+                    updateImage2 = true;
+                    sw_Crack.Restart();
+                }
+
+                
                 
                 consumerQueue.popAll(ref imageElements);
                 if (imageElements.Count > 0)
@@ -354,11 +372,12 @@ namespace SAF_OpticalFailureDetector.savequeue
                         if (type.Contains("1"))
                         {
                             // see if image needs to be stored in recent history buffer 1
-                            if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camOneCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
+                            if (updateImage1)
                             {
                                 // requires a slot in buffer
                                 CameraOneHistory.Insert(camOneIndex, data);
                                 camOneIndex = (camOneIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
+                                updateImage1 = false;
                             }
                             if (metadata.EnableDebugSaving)
                             {
@@ -369,16 +388,30 @@ namespace SAF_OpticalFailureDetector.savequeue
                                     saveImage1 = false;
                                 }
                             }
+                            if (data.ContainsCrack)
+                            {
+                                camOneCrackCount++;
+                                if (camOneCrackCount > 10)
+                                {
+                                    camCracked = true;
+                                }
+                            }
+                            else
+                            {
+                                camOneCrackCount = 0;
+                                camCracked = false;
+                            }
                             camOneCounter = data.ImageNumber;
                         }
                         else if (type.Contains("2"))
                         {
                             // see if image needs to be stored in recent history buffer 2
-                            if (data.ImageNumber % DEFAULT_SAVE_FRAME_FREQUENCY != camTwoCounter % DEFAULT_SAVE_FRAME_FREQUENCY)
+                            if (updateImage2)
                             {
                                 // requires a slot in buffer
                                 CameraTwoHistory.Insert(camTwoIndex, data);
                                 camTwoIndex = (camTwoIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
+                                updateImage2 = false;
                             }
                             if (metadata.EnableDebugSaving)
                             {
@@ -389,12 +422,51 @@ namespace SAF_OpticalFailureDetector.savequeue
                                     saveImage2 = false;
                                 }
                             }
+                            if (data.ContainsCrack)
+                            {
+                                camTwoCrackCount++;
+                                if (camTwoCrackCount > 10)
+                                {
+                                    camCracked = true;
+                                }
+                            }
+                            else
+                            {
+                                camTwoCrackCount = 0;
+                                camCracked = false;
+                            }
                             camTwoCounter = data.ImageNumber;
                         }
                         else
                         {
                             // unknown data type
                         }
+                        // save data in buffer
+                        if (camCracked)
+                        {
+                            for (int j = camOneIndex; j < DEFAULT_SAVE_FRAME_COUNT && j < CameraOneHistory.Count; j++)
+                            {
+                                IPData ipdata = CameraOneHistory[j];
+                                SaveIPData(cam1CrackedRootLocation, ref ipdata);
+                            }
+                            for (int j = 0; j < camOneIndex; j++)
+                            {
+                                IPData ipdata = CameraOneHistory[j];
+                                SaveIPData(cam1CrackedRootLocation, ref ipdata);
+                            }
+                            for (int j = camTwoIndex; j < DEFAULT_SAVE_FRAME_COUNT && j < CameraTwoHistory.Count; j++)
+                            {
+                                IPData ipdata = CameraTwoHistory[j];
+                                SaveIPData(cam2CrackedRootLocation, ref ipdata);
+                            }
+                            for (int j = 0; j < camTwoIndex; j++)
+                            {
+                                IPData ipdata = CameraTwoHistory[j];
+                                SaveIPData(cam2CrackedRootLocation, ref ipdata);
+                            }
+                            break;
+                        }
+
                     }
                 }
             }

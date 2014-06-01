@@ -332,6 +332,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 }
                             }
                         }
+                        else
+                        {
+                            roi = new Rectangle(0, 0, processImage.Width, processImage.Height);
+                        }
 
                         // update exposure of camera
                         if (enableAutoExposure)
