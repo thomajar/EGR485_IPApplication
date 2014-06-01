@@ -12,6 +12,7 @@ using System.Diagnostics;
 using SAF_OpticalFailureDetector.imageprocessing;
 using log4net;
 using System.IO;
+using SAF_OpticalFailureDetector.relay;
 
 namespace SAF_OpticalFailureDetector.savequeue
 {
@@ -464,6 +465,10 @@ namespace SAF_OpticalFailureDetector.savequeue
                                 IPData ipdata = CameraTwoHistory[j];
                                 SaveIPData(cam2CrackedRootLocation, ref ipdata);
                             }
+                            // trigger the USB Relay
+                            USBRelayController usb_relay = USBRelayController.Instance;
+                            usb_relay.SetRelay0Status(true);
+                            usb_relay.SetRelay1Status(true);
                             break;
                         }
 

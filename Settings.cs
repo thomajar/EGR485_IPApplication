@@ -76,6 +76,11 @@ namespace SAF_OpticalFailureDetector
                 DisplayError(errMsg, ex);
                 return;
             }
+
+            // turn USB relay off
+            USBRelayController usb_relay = USBRelayController.Instance;
+            usb_relay.SetRelay0Status(false);
+            usb_relay.SetRelay1Status(false);
                 
         }
 

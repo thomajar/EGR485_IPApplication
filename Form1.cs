@@ -15,6 +15,7 @@ using SAF_OpticalFailureDetector.savequeue;
 using System.Threading;
 using System.Drawing.Imaging;
 using log4net;
+using SAF_OpticalFailureDetector.relay;
 
 namespace SAF_OpticalFailureDetector
 {
@@ -96,6 +97,10 @@ namespace SAF_OpticalFailureDetector
             ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
             saveQueue = new CircularQueue<QueueElement>("save_queue", queueSize);
 
+            
+
+            
+
             // initialize camera and processor 1
             cam1 = new Camera();
             cam1.AddSubscriber(ipQueue1);
@@ -116,7 +121,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
             imagep2.EnableAutoExposure(true);
-            imagep2.EnableAutoROI(true);
+            imagep2.EnableAutoROI(false);
 
             // sets image queue
             saveEngine = new ImageHistoryBuffer("save_queue_images", "alocation");

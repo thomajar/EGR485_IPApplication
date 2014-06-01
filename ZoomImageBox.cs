@@ -100,7 +100,7 @@ namespace SAF_OpticalFailureDetector.threading
             DisplayText.BackColor = Color.Transparent;
 
             // default zoom lvl is 0x
-            zoomlvl = 0;
+            zoomlvl = -1;
             focusPoint = Point.Empty;
             displayImageOffset = new Point(0, 0);
             mousestate = MouseState.Released;
