@@ -15,6 +15,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 {
     unsafe class FailureDetector
     {
+
+        private const int THROTTLE_PERIOD = 250;
         public event ThreadErrorHandler ThreadError;
 
         // thread synchronization
@@ -280,10 +282,18 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
+            Stopwatch _threadTimer = new Stopwatch();
+            _threadTimer.Start();
+
             // keep thread running until told to stop or start
             while (isRunning)
             {
-                Thread.Sleep(2);
+                int timeToSleep = THROTTLE_PERIOD - Convert.ToInt32(_threadTimer.ElapsedMilliseconds);
+                if (timeToSleep > 0)
+                {
+                    Thread.Sleep(timeToSleep);
+                }
+                _threadTimer.Restart();
                 
                 List<QueueElement> imageElements = new List<QueueElement>();
                 IPData image = null;

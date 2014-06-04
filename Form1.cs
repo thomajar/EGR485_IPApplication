@@ -91,7 +91,7 @@ namespace SAF_OpticalFailureDetector
             }
 
             // each queue takes 6 MB per item in it
-            int queueSize = Convert.ToInt32(freeMem * 0.90) / 24;
+            int queueSize = 50;//Convert.ToInt32(freeMem * 0.90) / 32;
             mainQueue = new CircularQueue<QueueElement>("MAIN", queueSize);
             ipQueue1 = new CircularQueue<QueueElement>("IP1", queueSize);
             ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
@@ -109,7 +109,7 @@ namespace SAF_OpticalFailureDetector
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
-            imagep1.EnableAutoExposure(true);
+            imagep1.EnableAutoExposure(false);
             imagep1.EnableAutoROI(false);
 
             // initialize camera and processor 2
@@ -120,11 +120,11 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
-            imagep2.EnableAutoExposure(true);
+            imagep2.EnableAutoExposure(false);
             imagep2.EnableAutoROI(false);
 
             // sets image queue
-            saveEngine = new ImageHistoryBuffer("save_queue_images", "alocation");
+            saveEngine = new ImageHistoryBuffer();
             saveEngine.SetConsumerQueue(saveQueue);
 
             // add thread error handlers
@@ -157,7 +157,7 @@ namespace SAF_OpticalFailureDetector
             // setup timer update
             TimerCallback tcb = new TimerCallback(DisplayImage);
             imageUpdateTimer = new System.Threading.Timer(tcb, imageUpdateTimer, Timeout.Infinite, Timeout.Infinite);
-            imageUpdateTimer.Change(1, 100);
+            imageUpdateTimer.Change(1, 200);
 
             // setup garbage collector
             TimerCallback tcb2 = new TimerCallback(GarbageCollector);
@@ -674,7 +674,7 @@ namespace SAF_OpticalFailureDetector
             }
             try
             {
-                saveEngine.Start();
+                saveEngine.Start(5);
             }
             catch (Exception inner)
             {

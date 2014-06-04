@@ -18,6 +18,8 @@ namespace SAF_OpticalFailureDetector.savequeue
 {
     class ImageHistoryBuffer
     {
+        private const int DEFAULT_THROTTLE_PERIOD = 250;
+        private const int DEFAULT_TEST_HISTORY_SIZE = 50;
 
         public event ThreadErrorHandler ThreadError;
         // thread synchronization
@@ -25,35 +27,25 @@ namespace SAF_OpticalFailureDetector.savequeue
         private static readonly ILog log = LogManager.GetLogger(typeof(ImageHistoryBuffer));
 
         // consumer queue variables
-        private const String CONSUMER_ROOTNAME = "SAVE_";
-        private const int CONSUMER_QUEUE_SIZE = 1000;
         CircularQueue<QueueElement> consumerQueue;
-        private String consumerName;
-        private String consumerLogFileLocation;
-
-        // subscriber queue variables
-        List<CircularQueue<QueueElement>> subscribers;
 
         // thread variables
         private Boolean isRunning;
         private Thread processThread;
+        private int threadThrottlePeriod;
 
         public bool Running { get { return isRunning; } }
 
-        public ImageHistoryBuffer(String name, String LogFileLocation)
+        /// <summary>
+        /// Constructor of ImageHistoryBuffer
+        /// </summary>
+        public ImageHistoryBuffer()
         {
             _saveLock = new object();
 
-            // initialize queues
-            consumerLogFileLocation = LogFileLocation;
-            consumerName = CONSUMER_ROOTNAME + name;
-            //consumerQueue = new CircularQueue<QueueElement>(consumerName,CONSUMER_QUEUE_SIZE);
-            subscribers = new List<CircularQueue<QueueElement>>();
-
             // initialize processing thread variables
             isRunning = false;
-
-            // release control, end of initialization
+            threadThrottlePeriod = DEFAULT_THROTTLE_PERIOD;
         }
 
         /// <summary>
@@ -67,87 +59,35 @@ namespace SAF_OpticalFailureDetector.savequeue
         }
 
         /// <summary>
-        /// Function adds a subscriber to the cameras queue.  The camera will 
-        /// send all of its images to each subscriber in its queue.
+        /// Starts the process thread which enables debug and test saving of IPData.
         /// </summary>
-        /// <param name="subscriber">Subscriber to add to queue.</param>
-        /// <returns>True if successful, False if already exists.</returns>
-        public bool AddSubscriber(CircularQueue<QueueElement> subscriber)
-        {
-            bool doesNotExist = true;
-
-            lock (_saveLock)
-            {
-                // loop through all subscribers and check if subscriber exists
-                foreach (CircularQueue<QueueElement> test in subscribers)
-                {
-                    // only care if the names match
-                    if (test.Name == subscriber.Name)
-                    {
-                        doesNotExist = false;
-                    }
-                }
-                // verify subsriber not already in camera queue
-                if (doesNotExist)
-                {
-                    subscribers.Add(subscriber);
-                } 
-            }
-
-            return doesNotExist;
-        }
-
-        /// <summary>
-        /// Function removes subscriber from camera's queue if the subscriber
-        /// exists.
-        /// </summary>
-        /// <param name="subscriber">Subscriber to remove from camera.</param>
-        /// <returns>True if successful, False otherwise.</returns>
-        public bool RemoveSubscriber(CircularQueue<QueueElement> subscriber)
-        {
-            bool doesNotExist = true;
-            int removeIndex = -1;
-            int i = 0;
-
-            lock (_saveLock)
-            {
-                foreach (CircularQueue<QueueElement> test in subscribers)
-                {
-                    // only name needs to match
-                    if (test.Name == subscriber.Name)
-                    {
-                        doesNotExist = false;
-                        // take note of what index subsriber located at
-                        removeIndex = i;
-                    }
-                    i++;
-                }
-                // if it exists, remove it
-                if (!doesNotExist)
-                {
-                    subscribers.RemoveAt(removeIndex);
-                } 
-            }
-
-            return !doesNotExist;
-        }
-
-        /// <summary>
-        /// Starts the image processing thread.
-        /// </summary>
+        /// <param name="maximumUpdateFrequency">Limits the maximum frequency of the process thread. </param>
         /// <returns>T if successful, F otherwise.</returns>
-        public bool Start()
+        public bool Start(double maximumUpdateFrequency)
         {
             Boolean result = false;
-            if (!isRunning)
+            lock (_saveLock)
             {
-                result = true;
-                isRunning = true;
-                processThread = new Thread(new ThreadStart(Process));
-                processThread.Start();
+                if (!isRunning)
+                {
+                    try
+                    {
+                        threadThrottlePeriod = Convert.ToInt32(1000 / maximumUpdateFrequency);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ImageHistoryBuffer.Start : Unable to set throttle period, defaulting to 5 FPS.";
+                        ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                        log.Info(errMsg, ex);
+                        threadThrottlePeriod = DEFAULT_THROTTLE_PERIOD;
+                    }
+                    result = true;
+                    isRunning = true;
+                    processThread = new Thread(new ThreadStart(Process));
+                    processThread.Start();
+                } 
             }
             return result;
-
         }
 
         /// <summary>
@@ -157,32 +97,275 @@ namespace SAF_OpticalFailureDetector.savequeue
         public Boolean Stop()
         {
             Boolean result = false;
-            if (isRunning)
+            lock (_saveLock)
             {
-                result = true;
-                isRunning = false;
-                processThread.Join();
+                if (isRunning)
+                {
+                    result = true;
+                    isRunning = false;
+                    processThread.Join();
+                } 
             }
             return result;
         }
 
-        private int DEFAULT_SAVE_FRAME_COUNT = 100;
-        private int DEFAULT_SAVE_FRAME_FREQUENCY = 5;
+        private void Process()
+        {
+            // get a local copy of metadata singleton
+            MetaData metadata = MetaData.Instance;
 
+            // location of folders in saving directory structure
+            string rootLocation = metadata.SaveLocation;
+            string cam1TestLocation = "";
+            string cam2TestLocation = "";
+            string cam1DebugLocation = "";
+            string cam2DebugLocation = "";
+
+            // list to keep image data in
+            IPData[] cam1History = new IPData[DEFAULT_TEST_HISTORY_SIZE];
+            IPData[] cam2History = new IPData[DEFAULT_TEST_HISTORY_SIZE];
+            int cam1HistoryInsertIndex = 0;
+            int cam2HistoryInsertIndex = 0;
+
+            // tracks consecutive cracks in data and a flag to confirm a crack
+            int cam1ConsecutiveCrackedSampleCount = 0;
+            int cam2ConsecutiveCrackedSampleCount = 0;
+            bool crackConfirmed = false;
+
+            // timers for throttling thread, and updating save requests
+            Stopwatch _threadTimer = new Stopwatch();
+            Stopwatch _debugSaveUpdateTimer = new Stopwatch();
+            Stopwatch _testSaveUpdateTimer = new Stopwatch();
+
+            // flags to reset when timers trigger indicating corresponding data needs to be updated
+            bool updateCam1DebugData = true;
+            bool updateCam2DebugData = true;
+            bool updateCam1TestData = true;
+            bool updateCam2TestData = true;
+
+            // attempt to create root directory and unique identify folder
+            try
+            {
+                // updates the rootLocation to include the unique identifier folder generated inside function call
+                rootLocation = initRootDirectory(rootLocation);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ImageHistoryBuffer.Process : Unable to create root directory and unique identifier folder.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg, ex);
+                
+                // shutdown thread here
+                ThreadErrorEventArgs er = new ThreadErrorEventArgs(errMsg, ex, true);
+                ThreadErrorEventArgs.OnThreadError(this, ThreadError, er);
+            }
+
+            // attempt to create directory structure for test data
+            try
+            {
+                initTestDirectory(rootLocation, ref cam1TestLocation, ref cam2TestLocation);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ImageHistoryBuffer.Process : Unable to create directory structure for test data.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg, ex);
+
+                // shutdown thread here
+                ThreadErrorEventArgs er = new ThreadErrorEventArgs(errMsg, ex, true);
+                ThreadErrorEventArgs.OnThreadError(this, ThreadError, er);
+            }
+
+            // attempt to create directory structure for debug saving if enabled
+            if (metadata.EnableDebugSaving)
+            {
+                try
+                {
+                    initDebugDirectory(rootLocation, ref cam1DebugLocation, ref cam2DebugLocation);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.Process : Unable to create directory structure for debug saving.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+
+                    // shutdown thread here
+                    ThreadErrorEventArgs er = new ThreadErrorEventArgs(errMsg, ex, true);
+                    ThreadErrorEventArgs.OnThreadError(this, ThreadError, er);
+                }
+            }
+
+            // start threading timers
+            _threadTimer.Start();
+            _debugSaveUpdateTimer.Start();
+            _testSaveUpdateTimer.Start();
+
+            while (isRunning)
+            {
+                // throttles the thread to prevent it from consuming 100% of processor it is running on
+                int timeToSleep = threadThrottlePeriod - Convert.ToInt32(_threadTimer.ElapsedMilliseconds);
+                if (timeToSleep > 0)
+                {
+                    Thread.Sleep(timeToSleep);
+                }
+                _threadTimer.Restart();
+
+                // check if debug data needs to be updated
+                if (_debugSaveUpdateTimer.ElapsedMilliseconds >= metadata.DebugSaveFrequency * 1000)
+                {
+                    updateCam1DebugData = true;
+                    updateCam2DebugData = true;
+                    _debugSaveUpdateTimer.Restart();
+                }
+
+                // check to see if test data needs to be updated
+                if (_testSaveUpdateTimer.ElapsedMilliseconds >= 250)
+                {
+                    updateCam1TestData = true;
+                    updateCam2TestData = true;
+                    _testSaveUpdateTimer.Restart();
+                }
+
+                // pop everything off of savequeue
+                List<QueueElement> imageElements = new List<QueueElement>();
+                consumerQueue.popAll(ref imageElements);
+                if (imageElements.Count > 0)
+                {
+                    for (int i = 0; i < imageElements.Count; i++)
+                    {
+                        //figure our where the iamge is coming from
+                        IPData data = (IPData)imageElements[i].Data;
+                        string type = imageElements[i].Type;
+                        if (type.Contains("1"))
+                        {
+                            // see if image needs to be stored in recent history buffer 1
+                            if (updateCam1TestData)
+                            {
+                                // requires a slot in buffer
+                                cam1History[cam1HistoryInsertIndex] = data;
+                                cam1HistoryInsertIndex = (cam1HistoryInsertIndex + 1) % DEFAULT_TEST_HISTORY_SIZE;
+                                updateCam1TestData = false;
+                            }
+                            if (metadata.EnableDebugSaving)
+                            {
+                                if (updateCam1DebugData)
+                                {
+                                    // need to save image to debug slot
+                                    SaveIPData(cam1DebugLocation, ref data);
+                                    updateCam1DebugData = false;
+                                }
+                            }
+                            if (data.ContainsCrack)
+                            {
+                                cam1ConsecutiveCrackedSampleCount++;
+                                if (cam1ConsecutiveCrackedSampleCount > 10)
+                                {
+                                    crackConfirmed = true;
+                                }
+                            }
+                            else
+                            {
+                                cam1ConsecutiveCrackedSampleCount = 0;
+                                crackConfirmed = false;
+                            }
+                        }
+                        else if (type.Contains("2"))
+                        {
+                            // see if image needs to be stored in recent history buffer 2
+                            if (updateCam2TestData)
+                            {
+                                // requires a slot in buffer
+                                cam2History[cam2HistoryInsertIndex] = data;
+                                cam2HistoryInsertIndex = (cam2HistoryInsertIndex + 1) % DEFAULT_TEST_HISTORY_SIZE;
+                                updateCam2TestData = false;
+                            }
+                            if (metadata.EnableDebugSaving)
+                            {
+                                if (updateCam2DebugData)
+                                {
+                                    // need to save image to debug slot
+                                    SaveIPData(cam2DebugLocation, ref data);
+                                    updateCam2DebugData = false;
+                                }
+                            }
+                            if (data.ContainsCrack)
+                            {
+                                cam2ConsecutiveCrackedSampleCount++;
+                                if (cam2ConsecutiveCrackedSampleCount > 10)
+                                {
+                                    crackConfirmed = true;
+                                }
+                            }
+                            else
+                            {
+                                cam2ConsecutiveCrackedSampleCount = 0;
+                                crackConfirmed = false;
+                            }
+                        }
+                        else
+                        {
+                            // unknown data type
+                            log.Info("ImageHistoryBuffer.Process : Received unknown data type.");
+                        }
+                        // check to see if we have confirmed a crack existing
+                        if (crackConfirmed)
+                        {
+                            // trigger the USB Relay
+                            USBRelayController usb_relay = USBRelayController.Instance;
+                            usb_relay.SetRelay0Status(true);
+                            usb_relay.SetRelay1Status(true);
+
+                            // save all images in history buffer
+                            saveHistoryBuffer(cam1TestLocation, cam1History);
+                            saveHistoryBuffer(cam2TestLocation, cam2History);
+
+                            break;
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Saves raw image, processe image, and metadata file for each IPData inside a folder in rootLocation.
+        /// </summary>
+        /// <param name="rootLocation">Location to place folder containing IPData.</param>
+        /// <param name="data">Data to save.</param>
+        /// <exception cref="ImageHistoryBufferException"></exception>
         private void SaveIPData(string rootLocation, ref IPData data)
         {
-            DateTime time = DateTime.Now;
-            string directory = 
+            const string RAW_DATA_EXTENSION = "//rawimage_";
+            const string PROC_DATA_EXTENSION = "//procimage_";
+            const string METADATA_EXTENSION = "//data_";
+            const string IMAGE_FORMAT = ".bmp";
+            const string METADATA_FORMAT = ".txt";
+
+            // create a folder in current directory with timestamp of image data
+            DateTime time = data.TimeStamp;
+            string directory =
                 time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
                 time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2") + "_" +
                 "image" + data.ImageNumber.ToString("D8");
             rootLocation = rootLocation + "//" + directory;
+
+            // create the directory if it does not exist
             if (!Directory.Exists(rootLocation))
             {
-                Directory.CreateDirectory(rootLocation);
-            } 
+                try
+                {
+                    Directory.CreateDirectory(rootLocation);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.SaveIPData : Exception thrown creating directory to save IPData in.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
 
-            // save raw
+            // save raw IPData
             Bitmap rawBitmap = null;
             bool isValid = true;
             try
@@ -193,12 +376,12 @@ namespace SAF_OpticalFailureDetector.savequeue
             {
                 string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to retrieve raw data image for saving.";
                 ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
-                log.Error(errMsg,ex);
+                log.Error(errMsg, ex);
                 isValid = false;
             }
             if (isValid)
             {
-                string fileName = rootLocation + "//rawimage_" + data.ImageNumber.ToString("D8") + ".bmp";
+                string fileName = rootLocation + RAW_DATA_EXTENSION + data.ImageNumber.ToString("D8") + IMAGE_FORMAT;
                 try
                 {
                     rawBitmap.Save(fileName);
@@ -208,9 +391,16 @@ namespace SAF_OpticalFailureDetector.savequeue
                     string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to save raw data image.";
                     ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
                     log.Error(errMsg, ex);
+                    throw ex;
                 }
             }
-            // save processed
+            // dispose image to prevent memory leak
+            if (rawBitmap != null)
+            {
+                rawBitmap.Dispose();
+            }
+
+            // save processed IPData
             Bitmap processedBitmap = null;
             isValid = true;
             try
@@ -226,7 +416,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             }
             if (isValid)
             {
-                string fileName = rootLocation + "//procimage_" + data.ImageNumber.ToString("D8") + ".bmp";
+                string fileName = rootLocation + PROC_DATA_EXTENSION + data.ImageNumber.ToString("D8") + IMAGE_FORMAT;
                 try
                 {
                     processedBitmap.Save(fileName);
@@ -236,302 +426,264 @@ namespace SAF_OpticalFailureDetector.savequeue
                     string errMsg = "ImageHistoryBuffer.SaveIPData : Unable to save processed data image.";
                     ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
                     log.Error(errMsg, ex);
+                    throw ex;
                 }
             }
-            // save metadata
-            StreamWriter write = new StreamWriter(rootLocation + "//info" + data.ImageNumber.ToString("D8") + ".txt");
+
+            // dispose image to prevent memory leak
+            if (processedBitmap != null)
+            {
+                processedBitmap.Dispose();
+            }
+
+            // create metadata file string to save
             MetaData metadata = MetaData.Instance;
-            write.WriteLine("General Settings: ");
-            write.WriteLine("Sample Number: " + metadata.SampleNumber);
-            write.WriteLine("Test Number: " + metadata.TestNumber);
-            write.WriteLine("Imager Noise: " + metadata.ImagerNoise.ToString("D3"));
-            write.WriteLine("Minimum Contrast: " + metadata.MinimumContrast.ToString("D3"));
-            write.WriteLine("Target Intensity: " + metadata.TargetIntenstiy.ToString("D3"));
-            write.WriteLine("Minimum Line Length: " + metadata.MinimumLineLength.ToString("D3"));
-            write.WriteLine();
-            write.WriteLine("Camera Information: ");
-            write.WriteLine("Timestamp: " + data.TimeStamp.ToLongTimeString());
-            write.WriteLine("Image Number: " + data.ImageNumber.ToString("D8"));
-            write.WriteLine("Image Size: " + data.ImageSize.Width.ToString("D4") + "x" + data.ImageSize.Height.ToString("D4"));
-            write.WriteLine("Exposure (s): " + data.ImageExposure_s.ToString());
-            write.WriteLine("Intensity (lsb): " + data.ImageIntensity_lsb.ToString("D3"));
-            write.WriteLine("Potential Cracks: " + data.PotentialCrackCount.ToString("D2"));
-            write.WriteLine("Contains Crack: " + data.ContainsCrack.ToString());
-            write.Close();
-        }
+            string dataToWrite = "";
+            dataToWrite += "General Settings: " + Environment.NewLine + Environment.NewLine;
+            dataToWrite += "Sample Number: " + metadata.SampleNumber + Environment.NewLine;
+            dataToWrite += "Test Number: " + metadata.TestNumber + Environment.NewLine;
+            dataToWrite += "Imager Noise: " + metadata.ImagerNoise.ToString("D3") + Environment.NewLine;
+            dataToWrite += "Minimum Contrast: " + metadata.MinimumContrast.ToString("D3") + Environment.NewLine;
+            dataToWrite += "Target Intensity: " + metadata.TargetIntenstiy.ToString("D3") + Environment.NewLine;
+            dataToWrite += "Minimum Line Length: " + metadata.MinimumLineLength.ToString("D3") + Environment.NewLine;
+            dataToWrite += Environment.NewLine;
+            dataToWrite += "Camera Information: " + Environment.NewLine;
+            dataToWrite += "Timestamp: " + data.TimeStamp.ToLongTimeString() + Environment.NewLine;
+            dataToWrite += "Image Number: " + data.ImageNumber.ToString("D8") + Environment.NewLine;
+            dataToWrite += "Image Size: " + data.ImageSize.Width.ToString("D4") + "x" + data.ImageSize.Height.ToString("D4") + Environment.NewLine;
+            dataToWrite += "Exposure (s): " + data.ImageExposure_s.ToString() + Environment.NewLine;
+            dataToWrite += "Intensity (lsb): " + data.ImageIntensity_lsb.ToString("D3") + Environment.NewLine;
+            dataToWrite += "Potential Cracks: " + data.PotentialCrackCount.ToString("D2") + Environment.NewLine;
+            dataToWrite += "Contains Crack: " + data.ContainsCrack.ToString() + Environment.NewLine;
 
-        private void Process()
-        {
-            Stopwatch sw = new Stopwatch();
-            Stopwatch sw_Crack = new Stopwatch();
-            sw.Start();
-            sw_Crack.Start();
-            bool saveImage1 = true;
-            bool saveImage2 = true;
-            bool updateImage1 = true;
-            bool updateImage2 = true;
-
-            // setup directories
-            string rootLocation = MetaData.Instance.SaveLocation;
-            if (!Directory.Exists(rootLocation))
+            // attempt to write metadata file string to file
+            StreamWriter write = null;
+            try
             {
-                Directory.CreateDirectory(rootLocation);
+                write = new StreamWriter(rootLocation + METADATA_EXTENSION + data.ImageNumber.ToString("D8") + METADATA_FORMAT);
             }
-            DateTime time = DateTime.Now;
-            // add a date and time of test to test
-            string folderName = "//Test" + MetaData.Instance.TestNumber + "_Sample" +
-                MetaData.Instance.SampleNumber + "_" +
-                time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
-                time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2");
-            rootLocation += folderName;
-            if (!Directory.Exists(rootLocation))
+            catch (Exception inner)
             {
-                Directory.CreateDirectory(rootLocation);
+                string errMsg = "ImageHistoryBuffer.SaveIPData : Error opening stream writer for metadata file.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg, inner);
+                throw ex;
             }
-            // crack detected folder --> cam1 /cam2
-            string crackedRootLocation = rootLocation + "//cracked";
-            string cam1CrackedRootLocation = crackedRootLocation + "//cam1";
-            string cam2CrackedRootLocation = crackedRootLocation + "//cam2";
-            if (!Directory.Exists(crackedRootLocation))
+            if (write != null)
             {
-                Directory.CreateDirectory(crackedRootLocation);
-            }
-            if (!Directory.Exists(cam1CrackedRootLocation))
-            {
-                Directory.CreateDirectory(cam1CrackedRootLocation);
-            }
-            if (!Directory.Exists(cam2CrackedRootLocation))
-            {
-                Directory.CreateDirectory(cam2CrackedRootLocation);
-            }
-
-            // debug folder --> cam1 / cam2
-            string debugLocation = rootLocation + "//debug";
-            string cam1DebugRootLocation = debugLocation + "//cam1";
-            string cam2DebugRootLocation = debugLocation + "//cam2";
-            if (MetaData.Instance.EnableDebugSaving)
-            {
-                if (!Directory.Exists(debugLocation))
+                try
                 {
-                    Directory.CreateDirectory(debugLocation);
+                    write.Write(dataToWrite);
                 }
-                if (!Directory.Exists(cam1DebugRootLocation))
+                catch (Exception inner)
                 {
-                    Directory.CreateDirectory(cam1DebugRootLocation);
+                    string errMsg = "ImageHistoryBuffer.SaveIPData : Error writing data to metadata file.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, inner);
+                    throw ex;
                 }
-                if (!Directory.Exists(cam2DebugRootLocation))
+                try
                 {
-                    Directory.CreateDirectory(cam2DebugRootLocation);
+                    write.Close();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.SaveIPData : Error closing stream writer for metadata file.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, inner);
+                    throw ex;
                 }
             }
-
-
-            List<IPData> CameraOneHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
-            List<IPData> CameraTwoHistory = new List<IPData>(DEFAULT_SAVE_FRAME_COUNT);
-            int camOneCounter = 0;
-            int camTwoCounter = 0;
-            int camOneIndex = 0;
-            int camTwoIndex = 0;
-            int camOneCrackCount = 0;
-            int camTwoCrackCount = 0;
-
-            bool camCracked = false;
-            int crackCountdown = 10;
-
-            while (isRunning)
-            {
-                
-                Thread.Sleep(5);
-                List<QueueElement> imageElements = new List<QueueElement>();
-
-                MetaData metadata = MetaData.Instance;
-
-                if (sw.ElapsedMilliseconds >= metadata.DebugSaveFrequency * 1000)
-                {
-                    saveImage1 = true;
-                    saveImage2 = true;
-                    sw.Restart();
-                }
-
-                if (sw_Crack.ElapsedMilliseconds >= 250)
-                {
-                    updateImage1 = true;
-                    updateImage2 = true;
-                    sw_Crack.Restart();
-                }
-
-                
-                
-                consumerQueue.popAll(ref imageElements);
-                if (imageElements.Count > 0)
-                {
-                    for (int i = 0; i < imageElements.Count; i++)
-                    {
-                        //figure our where the iamge is coming from
-                        IPData data = (IPData)imageElements[i].Data;
-                        string type = imageElements[i].Type;
-                        if (type.Contains("1"))
-                        {
-                            // see if image needs to be stored in recent history buffer 1
-                            if (updateImage1)
-                            {
-                                // requires a slot in buffer
-                                CameraOneHistory.Insert(camOneIndex, data);
-                                camOneIndex = (camOneIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
-                                updateImage1 = false;
-                            }
-                            if (metadata.EnableDebugSaving)
-                            {
-                                if (saveImage1)
-                                {
-                                    // need to save image to debug slot
-                                    SaveIPData(cam1DebugRootLocation,  ref data);
-                                    saveImage1 = false;
-                                }
-                            }
-                            if (data.ContainsCrack)
-                            {
-                                camOneCrackCount++;
-                                if (camOneCrackCount > 10)
-                                {
-                                    camCracked = true;
-                                }
-                            }
-                            else
-                            {
-                                camOneCrackCount = 0;
-                                camCracked = false;
-                            }
-                            camOneCounter = data.ImageNumber;
-                        }
-                        else if (type.Contains("2"))
-                        {
-                            // see if image needs to be stored in recent history buffer 2
-                            if (updateImage2)
-                            {
-                                // requires a slot in buffer
-                                CameraTwoHistory.Insert(camTwoIndex, data);
-                                camTwoIndex = (camTwoIndex + 1) % DEFAULT_SAVE_FRAME_COUNT;
-                                updateImage2 = false;
-                            }
-                            if (metadata.EnableDebugSaving)
-                            {
-                                if (saveImage2)
-                                {
-                                    // need to save image to debug slot
-                                    SaveIPData(cam2DebugRootLocation, ref data);
-                                    saveImage2 = false;
-                                }
-                            }
-                            if (data.ContainsCrack)
-                            {
-                                camTwoCrackCount++;
-                                if (camTwoCrackCount > 10)
-                                {
-                                    camCracked = true;
-                                }
-                            }
-                            else
-                            {
-                                camTwoCrackCount = 0;
-                                camCracked = false;
-                            }
-                            camTwoCounter = data.ImageNumber;
-                        }
-                        else
-                        {
-                            // unknown data type
-                        }
-                        // save data in buffer
-                        if (camCracked)
-                        {
-                            // trigger the USB Relay
-                            USBRelayController usb_relay = USBRelayController.Instance;
-                            usb_relay.SetRelay0Status(true);
-                            usb_relay.SetRelay1Status(true);
-
-                            for (int j = camOneIndex; j < DEFAULT_SAVE_FRAME_COUNT && j < CameraOneHistory.Count; j++)
-                            {
-                                IPData ipdata = CameraOneHistory[j];
-                                SaveIPData(cam1CrackedRootLocation, ref ipdata);
-                            }
-                            for (int j = 0; j < camOneIndex; j++)
-                            {
-                                IPData ipdata = CameraOneHistory[j];
-                                SaveIPData(cam1CrackedRootLocation, ref ipdata);
-                            }
-                            for (int j = camTwoIndex; j < DEFAULT_SAVE_FRAME_COUNT && j < CameraTwoHistory.Count; j++)
-                            {
-                                IPData ipdata = CameraTwoHistory[j];
-                                SaveIPData(cam2CrackedRootLocation, ref ipdata);
-                            }
-                            for (int j = 0; j < camTwoIndex; j++)
-                            {
-                                IPData ipdata = CameraTwoHistory[j];
-                                SaveIPData(cam2CrackedRootLocation, ref ipdata);
-                            }
-                            break;
-                        }
-
-                    }
-                }
-            }
-            return;
         }
 
         /// <summary>
-        /// This is the process that is run in a seperate thread
+        /// Saves all contents of history buffer inside of saveLocation.
         /// </summary>
-        private void Process2()
+        /// <param name="saveLocation">Location to save history buffer to.</param>
+        /// <param name="camHistory">IPData history to save to disk.</param>
+        private void saveHistoryBuffer(string saveLocation, IPData[] camHistory)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            Bitmap[] bufferImages = new Bitmap[100];
-            int imageIndex = 0;
-            string date_time;
-            // keep thread running until told to stop or start
-            while (isRunning)
+            for (int j = 0; j < DEFAULT_TEST_HISTORY_SIZE; j++)
             {
-                List<QueueElement> imageElements = new List<QueueElement>();
-                IPData image = null;
-                // grab all image data off of queue
-                consumerQueue.popAll(ref imageElements);
-                if (imageElements.Count > 0)
+                IPData ipdata = camHistory[j];
+                if (ipdata != null)
                 {
-                    image = (IPData)imageElements[imageElements.Count - 1].Data;
-                    if(sw.ElapsedMilliseconds >= 5000)
+                    try
                     {
-                        sw.Restart();
-                        bufferImages[imageIndex] = image.GetRawDataImage();//image.GetCameraImage();
-                        imageIndex = (imageIndex + 1) % 100;
+                        SaveIPData(saveLocation, ref ipdata);
                     }
-                    if(!image.ContainsCrack)
+                    catch (Exception inner)
                     {
-                        for(int counter = imageIndex; counter < 100; counter++)
-                        {
-                             Bitmap tmpBmp = bufferImages[counter];
-                            if (tmpBmp != null)
-                            {
-                                date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
-                                     "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
-                                tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
-                            }
-                         
-                        }
-                        for(int counter = 0; counter < imageIndex; counter++)
-                        {
-                            Bitmap tmpBmp = bufferImages[counter];
-                            if (tmpBmp != null)
-                            {
-                                date_time = DateTime.Now.Date.Year + "_" + DateTime.Now.Month + "_" + DateTime.Now.Day +
-                                    "_" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString();
-                                tmpBmp.Save(consumerLogFileLocation + "_" + date_time + ".bmp");
-                            }
-                        }
+                        string errMsg = "ImageHistoryBuffer : Error saving image data " + j.ToString("D2") + " in image history buffer.";
+                        ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        // do not throw this error, bc we still want to try to save the rest of data
                     }
                 }
+            }
+        }
 
+        /// <summary>
+        /// Creates the rootDirectory if it does not exist and creates a unique identifier folder inside of
+        /// it using date and time that save stream was started.
+        /// </summary>
+        /// <param name="rootLocation">Location to setup folder structure within.</param>
+        /// <exception cref="ImageHistoryBufferException"></exception>
+        /// <returns>Modified rootDirectory containing unique identifier folder.</returns>
+        private string initRootDirectory(string rootLocation)
+        {
+            // get a local copy of metadata
+            MetaData metadata = MetaData.Instance;
 
+            // check if directory chosen by user exists and create it if it does not
+            if (!Directory.Exists(rootLocation))
+            {
+                try
+                {
+                    Directory.CreateDirectory(rootLocation);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initRootDirectory : Unable to create root directory for saving.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+            // get date and time to create a folder within user's choosen location to save data, this creates a uniques stamp for the folder name
+            DateTime time = DateTime.Now;
+            string folderName = "//Test" + metadata.TestNumber + "_Sample" + metadata.SampleNumber + "_" +
+                time.Month.ToString("D2") + time.Day.ToString("D2") + time.Year.ToString("D4") + "_" +
+                time.Hour.ToString("D2") + time.Minute.ToString("D2") + time.Second.ToString("D2");
+            rootLocation += folderName;
+            // attempt to create the directory, there is no reason it should already exist
+            try
+            {
+                Directory.CreateDirectory(rootLocation);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ImageHistoryBuffer.initRootDirectory : Unable to create unique identify folder in root directory.";
+                ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+            return rootLocation;
+        }
+
+        private void initTestDirectory(string rootLocation, ref string cam1Location, ref string cam2Location)
+        {
+            const string TEST_EXTENSION = "//test";
+            const string CAM1_EXTENSION = "//cam1";
+            const string CAM2_EXTENSION = "//cam2";
+
+            string testLocation = rootLocation + TEST_EXTENSION;
+            // create root test Location folder
+            if (!Directory.Exists(testLocation))
+            {
+                try
+                {
+                    Directory.CreateDirectory(testLocation);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initTestDirectory : Unable to create test directory root folder.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+
+            // create cam1 folder inside of test location folder
+            cam1Location = testLocation + CAM1_EXTENSION;
+            if (!Directory.Exists(cam1Location))
+            {
+                try
+                {
+                    Directory.CreateDirectory(cam1Location);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initTestDirectory : Unable to create cam1 folder inside of test directory";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+
+            // create cam2 folder inside of test location folder
+            cam2Location = testLocation + CAM2_EXTENSION;
+            if (!Directory.Exists(cam2Location))
+            {
+                try
+                {
+                    Directory.CreateDirectory(cam2Location);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initTestDirectory : Unable to create cam2 folder inside of test directory";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+        }
+
+        private void initDebugDirectory(string rootLocation, ref string cam1Location, ref string cam2Location)
+        {
+            const string DEBUG_EXTENSION = "//debug";
+            const string CAM1_EXTENSION = "//cam1";
+            const string CAM2_EXTENSION = "//cam2";
+
+            string debugLocation = rootLocation + DEBUG_EXTENSION;
+            // create root debug Location folder
+            if (!Directory.Exists(debugLocation))
+            {
+                try
+                {
+                    Directory.CreateDirectory(debugLocation);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initDebugDirectory : Unable to create debug directory root folder.";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+
+            // create cam1 folder inside of debug location folder
+            cam1Location = debugLocation + CAM1_EXTENSION;
+            if (!Directory.Exists(cam1Location))
+            {
+                try
+                {
+                    Directory.CreateDirectory(cam1Location);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initDebugDirectory : Unable to create cam1 folder inside of debug directory";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
+            }
+
+            // create cam2 folder inside of debug location folder
+            cam2Location = debugLocation + CAM2_EXTENSION;
+            if (!Directory.Exists(cam2Location))
+            {
+                try
+                {
+                    Directory.CreateDirectory(cam2Location);
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "ImageHistoryBuffer.initDebugDirectory : Unable to create cam2 folder inside of debug directory";
+                    ImageHistoryBufferException ex = new ImageHistoryBufferException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    throw ex;
+                }
             }
         }
 
