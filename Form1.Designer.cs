@@ -75,7 +75,7 @@
             this.tsbtn_Help});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(1322, 79);
+            this.toolStrip1.Size = new System.Drawing.Size(1582, 79);
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -152,9 +152,9 @@
             this.tlp_Main.Name = "tlp_Main";
             this.tlp_Main.RowCount = 3;
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
-            this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 490F));
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_Main.Size = new System.Drawing.Size(1322, 646);
+            this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110F));
+            this.tlp_Main.Size = new System.Drawing.Size(1582, 699);
             this.tlp_Main.TabIndex = 2;
             // 
             // label1
@@ -165,7 +165,7 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(3, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(324, 40);
+            this.label1.Size = new System.Drawing.Size(389, 40);
             this.label1.TabIndex = 0;
             this.label1.Text = "Camera 1 View:";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -175,9 +175,9 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(333, 8);
+            this.cmboCam1View.Location = new System.Drawing.Point(398, 8);
             this.cmboCam1View.Name = "cmboCam1View";
-            this.cmboCam1View.Size = new System.Drawing.Size(324, 24);
+            this.cmboCam1View.Size = new System.Drawing.Size(389, 24);
             this.cmboCam1View.TabIndex = 1;
             this.cmboCam1View.TextChanged += new System.EventHandler(this.cmboCam1View_TextChanged);
             // 
@@ -187,9 +187,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(663, 0);
+            this.label2.Location = new System.Drawing.Point(793, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(324, 40);
+            this.label2.Size = new System.Drawing.Size(389, 40);
             this.label2.TabIndex = 2;
             this.label2.Text = "Camera 2 View:";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -199,9 +199,9 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(993, 8);
+            this.cmboCam2View.Location = new System.Drawing.Point(1188, 8);
             this.cmboCam2View.Name = "cmboCam2View";
-            this.cmboCam2View.Size = new System.Drawing.Size(326, 24);
+            this.cmboCam2View.Size = new System.Drawing.Size(391, 24);
             this.cmboCam2View.TabIndex = 3;
             this.cmboCam2View.TextChanged += new System.EventHandler(this.cmboCam2View_TextChanged);
             // 
@@ -211,16 +211,16 @@
             this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Camera1Display.Location = new System.Drawing.Point(3, 43);
             this.Camera1Display.Name = "Camera1Display";
-            this.Camera1Display.Size = new System.Drawing.Size(654, 484);
+            this.Camera1Display.Size = new System.Drawing.Size(784, 543);
             this.Camera1Display.TabIndex = 4;
             // 
             // Camera2Display
             // 
             this.tlp_Main.SetColumnSpan(this.Camera2Display, 2);
             this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Camera2Display.Location = new System.Drawing.Point(663, 43);
+            this.Camera2Display.Location = new System.Drawing.Point(793, 43);
             this.Camera2Display.Name = "Camera2Display";
-            this.Camera2Display.Size = new System.Drawing.Size(656, 484);
+            this.Camera2Display.Size = new System.Drawing.Size(786, 543);
             this.Camera2Display.TabIndex = 5;
             // 
             // gbCamera1
@@ -233,9 +233,9 @@
             this.gbCamera1.Controls.Add(this.lblCam1IPFPS);
             this.gbCamera1.Controls.Add(this.lblCam1FPS);
             this.gbCamera1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gbCamera1.Location = new System.Drawing.Point(3, 533);
+            this.gbCamera1.Location = new System.Drawing.Point(3, 592);
             this.gbCamera1.Name = "gbCamera1";
-            this.gbCamera1.Size = new System.Drawing.Size(654, 110);
+            this.gbCamera1.Size = new System.Drawing.Size(784, 104);
             this.gbCamera1.TabIndex = 6;
             this.gbCamera1.TabStop = false;
             this.gbCamera1.Text = "Camera 1 Information";
@@ -305,9 +305,9 @@
             this.gbCamera2.Controls.Add(this.lblCam2IPFPS);
             this.gbCamera2.Controls.Add(this.lblCam2FPS);
             this.gbCamera2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gbCamera2.Location = new System.Drawing.Point(663, 533);
+            this.gbCamera2.Location = new System.Drawing.Point(793, 592);
             this.gbCamera2.Name = "gbCamera2";
-            this.gbCamera2.Size = new System.Drawing.Size(656, 110);
+            this.gbCamera2.Size = new System.Drawing.Size(786, 104);
             this.gbCamera2.TabIndex = 7;
             this.gbCamera2.TabStop = false;
             this.gbCamera2.Text = "Camera 2 Information";
@@ -371,7 +371,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1322, 725);
+            this.ClientSize = new System.Drawing.Size(1582, 778);
             this.Controls.Add(this.tlp_Main);
             this.Controls.Add(this.toolStrip1);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);

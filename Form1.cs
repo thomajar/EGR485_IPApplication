@@ -97,10 +97,6 @@ namespace SAF_OpticalFailureDetector
             ipQueue2 = new CircularQueue<QueueElement>("IP2", queueSize);
             saveQueue = new CircularQueue<QueueElement>("save_queue", queueSize);
 
-            
-
-            
-
             // initialize camera and processor 1
             cam1 = new Camera();
             cam1.AddSubscriber(ipQueue1);
