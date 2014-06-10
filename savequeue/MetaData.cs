@@ -120,8 +120,8 @@ namespace SAF_OpticalFailureDetector.savequeue
             settings_debugSavingFrequency = 10;
 
             // metadata image processing settings
-            ip_imagerNoise = 12;
-            ip_imagerContrast = 8;
+            ip_imagerNoise = 15;
+            ip_imagerContrast = 15;
             ip_targetIntensity = 200;
             ip_minLineLength = 0;
         }

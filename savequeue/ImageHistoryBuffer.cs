@@ -312,8 +312,11 @@ namespace SAF_OpticalFailureDetector.savequeue
                         {
                             // trigger the USB Relay
                             USBRelayController usb_relay = USBRelayController.Instance;
-                            usb_relay.SetRelay0Status(true);
-                            usb_relay.SetRelay1Status(true);
+                            if (usb_relay.IsOpen)
+                            {
+                                usb_relay.SetRelay0Status(true);
+                                usb_relay.SetRelay1Status(true);
+                            }
 
                             // save all images in history buffer
                             saveHistoryBuffer(cam1TestLocation, cam1History);

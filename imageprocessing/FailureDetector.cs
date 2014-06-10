@@ -407,6 +407,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         try
                         {
                             crackConfidence = filterImage(ref processImage);
+                            //detectCracks(ref processImage);
                         }
                         catch (Exception inner)
                         {
@@ -467,6 +468,604 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        private bool detectCracks(ref Bitmap b)
+        {
+            Stopwatch _tmpTimer = new Stopwatch();
+            _tmpTimer.Start();
+
+            List<Point> crackPixels = null;
+            Boolean[,] isCrackedPixel = null;
+            List<Line> lines = null;
+            List<LineCollection> cracks = null;
+
+
+            // run filter algorithm --> finds pixels that may be part of a crack
+            try
+            {
+                findCrackPixels(ref b, ref crackPixels, ref isCrackedPixel);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.detectCracks : Error occured while finding cracked pixels.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+            long time_findCrackPixels = _tmpTimer.ElapsedMilliseconds;
+            _tmpTimer.Restart();
+
+            // run line collection algorithm
+            try
+            {
+                findCrackLines(ref crackPixels, ref isCrackedPixel, b.Width, b.Height, ref lines);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.detectCracks : Error occured finding crack lines.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+            long time_findCrackLines = _tmpTimer.ElapsedMilliseconds;
+            _tmpTimer.Restart();
+            // run line connection algorithm
+            try
+            {
+                connectCrackLines(ref lines, ref cracks);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.detectCracks : Error occured connecting crack lines.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+
+
+
+
+
+            drawCrackLines(ref b, ref lines,255,0,255);
+
+            foreach (LineCollection crack in cracks)
+            {
+                List<Line> tmpLines = crack.Lines;
+                drawCrackLines(ref b, ref tmpLines, 255, 255, 0);
+            }
+
+            // run crack detection algorithm
+            time_findCrackPixels += 1;
+            time_findCrackPixels -= 1;
+            time_findCrackLines += 1;
+
+            return false;
+        }
+
+        private void drawCrackLines(ref Bitmap b, ref List<Line> lines, byte red, byte green, byte blue)
+        {
+            int PixelSize = 3;
+
+            BitmapData B_data = null;
+
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.updateROI : Unable to lock bits in bitmap.", inner);
+                throw ex;
+            }
+
+            foreach (Line line in lines)
+            {
+                // draw the best fit line
+                for (int x = line.StartX; x < line.EndX; x++)
+                {
+                    int y1 = line.GetValueAt(x);
+                    int y2 = line.GetValueAt(x + 1);
+                    for (int i = 0; i < Math.Abs(y1-y2); i++)
+                    {
+                        int yDraw = y1 + (y2 - y1) / Math.Abs(y2 - y1) * i;
+
+                        if (yDraw > -1 && yDraw < b.Height)
+                        {
+                            byte* row = (byte*)B_data.Scan0 + (yDraw * B_data.Stride);
+                            row[x * PixelSize] = blue;
+                            row[x * PixelSize + 1] = green;
+                            row[x * PixelSize + 2] = red;
+                            row[(x + 1) * PixelSize] = blue;
+                            row[(x + 1) * PixelSize + 1] = green;
+                            row[(x + 1) * PixelSize + 2] = red;
+                            //row[(x - 1) * PixelSize] = 255;
+                            //row[(x - 1) * PixelSize + 1] = 0;
+                            //row[(x - 1) * PixelSize + 2] = 255;
+                            //row[(x + 2) * PixelSize] = 255;
+                            //row[(x + 2) * PixelSize + 1] = 0;
+                            //row[(x + 2) * PixelSize + 2] = 255;
+                            //row[(x - 2) * PixelSize] = 255;
+                            //row[(x - 2) * PixelSize + 1] = 0;
+                            //row[(x - 2) * PixelSize + 2] = 255; 
+                        }
+                    }
+                }
+
+                byte* endRow = (byte*)B_data.Scan0 + (line.StartY * B_data.Stride);
+
+
+
+                //// draw horizontal lines
+                //byte* topRow = (byte*)B_data.Scan0 + (r.Top * B_data.Stride);
+                //byte* botRow = (byte*)B_data.Scan0 + (r.Bottom * B_data.Stride);
+                //for (int i = r.Left; i < r.Right; i++)
+                //{
+                //    topRow[i * PixelSize] = 255;
+                //    topRow[i * PixelSize + 1] = 0;
+                //    topRow[i * PixelSize + 2] = 0;
+                //    botRow[i * PixelSize] = 255;
+                //    botRow[i * PixelSize + 1] = 0;
+                //    botRow[i * PixelSize + 2] = 0;
+                //}
+
+                //// draw vertical lines
+                //for (int y = r.Top; y < r.Bottom; y++)
+                //{
+                //    byte* row = (byte*)B_data.Scan0 + (y * B_data.Stride);
+                //    row[r.Left * PixelSize] = 255;
+                //    row[r.Left * PixelSize + 1] = 0;
+                //    row[r.Left * PixelSize + 2] = 0;
+                //    row[r.Right * PixelSize] = 255;
+                //    row[r.Right * PixelSize + 1] = 0;
+                //    row[r.Right * PixelSize + 2] = 0;
+                //}
+            }
+
+            // unlock bits
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                log.Error("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                FailureDetectorException ex = new FailureDetectorException("FailureDetector.histogram : Unable to unlock bits in bitmap.", inner);
+                throw ex;
+            }
+        }
+
+        private void findCrackPixels(ref Bitmap b, ref List<Point> crackPixels, ref Boolean[,] isCrackedPixel)
+        {
+            const int PixelSize = 3;
+            int[] H = new int[] { 3, 1, -1, -6, -1, 1, 3 };
+
+            BitmapData B_data = null;
+            int threshHold = noiseRange * 8;
+
+            crackPixels = new List<Point>();
+            isCrackedPixel = new Boolean[b.Height, b.Width];
+
+            // make sure image is correct format
+            if (b.PixelFormat != PixelFormat.Format24bppRgb)
+            {
+                string errMsg = "FailureDetector.findCrackPixels : Image to process has incorrect pixel format, must be PixelFormat.Format24bppRgb.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+
+            // attempt to lock bits on bitmap to process
+            try
+            {
+                B_data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                    ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.findCrackPixels : Unable to lock bits to perform image processing.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+
+            // get region to process
+            Rectangle regionToProcess;
+            if (enableROI)
+            {
+                regionToProcess = roi;
+            }
+            else
+            {
+                regionToProcess = new Rectangle(0, 0, b.Width, b.Height);
+            }
+
+            // begin filtering of image
+            int result = 0;
+            int offset = 3;
+            const int FILTER_SIZE = 7;
+            try
+            {
+                for (int y = regionToProcess.Top; y < regionToProcess.Bottom; y++)
+                {
+                    byte* row = (byte*)B_data.Scan0 + (y * B_data.Stride);
+
+                    for (int x = regionToProcess.Left + 3; x < regionToProcess.Right - 3; x++)
+                    {
+                        result = 0;
+                        offset = 3;
+                        for (int i = 0; i < FILTER_SIZE; i++)
+                        {
+                            result += row[(x - offset + i) * PixelSize] * H[i];
+                        }
+                        if (result > threshHold)
+                        {
+                            if (row[(x - offset) * PixelSize] > row[x * PixelSize] + minimumContrast &&
+                                row[(x + offset) * PixelSize] > row[x * PixelSize] + minimumContrast)
+                            {
+                                // color pixel green
+                                row[x * PixelSize] = 0;         // Blue  0-255
+                                row[x * PixelSize + 1] = 255;   // Green 0-255
+                                row[x * PixelSize + 2] = 0;     // Red   0-255
+
+                                crackPixels.Add(new Point(x, y));
+                                isCrackedPixel[y, x] = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.findCrackPixels : Error occured during image processing.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+            try
+            {
+                b.UnlockBits(B_data);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.findCrackPixels : Unable to unlock bits.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        private void findCrackLines(ref List<Point> crackPixels, ref Boolean[,] isCrackedPixel, int width, int height, ref List<Line> lines)
+        {
+            lines = new List<Line>();
+            Stack<object> stack = new Stack<object>();
+            bool[,] hasPixelBeenUsed = new bool[height, width];
+            foreach (Point testPoint in crackPixels)
+            {
+                Point p = testPoint;
+                Point min = new Point(testPoint.X,testPoint.Y);
+                Point max = new Point(testPoint.X,testPoint.Y);
+                if (!hasPixelBeenUsed[p.Y,p.X])
+                {
+                    hasPixelBeenUsed[p.Y,p.X] = true;
+
+                    // this is where we look for neighbors
+                    bool keepSearching = true;
+                    ContourState s = ContourState.North;
+                    
+                    // best fit vars
+                    int count = 1;
+                    int sumX = p.X;
+                    int sumY = p.Y;
+                    int sumX2 = (int)Math.Pow(p.X,2);
+                    int sumXY = p.X * p.Y;
+
+
+
+                    while (keepSearching)
+                    {
+                        Point focus = p;
+                        Point direction = Point.Empty;
+                        switch (s)
+                        {
+                            case ContourState.North:
+                                direction = new Point(0, 1);
+                                break;
+                            case ContourState.NorthEast:
+                                direction = new Point(1, 1);
+                                break;
+                            case ContourState.East:
+                                direction = new Point(1, 0);
+                                break;
+                            case ContourState.SouthEast:
+                                direction = new Point(1, -1);
+                                break;
+                            case ContourState.South:
+                                direction = new Point(0, -1);
+                                break;
+                            case ContourState.SouthWest:
+                                direction = new Point(-1, -1);
+                                break;
+                            case ContourState.West:
+                                direction = new Point(-1, 0);
+                                break;
+                            case ContourState.NorthWest:
+                                direction = new Point(-1, 1);
+                                break;
+                            default:
+                                break;
+                        }
+                        // check to see if we can go that direction
+                        Point checkPoint = new Point(p.X + direction.X, p.Y + direction.Y);
+                        bool passedTests = false;
+                        if (checkPoint.X >= 0 && checkPoint.Y >= 0 && checkPoint.X < width && checkPoint.Y < height)
+                        {
+                            if (isCrackedPixel[checkPoint.Y, checkPoint.X] && !hasPixelBeenUsed[checkPoint.Y, checkPoint.X])
+                            {
+                                //stack.Push
+                                stack.Push(new Point(p.X, p.Y));
+                                stack.Push(s);
+                                p = checkPoint;
+                                s = ContourState.North;
+                                hasPixelBeenUsed[p.Y, p.X] = true;
+
+                                // add to best fit line vars
+                                count++;
+                                sumX += p.X;
+                                sumY += p.Y;
+                                sumX2 += (int)Math.Pow(p.X, 2);
+                                sumXY += p.X * p.Y;
+
+                                // update min / max
+                                if (p.X < min.X)
+                                {
+                                    min.X = p.X;
+                                }
+                                if (p.Y < min.Y)
+                                {
+                                    min.Y = p.Y;
+                                }
+                                if (p.X > max.X)
+                                {
+                                    max.X = p.X;
+                                }
+                                if (p.Y > max.Y)
+                                {
+                                    max.Y = p.Y;
+                                }
+                                passedTests = true;
+                            }
+                        }
+                        if (!passedTests)
+                        {
+                            if (s == ContourState.NorthWest)
+                            {
+                                bool foundNewPoint = false;
+                                while (!foundNewPoint)
+                                {
+                                    if (stack.Count > 1)
+                                    {
+                                        s = (ContourState)stack.Pop();
+                                        p = (Point)stack.Pop();
+                                        if (s != ContourState.NorthWest)
+                                        {
+                                            s++;
+                                            foundNewPoint = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        foundNewPoint = true;
+                                        keepSearching = false;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                s++;
+                            }
+                        } 
+                    }
+                    int xdif = max.X - min.X;
+                    int ydif = max.Y - min.Y;
+                    int hdif = (int)Math.Sqrt(Math.Pow(xdif, 2) + Math.Pow(ydif, 2));
+                    if (hdif >= 15)
+                    {
+                        double xMean = (double)sumX / (double)count;
+                        double yMean = (double)sumY / (double)count;
+                        double slope = (double)(sumXY - sumX * yMean) / (double)(sumX2 - sumX * xMean);
+                        double yInt = yMean - slope * xMean;
+                        Point startPoint = new Point(min.X, (int)(slope*min.X + yInt));
+                        Point endPoint = new Point(max.X, (int)(slope * max.X + yInt));
+                        // may be a line   
+                        lines.Add(new Line(startPoint, endPoint, slope, yInt));
+                    }
+                    
+                }
+            }
+        }
+
+        private double hypothenuse(Point p1, Point p2)
+        {
+            return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
+        }
+
+        private void connectCrackLines(ref List<Line> lines, ref List<LineCollection> cracks)
+        {
+            const double minDistance = 15;
+            const double absMinDist = 5;
+
+            cracks = new List<LineCollection>();
+            for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
+            {
+                Line line = lines[lineIndex];
+
+                for (int testIndex = 0; testIndex < cracks.Count; testIndex++)
+                {
+                    if (testIndex != lineIndex)
+                    {
+                        Line testLine = new Line(cracks[testIndex].StartPoint, cracks[testIndex].EndPoint, 0, 0);
+
+                        double d1 = hypothenuse(line.StartPoint, testLine.EndPoint);
+                        double d2 = hypothenuse(line.EndPoint, testLine.StartPoint);
+
+                        bool addLine = false;
+
+                        if (d1 < absMinDist)
+                        {
+                            addLine = true;
+                            cracks[testIndex].AddToEnd(line);
+                        }
+                        if (d2 < absMinDist)
+                        {
+                            addLine = true;
+                            cracks[testIndex].AddToStart(line);
+                        }
+
+                        if (d1 < minDistance)
+                        {
+                            if (line.Angle > 95)
+                            {
+                                if (testLine.EndPoint.Y > line.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else if (line.Angle < 85)
+                            {
+                                if (testLine.EndPoint.Y < line.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else
+                            {
+                                addLine = true;
+                            }
+                            if (addLine)
+                            {
+                                cracks[testIndex].AddToEnd(line);
+                            }
+                            
+                        }
+
+                        if (d2 < minDistance)
+                        {
+                            if (line.Angle > 95)
+                            {
+                                if (line.EndPoint.Y > testLine.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else if (line.Angle < 85)
+                            {
+                                if (line.EndPoint.Y < testLine.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else
+                            {
+                                addLine = true;
+                            }
+                            if (addLine)
+                            {
+                                cracks[testIndex].AddToStart(line);
+                            }
+                        }
+                    }
+                }
+
+                for (int testIndex = 0; testIndex < lines.Count; testIndex++)
+                {
+                    if (testIndex != lineIndex)
+                    {
+                        Line testLine = lines[testIndex];
+
+                        double d1 = hypothenuse(line.StartPoint, testLine.EndPoint);
+                        double d2 = hypothenuse(line.EndPoint, testLine.StartPoint);
+
+                        bool addLine = false;
+
+                        if (d1 < absMinDist || d2 < absMinDist)
+                        {
+                            addLine = true;
+                        }
+
+                        if (d1 < minDistance)
+                        {
+                            if (line.Angle > 95)
+                            {
+                                if (testLine.EndPoint.Y > line.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else if (line.Angle < 85)
+                            {
+                                if (testLine.EndPoint.Y < line.StartPoint.Y)
+                                {
+                                    addLine = true;   
+                                }
+                            }
+                            else
+                            {
+                                addLine = true;
+                            }
+                        }
+
+                        if (d2 < minDistance)
+                        {
+                            if (line.Angle > 95)
+                            {
+                                if (line.EndPoint.Y > testLine.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else if (line.Angle < 85)
+                            {
+                                if (line.EndPoint.Y < testLine.StartPoint.Y)
+                                {
+                                    addLine = true;
+                                }
+                            }
+                            else
+                            {
+                                addLine = true;
+                            }
+                        }
+
+                        if (addLine)
+                        {
+                            LineCollection tmp = new LineCollection();
+                            tmp.AddLine(line);
+                            tmp.AddLine(testLine);
+                            bool add = true;
+                            foreach (LineCollection tmplines in cracks)
+                            {
+                                if (tmplines.Lines.Contains(line) || tmplines.Lines.Contains(testLine))
+                                {
+                                    add = false;
+                                }
+                            }
+                            if (add)
+                            {
+                                cracks.Add(tmp);
+                            }
+                            
+                        }
+
+                    }
+                }
+                
+            }
+        }
+
+        private void detectCracks()
+        {
+
+        }
        
         /// <summary>
         /// 
@@ -711,7 +1310,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         private void DrawROI(ref Bitmap b)
         {
-            int percentwhite = 80;
             int PixelSize = 3;
 
             BitmapData B_data = null;
@@ -772,5 +1370,100 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         public FailureDetectorException(string message) : base(message) { }
         public FailureDetectorException(string message, System.Exception inner) : base(message, inner) { }
         protected FailureDetectorException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) { }
+    }
+
+    public class Line
+    {
+        private Point start;
+        private Point end;
+        private double slope;
+        private double yintercept;
+        private double angle;
+
+
+        public Line(Point start, Point end, double slope, double yint)
+        {
+            this.start = new Point(start.X, start.Y);
+            this.end = new Point(end.X, end.Y);
+            this.slope = slope;
+            this.yintercept = yint;
+            //this.angle 
+            if (slope > 0)
+            {
+                this.angle = 180 / Math.PI * Math.Asin(1 / slope);
+            }
+            else if (slope < 0 )
+            {
+                this.angle = 90 + 180 / Math.PI * Math.Acos(1 / Math.Abs(slope));
+            }
+            else
+            {
+                this.angle = 90;
+            }
+        }
+
+        public int GetValueAt(int x)
+        {
+            double y = slope * x + yintercept;
+            return (int)y;
+        }
+
+        public Point StartPoint { get { return start;} }
+        public Point EndPoint { get { return end; } }
+        public int StartX { get { return start.X; } }
+        public int StartY { get { return start.Y; } }
+        public int EndX { get { return end.X; } }
+        public int EndY { get { return end.Y; } }
+        public double Angle { get { return angle; } }
+        
+
+    }
+
+    public class LineCollection
+    {
+        List<Line> lines;
+
+        private Point startPoint;
+        private Point endPoint;
+
+        public List<Line> Lines { get { return lines; } }
+        public Point StartPoint { get { return startPoint; } }
+        public Point EndPoint { get { return endPoint; } }
+
+        public LineCollection()
+        {
+            lines = new List<Line>();
+        }
+
+        public void AddToEnd(Line line)
+        {
+            endPoint = line.EndPoint;
+            lines.Add(line);
+        }
+
+        public void AddToStart(Line line)
+        {
+            startPoint = line.StartPoint;
+            lines.Add(line);
+        }
+
+        public void AddLine(Line line)
+        {
+            startPoint = line.StartPoint;
+            endPoint = line.EndPoint;
+            lines.Add(line);
+        }
+    }
+
+    public enum ContourState
+    {
+        North,
+        NorthEast,
+        East,
+        SouthEast,
+        South,
+        SouthWest,
+        West,
+        NorthWest
     }
 }
