@@ -101,7 +101,7 @@ namespace SAF_OpticalFailureDetector
             cam1 = new Camera();
             cam1.AddSubscriber(ipQueue1);
             cam1.AddSubscriber(mainQueue);
-            imagep1 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR1_NAME);
+            imagep1 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR1_NAME, ref cam1);
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
@@ -112,7 +112,7 @@ namespace SAF_OpticalFailureDetector
             cam2 = new Camera();
             cam2.AddSubscriber(ipQueue2);
             cam2.AddSubscriber(mainQueue);
-            imagep2 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR2_NAME);
+            imagep2 = new FailureDetector(DEFAULT_IMAGE_PROCESSOR2_NAME, ref cam2);
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);

@@ -31,18 +31,20 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.tsbtn_ReplayMode = new System.Windows.Forms.ToolStripButton();
+            this.tsbtn_CameraMode = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.tsbtn_Settings = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_RefreshCamera = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Start = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Stop = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Help = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.tlp_Main = new System.Windows.Forms.TableLayoutPanel();
             this.label1 = new System.Windows.Forms.Label();
             this.cmboCam1View = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
             this.cmboCam2View = new System.Windows.Forms.ComboBox();
-            this.Camera1Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
-            this.Camera2Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.gbCamera1 = new System.Windows.Forms.GroupBox();
             this.lblCam1PotentialCracks = new System.Windows.Forms.Label();
             this.lblCam1CracksDetected = new System.Windows.Forms.Label();
@@ -57,6 +59,8 @@
             this.lblCam2Exposure = new System.Windows.Forms.Label();
             this.lblCam2IPFPS = new System.Windows.Forms.Label();
             this.lblCam2FPS = new System.Windows.Forms.Label();
+            this.Camera1Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
+            this.Camera2Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.toolStrip1.SuspendLayout();
             this.tlp_Main.SuspendLayout();
             this.gbCamera1.SuspendLayout();
@@ -68,16 +72,46 @@
             this.toolStrip1.AutoSize = false;
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(64, 64);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsbtn_ReplayMode,
+            this.tsbtn_CameraMode,
+            this.toolStripSeparator1,
             this.tsbtn_Settings,
             this.tsbtn_RefreshCamera,
             this.tsbtn_Start,
             this.tsbtn_Stop,
-            this.tsbtn_Help});
+            this.tsbtn_Help,
+            this.toolStripSeparator2});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1582, 79);
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "toolStrip1";
+            // 
+            // tsbtn_ReplayMode
+            // 
+            this.tsbtn_ReplayMode.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_ReplayMode.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_ReplayMode.Image")));
+            this.tsbtn_ReplayMode.ImageTransparentColor = System.Drawing.Color.White;
+            this.tsbtn_ReplayMode.Name = "tsbtn_ReplayMode";
+            this.tsbtn_ReplayMode.Size = new System.Drawing.Size(68, 76);
+            this.tsbtn_ReplayMode.Text = "toolStripButton2";
+            this.tsbtn_ReplayMode.ToolTipText = "Load Video";
+            // 
+            // tsbtn_CameraMode
+            // 
+            this.tsbtn_CameraMode.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_CameraMode.Enabled = false;
+            this.tsbtn_CameraMode.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_CameraMode.Image")));
+            this.tsbtn_CameraMode.ImageTransparentColor = System.Drawing.Color.White;
+            this.tsbtn_CameraMode.Name = "tsbtn_CameraMode";
+            this.tsbtn_CameraMode.Size = new System.Drawing.Size(68, 76);
+            this.tsbtn_CameraMode.Text = "toolStripButton1";
+            this.tsbtn_CameraMode.ToolTipText = "Capture Video";
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 79);
             // 
             // tsbtn_Settings
             // 
@@ -102,6 +136,7 @@
             // tsbtn_Start
             // 
             this.tsbtn_Start.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_Start.Enabled = false;
             this.tsbtn_Start.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Start.Image")));
             this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.White;
             this.tsbtn_Start.Name = "tsbtn_Start";
@@ -130,6 +165,11 @@
             this.tsbtn_Help.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Help.Text = "Help";
             this.tsbtn_Help.Click += new System.EventHandler(this.tsbtn_Help_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 79);
             // 
             // tlp_Main
             // 
@@ -204,24 +244,6 @@
             this.cmboCam2View.Size = new System.Drawing.Size(391, 24);
             this.cmboCam2View.TabIndex = 3;
             this.cmboCam2View.TextChanged += new System.EventHandler(this.cmboCam2View_TextChanged);
-            // 
-            // Camera1Display
-            // 
-            this.tlp_Main.SetColumnSpan(this.Camera1Display, 2);
-            this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Camera1Display.Location = new System.Drawing.Point(3, 43);
-            this.Camera1Display.Name = "Camera1Display";
-            this.Camera1Display.Size = new System.Drawing.Size(784, 543);
-            this.Camera1Display.TabIndex = 4;
-            // 
-            // Camera2Display
-            // 
-            this.tlp_Main.SetColumnSpan(this.Camera2Display, 2);
-            this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Camera2Display.Location = new System.Drawing.Point(793, 43);
-            this.Camera2Display.Name = "Camera2Display";
-            this.Camera2Display.Size = new System.Drawing.Size(786, 543);
-            this.Camera2Display.TabIndex = 5;
             // 
             // gbCamera1
             // 
@@ -367,6 +389,24 @@
             this.lblCam2FPS.TabIndex = 6;
             this.lblCam2FPS.Text = "Frames Per Second: n/a";
             // 
+            // Camera1Display
+            // 
+            this.tlp_Main.SetColumnSpan(this.Camera1Display, 2);
+            this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Camera1Display.Location = new System.Drawing.Point(3, 43);
+            this.Camera1Display.Name = "Camera1Display";
+            this.Camera1Display.Size = new System.Drawing.Size(784, 543);
+            this.Camera1Display.TabIndex = 4;
+            // 
+            // Camera2Display
+            // 
+            this.tlp_Main.SetColumnSpan(this.Camera2Display, 2);
+            this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Camera2Display.Location = new System.Drawing.Point(793, 43);
+            this.Camera2Display.Name = "Camera2Display";
+            this.Camera2Display.Size = new System.Drawing.Size(786, 543);
+            this.Camera2Display.TabIndex = 5;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -419,6 +459,10 @@
         private System.Windows.Forms.Label lblCam2Exposure;
         private System.Windows.Forms.Label lblCam2IPFPS;
         private System.Windows.Forms.Label lblCam2FPS;
+        private System.Windows.Forms.ToolStripButton tsbtn_ReplayMode;
+        private System.Windows.Forms.ToolStripButton tsbtn_CameraMode;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
     }
 }
 

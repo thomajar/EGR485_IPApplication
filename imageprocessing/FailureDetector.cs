@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using log4net;
+using SAF_OpticalFailureDetector.camera;
 
 namespace SAF_OpticalFailureDetector.imageprocessing
 {
@@ -33,6 +34,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private Boolean enableAutoExposure;
         private int updateExposureFrequency;
         private int targetIntesity;
+
+        private Camera cam;
 
         private const float INTENSITY_GAIN_THRESHOLD = 0.05f;
 
@@ -63,7 +66,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// 
         /// </summary>
         /// <param name="name"></param>
-        public FailureDetector(String name)
+        public FailureDetector(String name, ref Camera cam)
         {
             _ipLock = new object();
 
@@ -72,6 +75,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
             // initialize processing thread variables
             isRunning = false;
+
+            this.cam = cam;
 
             // defaults
             minimumContrast = DEFAULT_MIN_CONTRAST;
@@ -285,6 +290,12 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             Stopwatch _threadTimer = new Stopwatch();
             _threadTimer.Start();
 
+            Stopwatch _exposureUpdateTimer = new Stopwatch();
+            _exposureUpdateTimer.Start();
+
+            Stopwatch _roiUpdateTimer = new Stopwatch();
+            _roiUpdateTimer.Start();
+
             // keep thread running until told to stop or start
             while (isRunning)
             {
@@ -325,8 +336,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         if (enableROI)
                         {
                             roiCounter = (roiCounter + 1) % updateROIFrequency;
-                            if (roiCounter == 1)
+                            if (_roiUpdateTimer.ElapsedMilliseconds == 5000)
                             {
+                                _roiUpdateTimer.Restart();
                                 // store old roi incase of an exception
                                 Rectangle oldROI = new Rectangle(roi.X,roi.Y,roi.Width,roi.Height);
                                 try
@@ -350,9 +362,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         // update exposure of camera
                         if (enableAutoExposure)
                         {
-                            exposureCounter = (exposureCounter + 1) % updateExposureFrequency;
-                            if (exposureCounter == 0)
+                            if (_exposureUpdateTimer.ElapsedMilliseconds == 5000)
                             {
+                                _exposureUpdateTimer.Restart();
                                 // get histogram from image
                                 int[] hist = null;
                                 try
@@ -394,8 +406,16 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                     // make sure gain is above change threshold
                                     if (desiredGain > 1.0f + INTENSITY_GAIN_THRESHOLD || desiredGain < 1.0f - INTENSITY_GAIN_THRESHOLD)
                                     {
-                                        //cam.GainExposure(desiredGain) ~ this needs to be implemented
-                                        exposureCounter -= 20;
+                                        try
+                                        {
+                                            cam.SetExposureByGain(desiredGain);
+                                        }
+                                        catch (Exception inner)
+                                        {
+                                            string errMsg = "FailureDetector.Process : Exception thrown changing exposure on cameras.";
+                                            FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                                            log.Error(errMsg, ex);
+                                        }
                                     }
                                 }
                             }
@@ -406,8 +426,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         int crackConfidence = 0;
                         try
                         {
-                            crackConfidence = filterImage(ref processImage);
-                            //detectCracks(ref processImage);
+                            //crackConfidence = filterImage(ref processImage);
+                            detectCracks(ref processImage);
                         }
                         catch (Exception inner)
                         {
@@ -470,14 +490,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         private bool detectCracks(ref Bitmap b)
         {
-            Stopwatch _tmpTimer = new Stopwatch();
-            _tmpTimer.Start();
-
             List<Point> crackPixels = null;
             Boolean[,] isCrackedPixel = null;
             List<Line> lines = null;
             List<LineCollection> cracks = null;
-
 
             // run filter algorithm --> finds pixels that may be part of a crack
             try
@@ -491,8 +507,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 log.Error(errMsg, ex);
                 throw ex;
             }
-            long time_findCrackPixels = _tmpTimer.ElapsedMilliseconds;
-            _tmpTimer.Restart();
 
             // run line collection algorithm
             try
@@ -506,8 +520,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 log.Error(errMsg, ex);
                 throw ex;
             }
-            long time_findCrackLines = _tmpTimer.ElapsedMilliseconds;
-            _tmpTimer.Restart();
+
             // run line connection algorithm
             try
             {
@@ -521,10 +534,21 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
 
+            int crackCount = 0;
+            try
+            {
+                crackCount = filterLinesAndCracks(ref lines, ref cracks);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.detectCracks : Error occured filtering lines and cracks.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
 
-
-
-
+            // Visualizes Cracks
+            /*
             drawCrackLines(ref b, ref lines,255,0,255);
 
             foreach (LineCollection crack in cracks)
@@ -532,13 +556,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 List<Line> tmpLines = crack.Lines;
                 drawCrackLines(ref b, ref tmpLines, 255, 255, 0);
             }
+             * */
 
-            // run crack detection algorithm
-            time_findCrackPixels += 1;
-            time_findCrackPixels -= 1;
-            time_findCrackLines += 1;
-
-            return false;
+            return (crackCount > 0);
         }
 
         private void drawCrackLines(ref Bitmap b, ref List<Line> lines, byte red, byte green, byte blue)
@@ -578,47 +598,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                             row[(x + 1) * PixelSize] = blue;
                             row[(x + 1) * PixelSize + 1] = green;
                             row[(x + 1) * PixelSize + 2] = red;
-                            //row[(x - 1) * PixelSize] = 255;
-                            //row[(x - 1) * PixelSize + 1] = 0;
-                            //row[(x - 1) * PixelSize + 2] = 255;
-                            //row[(x + 2) * PixelSize] = 255;
-                            //row[(x + 2) * PixelSize + 1] = 0;
-                            //row[(x + 2) * PixelSize + 2] = 255;
-                            //row[(x - 2) * PixelSize] = 255;
-                            //row[(x - 2) * PixelSize + 1] = 0;
-                            //row[(x - 2) * PixelSize + 2] = 255; 
                         }
                     }
                 }
 
                 byte* endRow = (byte*)B_data.Scan0 + (line.StartY * B_data.Stride);
-
-
-
-                //// draw horizontal lines
-                //byte* topRow = (byte*)B_data.Scan0 + (r.Top * B_data.Stride);
-                //byte* botRow = (byte*)B_data.Scan0 + (r.Bottom * B_data.Stride);
-                //for (int i = r.Left; i < r.Right; i++)
-                //{
-                //    topRow[i * PixelSize] = 255;
-                //    topRow[i * PixelSize + 1] = 0;
-                //    topRow[i * PixelSize + 2] = 0;
-                //    botRow[i * PixelSize] = 255;
-                //    botRow[i * PixelSize + 1] = 0;
-                //    botRow[i * PixelSize + 2] = 0;
-                //}
-
-                //// draw vertical lines
-                //for (int y = r.Top; y < r.Bottom; y++)
-                //{
-                //    byte* row = (byte*)B_data.Scan0 + (y * B_data.Stride);
-                //    row[r.Left * PixelSize] = 255;
-                //    row[r.Left * PixelSize + 1] = 0;
-                //    row[r.Left * PixelSize + 2] = 0;
-                //    row[r.Right * PixelSize] = 255;
-                //    row[r.Right * PixelSize + 1] = 0;
-                //    row[r.Right * PixelSize + 2] = 0;
-                //}
             }
 
             // unlock bits
@@ -1062,9 +1046,25 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
-        private void detectCracks()
-        {
 
+        private int filterLinesAndCracks(ref List<Line> lines, ref List<LineCollection> cracks)
+        {
+            int crackCount = 0;
+            foreach (Line line in lines)
+            {
+                if (hypothenuse(line.StartPoint,line.EndPoint) > 50)
+                {
+                    crackCount++;
+                }
+            }
+            foreach (LineCollection crack in cracks)
+            {
+                if (hypothenuse(crack.StartPoint, crack.EndPoint) > 50)
+                {
+                    crackCount++;
+                }
+            }
+            return crackCount;
         }
        
         /// <summary>

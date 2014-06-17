@@ -267,6 +267,25 @@ namespace SAF_OpticalFailureDetector.camera
 
         }
 
+
+        public void SetExposureByGain(double gain)
+        {
+            double tmp_exposure = exposure_s * gain;
+
+            try
+            {
+                SetExposure(tmp_exposure);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "Camera.SetExposureByGain : Unable to set exposure.";
+                CameraException ex = new CameraException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+        //cam.GainExposure(desiredGain);
+
         /// <summary>
         /// Changes the state of camera's auto exposure to either on or off.
         /// </summary>
@@ -324,7 +343,6 @@ namespace SAF_OpticalFailureDetector.camera
                 // check that device is valid before attempting to change it.
                 if (!cam.DeviceValid)
                 {
-
                     string errMsg = "Camera.SetExposure : Camera is not valid, cannot change exposure.";
                     CameraException ex = new CameraException(errMsg);
                     log.Error(errMsg, ex);
@@ -348,6 +366,7 @@ namespace SAF_OpticalFailureDetector.camera
                 if (exposureInterface != null && exposureInterface.Available)
                 {
                     exposureInterface.Value = exposure_ms / 1000.0;
+                    Thread.Sleep(10);
                     exposure_s = Convert.ToDouble(exposureInterface.Value);
                 }
                 else
