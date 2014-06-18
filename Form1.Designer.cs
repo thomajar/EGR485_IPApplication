@@ -136,7 +136,6 @@
             // tsbtn_Start
             // 
             this.tsbtn_Start.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_Start.Enabled = false;
             this.tsbtn_Start.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Start.Image")));
             this.tsbtn_Start.ImageTransparentColor = System.Drawing.Color.White;
             this.tsbtn_Start.Name = "tsbtn_Start";
@@ -215,7 +214,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(398, 8);
+            this.cmboCam1View.Location = new System.Drawing.Point(398, 7);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(389, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -239,7 +238,7 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(1188, 8);
+            this.cmboCam2View.Location = new System.Drawing.Point(1188, 7);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(391, 24);
             this.cmboCam2View.TabIndex = 3;
