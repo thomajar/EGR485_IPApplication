@@ -29,10 +29,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private int minimumContrast;
         private int noiseRange;
         private Boolean enableROI;
-        private int updateROIFrequency;
+        private int updateROIPeriod_ms;
         private Rectangle roi;
         private Boolean enableAutoExposure;
-        private int updateExposureFrequency;
+        private int updateExposurePeriod_ms;
         private int targetIntesity;
 
         private Camera cam;
@@ -58,7 +58,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_ROI_UPDATE_FREQUENCY = 100;
         private const bool DEFAULT_ENABLE_AUTO_EXPOSURE = false;
         private const int DEFAULT_EXPOSURE_UPDATE_FREQUENCY = 50;
-        private const int DEFAULT_TARGET_INTENSITY = 200;
+        private const int DEFAULT_TARGET_INTENSITY = 150;
+        private const int DEFAULT_ROI_UPDATE_PERIOD_MS = 5000;
+        private const int DEFAULT_EXPOSURE_UPDATE_PERIOD_MS = 2500;
 
         public bool Running { get { return isRunning; } }
 
@@ -82,9 +84,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             minimumContrast = DEFAULT_MIN_CONTRAST;
             noiseRange = DEFAULT_MIN_NOISE_LVL;
             enableROI = DEFAULT_ENABLE_ROI;
-            updateROIFrequency = DEFAULT_ROI_UPDATE_FREQUENCY;
+            updateROIPeriod_ms = DEFAULT_ROI_UPDATE_FREQUENCY;
             enableAutoExposure = DEFAULT_ENABLE_AUTO_EXPOSURE;
-            updateExposureFrequency = DEFAULT_EXPOSURE_UPDATE_FREQUENCY;
+            updateExposurePeriod_ms = DEFAULT_EXPOSURE_UPDATE_FREQUENCY;
             targetIntesity = DEFAULT_TARGET_INTENSITY;
 
         }
@@ -335,8 +337,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         // update roi to process
                         if (enableROI)
                         {
-                            roiCounter = (roiCounter + 1) % updateROIFrequency;
-                            if (_roiUpdateTimer.ElapsedMilliseconds == 5000)
+                            if (_roiUpdateTimer.ElapsedMilliseconds >= updateROIPeriod_ms)
                             {
                                 _roiUpdateTimer.Restart();
                                 // store old roi incase of an exception
@@ -362,8 +363,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         // update exposure of camera
                         if (enableAutoExposure)
                         {
-                            if (_exposureUpdateTimer.ElapsedMilliseconds == 5000)
+                            if (_exposureUpdateTimer.ElapsedMilliseconds >= updateExposurePeriod_ms)
                             {
+                                updateExposurePeriod_ms = DEFAULT_EXPOSURE_UPDATE_PERIOD_MS;
                                 _exposureUpdateTimer.Restart();
                                 // get histogram from image
                                 int[] hist = null;
@@ -416,6 +418,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                             FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
                                             log.Error(errMsg, ex);
                                         }
+                                        updateExposurePeriod_ms = 1000;
                                     }
                                 }
                             }

@@ -41,6 +41,9 @@ namespace SAF_OpticalFailureDetector.camera
         private const double DEFAULT_GAIN_DB = 0.0;
         private const int DEFAULT_IMAGE_BUFFER_SIZE = 50;
 
+        private const double EXPOSURE_MAX = 0.1;
+        private const double EXPOSURE_MIN = 0.001;
+
         public bool Running { get { return isRunning; } }
 
         /// <summary>
@@ -268,9 +271,16 @@ namespace SAF_OpticalFailureDetector.camera
         }
 
 
-        public void SetExposureByGain(double gain)
+        public bool SetExposureByGain(double gain)
         {
             double tmp_exposure = exposure_s * gain;
+
+            if (tmp_exposure > EXPOSURE_MAX || tmp_exposure < EXPOSURE_MIN)
+            {
+                string errMsg = "Camera.SetExposureByGain : Unable to set exposure, out of bounds.";
+                log.Info(errMsg);
+                return false;
+            }
 
             try
             {
@@ -283,6 +293,7 @@ namespace SAF_OpticalFailureDetector.camera
                 log.Error(errMsg, ex);
                 throw ex;
             }
+            return true;
         }
         //cam.GainExposure(desiredGain);
 

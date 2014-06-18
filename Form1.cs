@@ -105,8 +105,8 @@ namespace SAF_OpticalFailureDetector
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
-            imagep1.EnableAutoExposure(false);
-            imagep1.EnableAutoROI(false);
+            imagep1.EnableAutoExposure(true);
+            imagep1.EnableAutoROI(true);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -116,8 +116,8 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
-            imagep2.EnableAutoExposure(false);
-            imagep2.EnableAutoROI(false);
+            imagep2.EnableAutoExposure(true);
+            imagep2.EnableAutoROI(true);
 
             // sets image queue
             saveEngine = new ImageHistoryBuffer();
@@ -507,11 +507,6 @@ namespace SAF_OpticalFailureDetector
         {
             log.Info("MainForm.tsbtn_Settings_Click : User pressed settings button.");
             program_settings.ShowDialog();
-            //MessageBox.Show("This feature is not yet implemented.", "Settings");
-            /*if (program_settings.ShowDialog() == DialogResult.OK)
-            {
-                tsbtn_Start.Enabled = true;
-            }*/
         }
 
         /// <summary>
