@@ -90,8 +90,7 @@ namespace SAF_OpticalFailureDetector
             {
                 try
                 {
-                    relayCtrl.SetRelay0Status(true);
-                    relayCtrl.SetRelay1Status(true);
+                    TurnRelayOn();
                 }
                 catch (Exception inner)
                 {
@@ -116,8 +115,7 @@ namespace SAF_OpticalFailureDetector
             {
                 try
                 {
-                    relayCtrl.SetRelay0Status(false);
-                    relayCtrl.SetRelay1Status(false);
+                    TurnRelayOff();
                 }
                 catch (Exception inner)
                 {
@@ -154,10 +152,21 @@ namespace SAF_OpticalFailureDetector
             if (isMetaDataValid())
             {
                 DialogResult = DialogResult.OK;
+                try
+                {
+                    TurnRelayOff();
+                }
+                catch (Exception inner)
+                {
+                    string errMsg = "Settings.btnClose_Click : Unable to turn relays off prior to testing.";
+                    SettingsException ex = new SettingsException(errMsg, inner);
+                    log.Error(errMsg, ex);
+                    DisplayError(errMsg, ex);
+                }
             }
             else
             {
-                DialogResult = DialogResult.Ignore;
+                DialogResult = DialogResult.OK;
                 MessageBox.Show("Cannot begin testing until all fields are filled in and connection to relay controller is opened.", "Warning");
             }
             SaveMetaData();
@@ -185,6 +194,38 @@ namespace SAF_OpticalFailureDetector
 
             return true;
 
+        }
+
+        private void TurnRelayOff()
+        {
+            try
+            {
+                relayCtrl.SetRelay0Status(false);
+                relayCtrl.SetRelay1Status(false);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "Settings.TurnRelayOff : Unable to turn relays off, exception occured.";
+                SettingsException ex = new SettingsException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }            
+        }
+
+        private void TurnRelayOn()
+        {
+            try
+            {
+                relayCtrl.SetRelay0Status(true);
+                relayCtrl.SetRelay1Status(true);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "Settings.TurnRelayOn : Unable to turn relays on, exception occured";
+                SettingsException ex = new SettingsException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
         }
 
         private void DisplayMetadata()

@@ -17,7 +17,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
     unsafe class FailureDetector
     {
 
-        private const int THROTTLE_PERIOD = 200;
+        private const int THROTTLE_PERIOD = 250;
         public event ThreadErrorHandler ThreadError;
 
         // thread synchronization

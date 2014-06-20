@@ -36,7 +36,7 @@ namespace SAF_OpticalFailureDetector.camera
         private const float DEFAULT_FRAME_RATE = 15.0f;
         private const string DEFAULT_VIDEO_FORMAT = "Y800 (1280x960)";
         private const bool DEFAULT_ENABLE_AUTO_EXPOSURE = false;
-        private const double DEFAULT_EXPOSURE_MS = 35.0;
+        private const double DEFAULT_EXPOSURE_MS = 25.0;
         private const bool DEFAULT_ENABLE_AUTO_GAIN = false;
         private const double DEFAULT_GAIN_DB = 0.0;
         private const int DEFAULT_IMAGE_BUFFER_SIZE = 50;
@@ -271,20 +271,21 @@ namespace SAF_OpticalFailureDetector.camera
         }
 
 
-        public bool SetExposureByGain(double gain)
+        public void SetExposureByGain(double gain)
         {
             double tmp_exposure = exposure_s * gain;
 
             if (tmp_exposure > EXPOSURE_MAX || tmp_exposure < EXPOSURE_MIN)
             {
                 string errMsg = "Camera.SetExposureByGain : Unable to set exposure, out of bounds.";
-                log.Info(errMsg);
-                return false;
+                CameraException ex = new CameraException(errMsg);
+                log.Error(errMsg, ex);
+                throw ex;
             }
 
             try
             {
-                SetExposure(tmp_exposure);
+                SetExposure(tmp_exposure * 1000);
             }
             catch (Exception inner)
             {
@@ -293,9 +294,7 @@ namespace SAF_OpticalFailureDetector.camera
                 log.Error(errMsg, ex);
                 throw ex;
             }
-            return true;
         }
-        //cam.GainExposure(desiredGain);
 
         /// <summary>
         /// Changes the state of camera's auto exposure to either on or off.

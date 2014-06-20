@@ -72,6 +72,8 @@ namespace SAF_OpticalFailureDetector
             InitializeComponent();
             this.Text = PROGRAM_NAME;
 
+            SwitchDisplayMode();
+
             guiSem = new Semaphore(0, 1);
             program_settings = new Settings();
             // see how much memory is available on computer and take 80% of it
@@ -105,8 +107,8 @@ namespace SAF_OpticalFailureDetector
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
-            imagep1.EnableAutoExposure(true);
-            imagep1.EnableAutoROI(true);
+            imagep1.EnableAutoExposure(false);
+            imagep1.EnableAutoROI(false);
 
             // initialize camera and processor 2
             cam2 = new Camera();
@@ -116,8 +118,8 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
-            imagep2.EnableAutoExposure(true);
-            imagep2.EnableAutoROI(true);
+            imagep2.EnableAutoExposure(false);
+            imagep2.EnableAutoROI(false);
 
             // sets image queue
             saveEngine = new ImageHistoryBuffer();
@@ -135,10 +137,10 @@ namespace SAF_OpticalFailureDetector
 
 
             // initialize camera and processor periods
-            camera1Period = 0.03;
-            camera2Period = 0.03;
-            process1Period = 0.03;
-            process2Period = 0.03;
+            camera1Period = 0.066;
+            camera2Period = 0.066;
+            process1Period = 0.2;
+            process2Period = 0.2;
 
             // need to update comboboxes
             cmboCam1View.Items.Add(DISPLAY_TYPE_NORMAL);
@@ -506,7 +508,11 @@ namespace SAF_OpticalFailureDetector
         private void tsbtn_Settings_Click(object sender, EventArgs e)
         {
             log.Info("MainForm.tsbtn_Settings_Click : User pressed settings button.");
-            program_settings.ShowDialog();
+            if (program_settings.ShowDialog() == DialogResult.OK)
+            {
+                tsbtn_Start.Enabled = true;
+            }
+            
         }
 
         /// <summary>
@@ -520,7 +526,7 @@ namespace SAF_OpticalFailureDetector
             Start();
             tsbtn_Stop.Enabled = true;
             tsbtn_Start.Enabled = false;
-            //tsbtn_Settings.Enabled = false;
+            tsbtn_Settings.Enabled = false;
         }
 
         /// <summary>
@@ -536,7 +542,7 @@ namespace SAF_OpticalFailureDetector
             tsbtn_Start.Enabled = true;
             ipQueue1.reset();
             ipQueue2.reset();
-            //tsbtn_Settings.Enabled = true;
+            tsbtn_Settings.Enabled = true;
         }
 
         /// <summary>
@@ -771,6 +777,58 @@ namespace SAF_OpticalFailureDetector
         private void cmboCam2View_TextChanged(object sender, EventArgs e)
         {
             Cam2DisplayType = cmboCam2View.Text;
+        }
+
+        private void tsbtn_ReplayMode_Click(object sender, EventArgs e)
+        {
+            SwitchDisplayMode();
+        }
+
+        private void tsbtn_CameraMode_Click(object sender, EventArgs e)
+        {
+            SwitchDisplayMode();
+        }
+
+        private bool isCameraMode = false;
+        private void SwitchDisplayMode()
+        {
+            isCameraMode = !isCameraMode;
+            if (isCameraMode)
+            {
+                tsbtn_CameraMode.Enabled = false;
+                tsbtn_ReplayMode.Enabled = true;
+                tsbtn_Settings.Enabled = true;
+                tsbtn_RefreshCamera.Enabled = true;
+                tsbtn_Start.Enabled = false;
+                tsbtn_Stop.Enabled = false;
+                tsbtn_PreviosFrame.Enabled = false;
+                tsbtn_PlayFrame.Enabled = false;
+                tsbtn_StopFrame.Enabled = false;
+                tsbtn_NextFrame.Enabled = false;
+                tlp_Main.ColumnStyles[0].Width = 25;
+                tlp_Main.ColumnStyles[1].Width = 25;
+                tlp_Main.ColumnStyles[2].Width = 25;
+                tlp_Main.ColumnStyles[3].Width = 25;
+                tlp_Main.ColumnStyles[4].Width = 0;
+            }
+            else
+            {
+                tsbtn_CameraMode.Enabled = true;
+                tsbtn_ReplayMode.Enabled = false;
+                tsbtn_Settings.Enabled = false;
+                tsbtn_RefreshCamera.Enabled = false;
+                tsbtn_Start.Enabled = false;
+                tsbtn_Stop.Enabled = false;
+                tsbtn_PreviosFrame.Enabled = true;
+                tsbtn_PlayFrame.Enabled = true;
+                tsbtn_StopFrame.Enabled = true;
+                tsbtn_NextFrame.Enabled = true;
+                tlp_Main.ColumnStyles[0].Width = 0;
+                tlp_Main.ColumnStyles[1].Width = 0;
+                tlp_Main.ColumnStyles[2].Width = 0;
+                tlp_Main.ColumnStyles[3].Width = 0;
+                tlp_Main.ColumnStyles[4].Width = 100;
+            }
         }
 
  
