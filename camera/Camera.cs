@@ -376,7 +376,6 @@ namespace SAF_OpticalFailureDetector.camera
                 if (exposureInterface != null && exposureInterface.Available)
                 {
                     exposureInterface.Value = exposure_ms / 1000.0;
-                    Thread.Sleep(10);
                     exposure_s = Convert.ToDouble(exposureInterface.Value);
                 }
                 else

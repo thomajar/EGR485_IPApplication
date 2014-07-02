@@ -166,7 +166,7 @@ namespace SAF_OpticalFailureDetector
             }
             else
             {
-                DialogResult = DialogResult.OK;
+                DialogResult = DialogResult.Retry;
                 MessageBox.Show("Cannot begin testing until all fields are filled in and connection to relay controller is opened.", "Warning");
             }
             SaveMetaData();

@@ -58,7 +58,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_ROI_UPDATE_FREQUENCY = 100;
         private const bool DEFAULT_ENABLE_AUTO_EXPOSURE = false;
         private const int DEFAULT_EXPOSURE_UPDATE_FREQUENCY = 50;
-        private const int DEFAULT_TARGET_INTENSITY = 150;
+        private const int DEFAULT_TARGET_INTENSITY = 50;
         private const int DEFAULT_ROI_UPDATE_PERIOD_MS = 5000;
         private const int DEFAULT_EXPOSURE_UPDATE_PERIOD_MS = 2500;
 
@@ -282,8 +282,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
         private void Process()
         {
-            int exposureCounter = 0;
-            int roiCounter = 0;
             int imageIntensity = -1;
 
             Stopwatch sw = new Stopwatch();
@@ -426,11 +424,12 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                         // perform image processing
                         Boolean isImageFiltered = true;
+                        int crackCount = 0;
                         int crackConfidence = 0;
                         try
                         {
                             //crackConfidence = filterImage(ref processImage);
-                            detectCracks(ref processImage);
+                            crackCount = detectCracks(ref processImage);
                         }
                         catch (Exception inner)
                         {
@@ -459,7 +458,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         if (isImageFiltered)
                         {
                             bool isCracked = false;
-                            if (crackConfidence > 80)
+                            if (crackConfidence > 80 || crackCount > 0)
                             {
                                 isCracked = true;
                             }
@@ -475,7 +474,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 log.Error(errMsg, ex);
                                 isIPDataSet = false;
                             }
-                            image.SetIPMetaData(((Double)sw.ElapsedMilliseconds) / 1000, roi, imageIntensity, 0, isCracked, true);
+                            image.SetIPMetaData(((Double)sw.ElapsedMilliseconds) / 1000, roi, imageIntensity, crackCount, isCracked, true);
                             sw.Restart();
 
                             if (isIPDataSet)
@@ -491,7 +490,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
-        private bool detectCracks(ref Bitmap b)
+        private int detectCracks(ref Bitmap b)
         {
             List<Point> crackPixels = null;
             Boolean[,] isCrackedPixel = null;
@@ -551,7 +550,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
 
             // Visualizes Cracks
-            /*
+            
             drawCrackLines(ref b, ref lines,255,0,255);
 
             foreach (LineCollection crack in cracks)
@@ -559,9 +558,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 List<Line> tmpLines = crack.Lines;
                 drawCrackLines(ref b, ref tmpLines, 255, 255, 0);
             }
-             * */
+            
 
-            return (crackCount > 0);
+            return crackCount;
         }
 
         private void drawCrackLines(ref Bitmap b, ref List<Line> lines, byte red, byte green, byte blue)

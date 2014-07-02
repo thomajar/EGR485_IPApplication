@@ -13,28 +13,30 @@ namespace SAF_OpticalFailureDetector
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(ReplayManager));
 
+        // folder structure directory names
         private const string cam1Name = "cam1";
         private const string cam2Name = "cam2";
         private const string debugName = "debug";
         private const string testName = "test";
 
+        // local variables to keep track of frame information and positioning
         private int debugFrames;
         private int testFrames;
         private bool isDebugVideo;
         private bool isRawVideo;
         private int currentFrameNumber;
 
-
+        // store all of the matching directories found in lists
         private List<string> cam1DebugDirectories;
         private List<string> cam2DebugDirectories;
         private List<string> cam1TestDirectories;
         private List<string> cam2TestDirectories;
 
 
-        public int DebugFrames { get { return debugFrames; } }
-        public int TestFrames { get { return testFrames; } }
-
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rootLocation">Folder containing a replay manager file structure.</param>
         public ReplayManager(string rootLocation)
         {
             string cam1DebugDir = rootLocation + "//" + debugName + "//" + cam1Name;
@@ -163,7 +165,27 @@ namespace SAF_OpticalFailureDetector
 
         private string GetBitmapLocation(string root)
         {
-            string[] files = Directory.GetFiles(root);
+            string[] files = null;
+            try
+            {
+                files = Directory.GetFiles(root);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "ReplayManager.GetBitmapLocation : Error looking for bitmap files.";
+                ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
+
+            // make suer files is not null
+            if (files == null)
+            {
+                string errMsg = "ReplayManager.GetBitmapLocation : Unable to find bitmap files in directory.";
+                ReplayManagerException ex = new ReplayManagerException(errMsg);
+                log.Error(errMsg, ex);
+                throw ex;
+            }
             if (isRawVideo)
             {
                 foreach (string s in files)
@@ -184,7 +206,10 @@ namespace SAF_OpticalFailureDetector
                     }
                 }
             }
-            return "";
+            string errMsg2 = "ReplayManager.GetBitmapLocation : Unable to find bitmap files.";
+            ReplayManagerException ex2 = new ReplayManagerException(errMsg2);
+            log.Error(errMsg2, ex2);
+            throw ex2;
         }
 
         public void SetVideoMode(bool isDebugMode)
@@ -232,22 +257,65 @@ namespace SAF_OpticalFailureDetector
             {
                 if (currentFrameNumber < cam1DebugDirectories.Count)
                 {
-                    frames[0] = new Bitmap(GetBitmapLocation(cam1DebugDirectories[currentFrameNumber]));
+                    try
+                    {
+                        frames[0] = new Bitmap(GetBitmapLocation(cam1DebugDirectories[currentFrameNumber]));
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentBitmap : Unable to get bitmap for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        frames[0] = null;
+                    }
                 }
                 if(currentFrameNumber < cam2DebugDirectories.Count)
                 {
-                    frames[1] = new Bitmap(GetBitmapLocation(cam2DebugDirectories[currentFrameNumber]));
+                    try
+                    {
+                        frames[1] = new Bitmap(GetBitmapLocation(cam2DebugDirectories[currentFrameNumber]));
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentBitmap : Unable to get bitmap for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        frames[1] = null;
+                    }
                 }
             }
             else
             {
                 if (currentFrameNumber < cam1TestDirectories.Count)
                 {
-                    frames[0] = new Bitmap(GetBitmapLocation(cam1TestDirectories[currentFrameNumber]));
+                    try
+                    {
+                        frames[0] = new Bitmap(GetBitmapLocation(cam1TestDirectories[currentFrameNumber]));
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentBitmap : Unable to get bitmap for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        frames[0] = null;
+                        throw;
+                    }
+                    
                 }
                 if (currentFrameNumber < cam2TestDirectories.Count)
                 {
-                    frames[1] = new Bitmap(GetBitmapLocation(cam2TestDirectories[currentFrameNumber]));
+                    try
+                    {
+                        frames[1] = new Bitmap(GetBitmapLocation(cam2TestDirectories[currentFrameNumber]));
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentBitmap : Unable to get bitmap for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        frames[1] = null;
+                    }
+                   
                 }
             }
             return frames;
@@ -259,12 +327,48 @@ namespace SAF_OpticalFailureDetector
             {
                 if (currentFrameNumber < cam1DebugDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     return data[0];
                 }
                 if (currentFrameNumber < cam2DebugDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam2DebugDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     return data[0];
                 }
             }
@@ -272,12 +376,48 @@ namespace SAF_OpticalFailureDetector
             {
                 if (currentFrameNumber < cam1TestDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam1TestDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     return data[0];
                 }
                 if (currentFrameNumber < cam2TestDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam2TestDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetTestInfo : Unable to get image info for cam1.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     return data[0];
                 }
             }
@@ -293,12 +433,48 @@ namespace SAF_OpticalFailureDetector
             {
                 if (currentFrameNumber < cam1DebugDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo: Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     frameInfo[0] = data[1];
                 }
                 if (currentFrameNumber < cam2DebugDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam2DebugDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo: Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     frameInfo[1] = data[1];
                 }
             }
@@ -306,12 +482,48 @@ namespace SAF_OpticalFailureDetector
             {
                 if (currentFrameNumber < cam1TestDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam1TestDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo: Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     frameInfo[0] = data[1];
                 }
                 if (currentFrameNumber < cam2TestDirectories.Count)
                 {
-                    string[] data = getImageInfo(cam1DebugDirectories[currentFrameNumber]);
+                    string[] data = null;
+                    try
+                    {
+                        data = getImageInfo(cam2TestDirectories[currentFrameNumber]);
+                    }
+                    catch (Exception inner)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo : Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg, inner);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
+                    if (data == null)
+                    {
+                        string errMsg = "ReplayManager.GetCurrentFrameInfo: Unable to get image info for cam0.";
+                        ReplayManagerException ex = new ReplayManagerException(errMsg);
+                        log.Error(errMsg, ex);
+                        throw ex;
+                    }
                     frameInfo[1] = data[1];
                 }
             }
@@ -320,38 +532,46 @@ namespace SAF_OpticalFailureDetector
 
         private String[] getImageInfo(string rootLocation)
         {
-            string[] imageInfo = new string[2];
-            imageInfo[0] = null;
-            imageInfo[1] = null;
-            string[] files = Directory.GetFiles(rootLocation);
-            foreach (string s in files)
+            try
             {
-                if (s.Contains(".txt"))
+                string[] imageInfo = new string[2];
+                imageInfo[0] = null;
+                imageInfo[1] = null;
+                string[] files = Directory.GetFiles(rootLocation);
+                foreach (string s in files)
                 {
-                    
-                    int writeIndex = -1;
-                    StreamReader sr = new StreamReader(s);
-                    string tmp = "";
-                    while (!sr.EndOfStream)
+                    if (s.Contains(".txt"))
                     {
-                        string temp = sr.ReadLine();
-                        if (writeIndex > -1)
+
+                        int writeIndex = -1;
+                        StreamReader sr = new StreamReader(s);
+                        string tmp = "";
+                        while (!sr.EndOfStream)
                         {
-                            imageInfo[writeIndex] += temp + Environment.NewLine;
+                            string temp = sr.ReadLine();
+                            if (writeIndex > -1)
+                            {
+                                imageInfo[writeIndex] += temp + Environment.NewLine;
+                            }
+                            if (temp.Contains("General Settings"))
+                            {
+                                writeIndex++;
+                            }
+                            if (temp.Contains("Camera Information"))
+                            {
+                                writeIndex++;
+                            }
                         }
-                        if (temp.Contains("General Settings"))
-                        {
-                            writeIndex++;
-                        }
-                        if (temp.Contains("Camera Information"))
-                        {
-                            writeIndex++;
-                        }
+                        return imageInfo;
                     }
-                    return imageInfo;
                 }
+                return imageInfo;
             }
-            return imageInfo;
+            catch (Exception)
+            {
+                return null;
+                
+            }
         }
 
         public int NextFrame()
@@ -371,6 +591,12 @@ namespace SAF_OpticalFailureDetector
                     currentFrameNumber = (currentFrameNumber + 1) % testFrames;
                 }
             }
+            return currentFrameNumber;
+        }
+
+        public int JumpToFrame(int frame)
+        {
+            currentFrameNumber = frame;
             return currentFrameNumber;
         }
 

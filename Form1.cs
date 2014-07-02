@@ -54,18 +54,24 @@ namespace SAF_OpticalFailureDetector
         private Double process1Period;
         private Double process2Period;
 
+        private bool isCameraMode;
+
         private Settings program_settings;
         private ImageHistoryBuffer saveEngine;
         private ReplayManager replayManager;
+        private bool isReplayManagerValid;
 
         private string Cam1DisplayType;
         private string Cam2DisplayType;
 
         private System.Threading.Timer imageUpdateTimer;
         private System.Threading.Timer garbageCollector;
+        private System.Threading.Timer replayFeedbackTimer;
 
         private delegate void UpdateCamera1ImageCallback();
         private delegate void UpdateCamera2ImageCallback();
+
+        private delegate void UpdateReplayVideoCallback();
 
         public MainForm()
         {
@@ -74,6 +80,12 @@ namespace SAF_OpticalFailureDetector
 
             InitializeComponent();
             this.Text = PROGRAM_NAME;
+            isCameraMode = false;
+
+            zibReplayCam1.SetText("");
+            zibReplayCam2.SetText("");
+            Camera1Display.SetText("");
+            Camera2Display.SetText("");
 
             SwitchDisplayMode();
 
@@ -165,6 +177,8 @@ namespace SAF_OpticalFailureDetector
             cmbo_DataType.SelectedIndexChanged += cmbo_DataType_SelectedIndexChanged;
             cmbo_VideoType.SelectedIndexChanged += cmbo_VideoType_SelectedIndexChanged;
 
+            isReplayManagerValid = false;
+
             guiSem.Release();
             // setup timer update
             TimerCallback tcb = new TimerCallback(DisplayImage);
@@ -175,6 +189,13 @@ namespace SAF_OpticalFailureDetector
             TimerCallback tcb2 = new TimerCallback(GarbageCollector);
             garbageCollector = new System.Threading.Timer(tcb2, garbageCollector, Timeout.Infinite, Timeout.Infinite);
             garbageCollector.Change(1, 100);
+
+            // setup replay feedback
+            TimerCallback tcb3 = new TimerCallback(ReplayFeedbackTimer);
+            replayFeedbackTimer = new System.Threading.Timer(tcb3, replayFeedbackTimer, Timeout.Infinite, Timeout.Infinite);
+            
+
+
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -785,25 +806,43 @@ namespace SAF_OpticalFailureDetector
 
         private void cmboCam1View_TextChanged(object sender, EventArgs e)
         {
+            log.Info("MainForm.cmboCam1View_TextChanged : User changed camera 1 view to " + cmboCam1View.Text);
             Cam1DisplayType = cmboCam1View.Text;
         }
 
         private void cmboCam2View_TextChanged(object sender, EventArgs e)
         {
+            log.Info("MainForm.cmboCam2View_TextChanged : User changed camera 2 view to " + cmboCam2View.Text);
             Cam2DisplayType = cmboCam2View.Text;
         }
 
         private void tsbtn_ReplayMode_Click(object sender, EventArgs e)
         {
+            if (isCameraMode)
+            {
+                log.Info("MainForm.tsbtn_ReplayMode_Click : User switched from camera mode to replay mode.");
+            }
+            else
+            {
+                log.Info("MainForm.tsbtn_ReplayMode_Click : User switched from replay mode to camera mode.");
+            }
             SwitchDisplayMode();
         }
 
         private void tsbtn_CameraMode_Click(object sender, EventArgs e)
         {
+            if (isCameraMode)
+            {
+                log.Info("MainForm.tsbtn_ReplayMode_Click : User switched from camera mode to replay mode.");
+            }
+            else
+            {
+                log.Info("MainForm.tsbtn_ReplayMode_Click : User switched from replay mode to camera mode.");
+            }
             SwitchDisplayMode();
         }
 
-        private bool isCameraMode = false;
+        
         private void SwitchDisplayMode()
         {
             isCameraMode = !isCameraMode;
@@ -833,10 +872,14 @@ namespace SAF_OpticalFailureDetector
                 tsbtn_RefreshCamera.Enabled = false;
                 tsbtn_Start.Enabled = false;
                 tsbtn_Stop.Enabled = false;
-                tsbtn_PreviosFrame.Enabled = true;
-                tsbtn_PlayFrame.Enabled = true;
-                tsbtn_StopFrame.Enabled = true;
-                tsbtn_NextFrame.Enabled = true;
+                
+                if (isReplayManagerValid)
+                {
+                    tsbtn_PreviosFrame.Enabled = true;
+                    tsbtn_PlayFrame.Enabled = true;
+                    tsbtn_StopFrame.Enabled = true;
+                    tsbtn_NextFrame.Enabled = true;
+                }
                 tlp_Main.ColumnStyles[0].Width = 0;
                 tlp_Main.ColumnStyles[1].Width = 0;
                 tlp_Main.ColumnStyles[2].Width = 0;
@@ -847,16 +890,29 @@ namespace SAF_OpticalFailureDetector
 
         private void btnBrowse_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.btnBrowse_Click : User selected browse for replay video folder.");
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() == DialogResult.OK)
             {
                 replayManager = new ReplayManager(fbd.SelectedPath);
+                lblTestLocation.Text = fbd.SelectedPath;
+                tsbtn_PreviosFrame.Enabled = true;
+                tsbtn_PlayFrame.Enabled = true;
+                tsbtn_StopFrame.Enabled = true;
+                tsbtn_NextFrame.Enabled = true;
+                cmbo_DataType.Enabled = true;
+                cmbo_VideoType.Enabled = true;
+                sliderFrameNumber.Enabled = true;
+                txtFrameNumber.Enabled = true;
+                isReplayManagerValid = true;
+                UpdateReplayVideo();
             }
-            UpdateReplayVideoMode();
+            
         }
 
         private void cmbo_VideoType_SelectedIndexChanged(object sender, EventArgs e)
         {
+            log.Info("MainForm.cmbo_VideoType_SelectedIndexChanged : Replay video type switched to " + cmbo_VideoType.Text);
             bool isDebugVideo;
             if(cmbo_VideoType.Text == VIDEO_TYPE_DEBUG)
             {
@@ -867,11 +923,12 @@ namespace SAF_OpticalFailureDetector
                 isDebugVideo = false;
             }
             replayManager.SetVideoMode(isDebugVideo);
-            UpdateReplayVideoMode();
+            UpdateReplayVideo();
         }
 
         private void cmbo_DataType_SelectedIndexChanged(object sender, EventArgs e)
         {
+            log.Info("MainForm.cmbo_DataType_SelectedIndexChanged : Replay data type switched to " + cmbo_DataType.Text);
             bool isRawVideo;
             if (cmbo_DataType.Text == DISPLAY_TYPE_NORMAL)
             {
@@ -882,43 +939,129 @@ namespace SAF_OpticalFailureDetector
                 isRawVideo = false;
             }
             replayManager.SetDataMode(isRawVideo);
-            UpdateReplayVideoMode();
+            UpdateReplayVideo();
         }
 
-        private void UpdateReplayVideoMode()
+        private void UpdateReplayVideo()
         {
-            Bitmap[] bitmaps = replayManager.GetCurrentBitmaps();
-            if (bitmaps[0] != null)
+            // invokes
+            if (zibReplayCam1.InvokeRequired || zibReplayCam2.InvokeRequired || txtFrameNumber.InvokeRequired || 
+                lbl_TotalFrames.InvokeRequired || sliderFrameNumber.InvokeRequired ||lblCam1Params.InvokeRequired || lblCam2Params.InvokeRequired || lblTestSettings.InvokeRequired)
             {
-                zibReplayCam1.SetImage(bitmaps[0]);
+                UpdateReplayVideoCallback d = new UpdateReplayVideoCallback(UpdateReplayVideo);
+                this.BeginInvoke(d, null);
             }
-            if (bitmaps[1] != null)
+            else
             {
-                zibReplayCam2.SetImage(bitmaps[1]);
+                // do stuff
+                Bitmap[] bitmaps = replayManager.GetCurrentBitmaps();
+                if (bitmaps[0] != null)
+                {
+                    zibReplayCam1.SetImage(bitmaps[0]);
+                }
+                if (bitmaps[1] != null)
+                {
+                    zibReplayCam2.SetImage(bitmaps[1]);
+                }
+
+                int currentFrame = replayManager.GetCurrentFrame();
+                int totalFrames = replayManager.GetTotalFrames();
+
+                if (totalFrames > 0)
+                {
+                    txtFrameNumber.Text = (currentFrame + 1).ToString();
+                    lbl_TotalFrames.Text = " / " + totalFrames.ToString();
+
+                    if (!sliderFrameNumber.Enabled)
+                    {
+                        sliderFrameNumber.Enabled = true;
+                    }
+
+                    sliderFrameNumber.Minimum = 0;
+                    sliderFrameNumber.Maximum = totalFrames - 1;
+                    sliderFrameNumber.Value = currentFrame;
+                }
+                else
+                {
+                    txtFrameNumber.Text = "0";
+                    lbl_TotalFrames.Text = " / 0";
+                    if (sliderFrameNumber.Enabled)
+                    {
+                        sliderFrameNumber.Enabled = false;
+                    }
+                }
+
+
+                string[] frameInfo = replayManager.GetCurrentFrameInfo();
+
+                lblCam1Params.Text = frameInfo[0];
+                lblCam2Params.Text = frameInfo[1];
+                lblTestSettings.Text = replayManager.GetTestInfo();
             }
-
-            txtFrameNumber.Text = (replayManager.GetCurrentFrame() + 1).ToString();
-            lbl_TotalFrames.Text = " / " + replayManager.GetTotalFrames().ToString();
-
-            string[] frameInfo = replayManager.GetCurrentFrameInfo();
-
-            lblCam1Params.Text = frameInfo[0];
-            lblCam2Params.Text = frameInfo[1];
-
-            lblTestSettings.Text = replayManager.GetTestInfo();
-            
         }
+
 
         private void tsbtn_NextFrame_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_NextFrame_Click : User pressed next frame button.");
             replayManager.NextFrame();
-            UpdateReplayVideoMode();
+            UpdateReplayVideo();
         }
 
         private void tsbtn_PreviosFrame_Click(object sender, EventArgs e)
         {
+            log.Info("MainForm.tsbtn_PreviousFrame_Click : User pressed previous frame button.");
             replayManager.PreviousFrame();
-            UpdateReplayVideoMode();
+            UpdateReplayVideo();
+        }
+
+        private void sliderFrameNumber_Scroll(object sender, EventArgs e)
+        {
+            log.Info("MainForm.sliderFrameNumber_Scroll : User changed slider value to index " + sliderFrameNumber.Value.ToString());
+            int value = -1;
+            try
+            {
+                value = Convert.ToInt32(sliderFrameNumber.Value);
+            }
+            catch (Exception inner)
+            {
+                
+            }
+            if (value >= 0)
+            {
+                replayManager.JumpToFrame(value);
+                UpdateReplayVideo();
+            }
+        }
+
+        private void tsbtn_PlayFrame_Click(object sender, EventArgs e)
+        {
+            log.Info("MainForm.tsbtn_PlayFrame_Click : User pressed play on replay video.");
+            tsbtn_PlayFrame.Enabled = false;
+            tsbtn_StopFrame.Enabled = true;
+            tsbtn_NextFrame.Enabled = false;
+            tsbtn_PreviosFrame.Enabled = false;
+            sliderFrameNumber.Enabled = false;
+            tsbtn_CameraMode.Enabled = false;
+            replayFeedbackTimer.Change(1, 250);
+        }
+
+        private void tsbtn_StopFrame_Click(object sender, EventArgs e)
+        {
+            log.Info("MainForm.tsbtn_StopFrame_Click : User pressed stop on replay video.");
+            tsbtn_StopFrame.Enabled = false;
+            tsbtn_PlayFrame.Enabled = true;
+            tsbtn_NextFrame.Enabled = true;
+            tsbtn_PreviosFrame.Enabled = true;
+            sliderFrameNumber.Enabled = true;
+            tsbtn_CameraMode.Enabled = true;
+            replayFeedbackTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private void ReplayFeedbackTimer(object stateInfo)
+        {
+            replayManager.NextFrame();
+            UpdateReplayVideo();
         }
 
     }

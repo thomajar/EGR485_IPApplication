@@ -201,6 +201,7 @@
             this.tsbtn_Help.Name = "tsbtn_Help";
             this.tsbtn_Help.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Help.Text = "Help";
+            this.tsbtn_Help.Visible = false;
             this.tsbtn_Help.Click += new System.EventHandler(this.tsbtn_Help_Click);
             // 
             // toolStripSeparator2
@@ -211,39 +212,45 @@
             // tsbtn_PreviosFrame
             // 
             this.tsbtn_PreviosFrame.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_PreviosFrame.Enabled = false;
             this.tsbtn_PreviosFrame.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_PreviosFrame.Image")));
             this.tsbtn_PreviosFrame.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_PreviosFrame.Name = "tsbtn_PreviosFrame";
             this.tsbtn_PreviosFrame.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_PreviosFrame.Text = "toolStripButton1";
+            this.tsbtn_PreviosFrame.Text = "Previous Frame";
             this.tsbtn_PreviosFrame.Click += new System.EventHandler(this.tsbtn_PreviosFrame_Click);
             // 
             // tsbtn_PlayFrame
             // 
             this.tsbtn_PlayFrame.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_PlayFrame.Enabled = false;
             this.tsbtn_PlayFrame.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_PlayFrame.Image")));
             this.tsbtn_PlayFrame.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_PlayFrame.Name = "tsbtn_PlayFrame";
             this.tsbtn_PlayFrame.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_PlayFrame.Text = "toolStripButton2";
+            this.tsbtn_PlayFrame.Text = "Play";
+            this.tsbtn_PlayFrame.Click += new System.EventHandler(this.tsbtn_PlayFrame_Click);
             // 
             // tsbtn_StopFrame
             // 
             this.tsbtn_StopFrame.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_StopFrame.Enabled = false;
             this.tsbtn_StopFrame.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_StopFrame.Image")));
             this.tsbtn_StopFrame.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_StopFrame.Name = "tsbtn_StopFrame";
             this.tsbtn_StopFrame.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_StopFrame.Text = "toolStripButton3";
+            this.tsbtn_StopFrame.Text = "Stop";
+            this.tsbtn_StopFrame.Click += new System.EventHandler(this.tsbtn_StopFrame_Click);
             // 
             // tsbtn_NextFrame
             // 
             this.tsbtn_NextFrame.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtn_NextFrame.Enabled = false;
             this.tsbtn_NextFrame.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_NextFrame.Image")));
             this.tsbtn_NextFrame.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbtn_NextFrame.Name = "tsbtn_NextFrame";
             this.tsbtn_NextFrame.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_NextFrame.Text = "toolStripButton4";
+            this.tsbtn_NextFrame.Text = "Next Frame";
             this.tsbtn_NextFrame.Click += new System.EventHandler(this.tsbtn_NextFrame_Click);
             // 
             // tlp_Main
@@ -271,7 +278,7 @@
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Main.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110F));
-            this.tlp_Main.Size = new System.Drawing.Size(1582, 699);
+            this.tlp_Main.Size = new System.Drawing.Size(1582, 724);
             this.tlp_Main.TabIndex = 2;
             // 
             // label1
@@ -292,7 +299,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(34, 8);
+            this.cmboCam1View.Location = new System.Drawing.Point(34, 7);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -316,7 +323,7 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(96, 8);
+            this.cmboCam2View.Location = new System.Drawing.Point(96, 7);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam2View.TabIndex = 3;
@@ -328,7 +335,7 @@
             this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Camera1Display.Location = new System.Drawing.Point(3, 43);
             this.Camera1Display.Name = "Camera1Display";
-            this.Camera1Display.Size = new System.Drawing.Size(56, 543);
+            this.Camera1Display.Size = new System.Drawing.Size(56, 568);
             this.Camera1Display.TabIndex = 4;
             // 
             // Camera2Display
@@ -337,7 +344,7 @@
             this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Camera2Display.Location = new System.Drawing.Point(65, 43);
             this.Camera2Display.Name = "Camera2Display";
-            this.Camera2Display.Size = new System.Drawing.Size(56, 543);
+            this.Camera2Display.Size = new System.Drawing.Size(56, 568);
             this.Camera2Display.TabIndex = 5;
             // 
             // gbCamera1
@@ -350,7 +357,7 @@
             this.gbCamera1.Controls.Add(this.lblCam1IPFPS);
             this.gbCamera1.Controls.Add(this.lblCam1FPS);
             this.gbCamera1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gbCamera1.Location = new System.Drawing.Point(3, 592);
+            this.gbCamera1.Location = new System.Drawing.Point(3, 617);
             this.gbCamera1.Name = "gbCamera1";
             this.gbCamera1.Size = new System.Drawing.Size(56, 104);
             this.gbCamera1.TabIndex = 6;
@@ -422,7 +429,7 @@
             this.gbCamera2.Controls.Add(this.lblCam2IPFPS);
             this.gbCamera2.Controls.Add(this.lblCam2FPS);
             this.gbCamera2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gbCamera2.Location = new System.Drawing.Point(65, 592);
+            this.gbCamera2.Location = new System.Drawing.Point(65, 617);
             this.gbCamera2.Name = "gbCamera2";
             this.gbCamera2.Size = new System.Drawing.Size(56, 104);
             this.gbCamera2.TabIndex = 7;
@@ -503,7 +510,7 @@
             this.tlp_ReplayMode.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 135F));
             this.tlp_ReplayMode.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_ReplayMode.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 150F));
-            this.tlp_ReplayMode.Size = new System.Drawing.Size(1452, 693);
+            this.tlp_ReplayMode.Size = new System.Drawing.Size(1452, 718);
             this.tlp_ReplayMode.TabIndex = 8;
             // 
             // groupBox2
@@ -546,10 +553,12 @@
             // 
             this.tlp_CamView.SetColumnSpan(this.sliderFrameNumber, 4);
             this.sliderFrameNumber.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sliderFrameNumber.Enabled = false;
             this.sliderFrameNumber.Location = new System.Drawing.Point(3, 63);
             this.sliderFrameNumber.Name = "sliderFrameNumber";
             this.sliderFrameNumber.Size = new System.Drawing.Size(708, 42);
             this.sliderFrameNumber.TabIndex = 0;
+            this.sliderFrameNumber.Scroll += new System.EventHandler(this.sliderFrameNumber_Scroll);
             // 
             // label3
             // 
@@ -577,6 +586,7 @@
             // 
             this.cmbo_VideoType.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cmbo_VideoType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbo_VideoType.Enabled = false;
             this.cmbo_VideoType.FormattingEnabled = true;
             this.cmbo_VideoType.Location = new System.Drawing.Point(102, 3);
             this.cmbo_VideoType.Name = "cmbo_VideoType";
@@ -587,6 +597,7 @@
             // 
             this.cmbo_DataType.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cmbo_DataType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbo_DataType.Enabled = false;
             this.cmbo_DataType.FormattingEnabled = true;
             this.cmbo_DataType.Location = new System.Drawing.Point(458, 3);
             this.cmbo_DataType.Name = "cmbo_DataType";
@@ -618,8 +629,10 @@
             // txtFrameNumber
             // 
             this.txtFrameNumber.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtFrameNumber.Enabled = false;
             this.txtFrameNumber.Location = new System.Drawing.Point(359, 33);
             this.txtFrameNumber.Name = "txtFrameNumber";
+            this.txtFrameNumber.ReadOnly = true;
             this.txtFrameNumber.Size = new System.Drawing.Size(93, 22);
             this.txtFrameNumber.TabIndex = 7;
             // 
@@ -688,7 +701,7 @@
             // 
             this.groupBox4.Controls.Add(this.lblCam1Params);
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox4.Location = new System.Drawing.Point(3, 546);
+            this.groupBox4.Location = new System.Drawing.Point(3, 571);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(720, 144);
             this.groupBox4.TabIndex = 3;
@@ -709,7 +722,7 @@
             // 
             this.groupBox5.Controls.Add(this.lblCam2Params);
             this.groupBox5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox5.Location = new System.Drawing.Point(729, 546);
+            this.groupBox5.Location = new System.Drawing.Point(729, 571);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Size = new System.Drawing.Size(720, 144);
             this.groupBox5.TabIndex = 4;
@@ -731,7 +744,7 @@
             this.zibReplayCam1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.zibReplayCam1.Location = new System.Drawing.Point(3, 138);
             this.zibReplayCam1.Name = "zibReplayCam1";
-            this.zibReplayCam1.Size = new System.Drawing.Size(720, 402);
+            this.zibReplayCam1.Size = new System.Drawing.Size(720, 427);
             this.zibReplayCam1.TabIndex = 5;
             // 
             // zibReplayCam2
@@ -739,14 +752,14 @@
             this.zibReplayCam2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.zibReplayCam2.Location = new System.Drawing.Point(729, 138);
             this.zibReplayCam2.Name = "zibReplayCam2";
-            this.zibReplayCam2.Size = new System.Drawing.Size(720, 402);
+            this.zibReplayCam2.Size = new System.Drawing.Size(720, 427);
             this.zibReplayCam2.TabIndex = 6;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1582, 778);
+            this.ClientSize = new System.Drawing.Size(1582, 803);
             this.Controls.Add(this.tlp_Main);
             this.Controls.Add(this.toolStrip1);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
