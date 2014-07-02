@@ -200,7 +200,11 @@ namespace SAF_OpticalFailureDetector.threading
                 ZoomImageBoxException ex = new ZoomImageBoxException("ZoomImageBox.SetImage : Unable to set and draw image.", inner);
                 throw ex;
             }
-            currentImage.Dispose();
+            if (currentImage != null)
+            {
+                currentImage.Dispose();
+            }
+            
         }
 
         /// <summary>

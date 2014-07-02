@@ -24,6 +24,8 @@ namespace SAF_OpticalFailureDetector
         private const string PROGRAM_NAME = "Optical Failure Detector (V1.0)";
         private const String DISPLAY_TYPE_NORMAL = "Camera Image";
         private const String DISPLAY_TYPE_PROCESSED = "Raw Processed";
+        private const string VIDEO_TYPE_TEST = "Test";
+        private const string VIDEO_TYPE_DEBUG = "Debug";
 
         private const string DEFAULT_CAM1_NAME = "cam1";
         private const string DEFAULT_CAM2_NAME = "cam2";
@@ -54,6 +56,7 @@ namespace SAF_OpticalFailureDetector
 
         private Settings program_settings;
         private ImageHistoryBuffer saveEngine;
+        private ReplayManager replayManager;
 
         private string Cam1DisplayType;
         private string Cam2DisplayType;
@@ -150,6 +153,17 @@ namespace SAF_OpticalFailureDetector
             cmboCam2View.Items.Add(DISPLAY_TYPE_NORMAL);
             cmboCam2View.Items.Add(DISPLAY_TYPE_PROCESSED);
             cmboCam2View.SelectedIndex = 0;
+
+            cmbo_DataType.Items.Add(DISPLAY_TYPE_NORMAL);
+            cmbo_DataType.Items.Add(DISPLAY_TYPE_PROCESSED);
+            cmbo_DataType.SelectedIndex = 1;
+
+            cmbo_VideoType.Items.Add(VIDEO_TYPE_TEST);
+            cmbo_VideoType.Items.Add(VIDEO_TYPE_DEBUG);
+            cmbo_VideoType.SelectedIndex = 0;
+
+            cmbo_DataType.SelectedIndexChanged += cmbo_DataType_SelectedIndexChanged;
+            cmbo_VideoType.SelectedIndexChanged += cmbo_VideoType_SelectedIndexChanged;
 
             guiSem.Release();
             // setup timer update
@@ -831,7 +845,82 @@ namespace SAF_OpticalFailureDetector
             }
         }
 
- 
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                replayManager = new ReplayManager(fbd.SelectedPath);
+            }
+            UpdateReplayVideoMode();
+        }
+
+        private void cmbo_VideoType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            bool isDebugVideo;
+            if(cmbo_VideoType.Text == VIDEO_TYPE_DEBUG)
+            {
+                isDebugVideo = true;
+            }
+            else
+            {
+                isDebugVideo = false;
+            }
+            replayManager.SetVideoMode(isDebugVideo);
+            UpdateReplayVideoMode();
+        }
+
+        private void cmbo_DataType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            bool isRawVideo;
+            if (cmbo_DataType.Text == DISPLAY_TYPE_NORMAL)
+            {
+                isRawVideo = true;
+            }
+            else
+            {
+                isRawVideo = false;
+            }
+            replayManager.SetDataMode(isRawVideo);
+            UpdateReplayVideoMode();
+        }
+
+        private void UpdateReplayVideoMode()
+        {
+            Bitmap[] bitmaps = replayManager.GetCurrentBitmaps();
+            if (bitmaps[0] != null)
+            {
+                zibReplayCam1.SetImage(bitmaps[0]);
+            }
+            if (bitmaps[1] != null)
+            {
+                zibReplayCam2.SetImage(bitmaps[1]);
+            }
+
+            txtFrameNumber.Text = (replayManager.GetCurrentFrame() + 1).ToString();
+            lbl_TotalFrames.Text = " / " + replayManager.GetTotalFrames().ToString();
+
+            string[] frameInfo = replayManager.GetCurrentFrameInfo();
+
+            lblCam1Params.Text = frameInfo[0];
+            lblCam2Params.Text = frameInfo[1];
+
+            lblTestSettings.Text = replayManager.GetTestInfo();
+            
+        }
+
+        private void tsbtn_NextFrame_Click(object sender, EventArgs e)
+        {
+            replayManager.NextFrame();
+            UpdateReplayVideoMode();
+        }
+
+        private void tsbtn_PreviosFrame_Click(object sender, EventArgs e)
+        {
+            replayManager.PreviousFrame();
+            UpdateReplayVideoMode();
+        }
+
     }
     // Use for exceptinos generated in FailureDetector class
     public class MainFormException : System.Exception

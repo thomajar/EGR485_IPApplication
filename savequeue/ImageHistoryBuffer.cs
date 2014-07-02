@@ -442,7 +442,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             // create metadata file string to save
             MetaData metadata = MetaData.Instance;
             string dataToWrite = "";
-            dataToWrite += "General Settings: " + Environment.NewLine + Environment.NewLine;
+            dataToWrite += "General Settings: " + Environment.NewLine;
             dataToWrite += "Sample Number: " + metadata.SampleNumber + Environment.NewLine;
             dataToWrite += "Test Number: " + metadata.TestNumber + Environment.NewLine;
             dataToWrite += "Imager Noise: " + metadata.ImagerNoise.ToString("D3") + Environment.NewLine;
