@@ -122,7 +122,7 @@ namespace SAF_OpticalFailureDetector
             imagep1.SetConsumerQueue(ipQueue1);
             imagep1.AddSubscriber(saveQueue);
             imagep1.AddSubscriber(mainQueue);
-            imagep1.EnableAutoExposure(false);
+            imagep1.EnableAutoExposure(true);
             imagep1.EnableAutoROI(false);
 
             // initialize camera and processor 2
@@ -133,7 +133,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetConsumerQueue(ipQueue2);
             imagep2.AddSubscriber(saveQueue);
             imagep2.AddSubscriber(mainQueue);
-            imagep2.EnableAutoExposure(false);
+            imagep2.EnableAutoExposure(true);
             imagep2.EnableAutoROI(false);
 
             // sets image queue
@@ -1043,7 +1043,7 @@ namespace SAF_OpticalFailureDetector
             tsbtn_PreviosFrame.Enabled = false;
             sliderFrameNumber.Enabled = false;
             tsbtn_CameraMode.Enabled = false;
-            replayFeedbackTimer.Change(1, 250);
+            replayFeedbackTimer.Change(1, 500);
         }
 
         private void tsbtn_StopFrame_Click(object sender, EventArgs e)
