@@ -34,10 +34,14 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private Boolean enableAutoExposure;
         private int updateExposurePeriod_ms;
         private int targetIntesity;
+        private int lineLengthThresh;
+        private int crackLengthThresh;
+        private double connectCrackMaxDistanceThresh;
+        private double connectCrackAbsDistanceThresh;
 
         private Camera cam;
 
-        private const float INTENSITY_GAIN_THRESHOLD = 0.05f;
+        private const float INTENSITY_GAIN_THRESHOLD = 0.03f;
 
         // consumer queue variables
         private const int CONSUMER_QUEUE_SIZE = 1000;
@@ -61,6 +65,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_TARGET_INTENSITY = 50;
         private const int DEFAULT_ROI_UPDATE_PERIOD_MS = 5000;
         private const int DEFAULT_EXPOSURE_UPDATE_PERIOD_MS = 2500;
+        private const int DEFAULT_LINE_LENGTH_THRESH = 15;
+        private const int DEFAULT_CRACK_LENGTH_THRESHOLD = 40;
+        private const int DEFAULT_CONNECT_LINES_ABS_PASS_THRESH = 5;
+        private const int DEFAULT_CONNECT_LINES_MAXIMUM_PASS_THRESH = 15;
+
 
         public bool Running { get { return isRunning; } }
 
@@ -88,7 +97,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             enableAutoExposure = DEFAULT_ENABLE_AUTO_EXPOSURE;
             updateExposurePeriod_ms = DEFAULT_EXPOSURE_UPDATE_FREQUENCY;
             targetIntesity = DEFAULT_TARGET_INTENSITY;
-
+            lineLengthThresh = DEFAULT_LINE_LENGTH_THRESH;
+            crackLengthThresh = DEFAULT_LINE_LENGTH_THRESH;
+            connectCrackAbsDistanceThresh = DEFAULT_CONNECT_LINES_ABS_PASS_THRESH;
+            connectCrackMaxDistanceThresh = DEFAULT_CONNECT_LINES_MAXIMUM_PASS_THRESH;
         }
 
         /// <summary>
@@ -312,7 +324,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 consumerQueue.popAll(ref imageElements);
                 if (imageElements.Count > 0)
                 {
-                    
+                    // convert object to IPData class
                     image = (IPData)imageElements[imageElements.Count - 1].Data;
 
                     // get the image to process on
@@ -490,11 +502,26 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+
+        /// <summary>
+        /// Function processes a given image(bitmap) to look for cracks running vertically
+        /// through the image.  The algorithm is opimized for small cracks less than 10 pixels
+        /// wide. The total number of suspected cracks is returned from function.
+        /// </summary>
+        /// <param name="b">Image to perform image processing on.</param>
+        /// <returns>Number of suspected cracks detected.</returns>
         private int detectCracks(ref Bitmap b)
         {
+            // list of all pixels that may be part of crack
             List<Point> crackPixels = null;
+
+            // states wheter pixel passed condition to be part of crack
             Boolean[,] isCrackedPixel = null;
+
+            // list of lines found to possibly be a crack
             List<Line> lines = null;
+
+            // connected lines formed from lines
             List<LineCollection> cracks = null;
 
             // run filter algorithm --> finds pixels that may be part of a crack
@@ -510,7 +537,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
 
-            // run line collection algorithm
+            // run line detector algorithm --> connects cracted pixels together to form lines.
             try
             {
                 findCrackLines(ref crackPixels, ref isCrackedPixel, b.Width, b.Height, ref lines);
@@ -523,7 +550,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
 
-            // run line connection algorithm
+            // run line connection algorithm --> connects lines that have start/endpoints close to eachother
             try
             {
                 connectCrackLines(ref lines, ref cracks);
@@ -536,10 +563,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
 
+            // run crack filter algorithm --> filters out cracks/lines that are too short
             int crackCount = 0;
             try
             {
-                crackCount = filterLinesAndCracks(ref lines, ref cracks);
+                crackCount = filterLinesAndCracks(ref b, ref lines, ref cracks);
             }
             catch (Exception inner)
             {
@@ -548,25 +576,22 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 log.Error(errMsg, ex);
                 throw ex;
             }
-
-            // Visualizes Cracks
             
-            drawCrackLines(ref b, ref lines,255,0,255);
-
-            foreach (LineCollection crack in cracks)
-            {
-                List<Line> tmpLines = crack.Lines;
-                drawCrackLines(ref b, ref tmpLines, 255, 255, 0);
-            }
-            
-
             return crackCount;
         }
 
+        /// <summary>
+        /// Goes through list of lines given and draws all of them to an image.  The line is colored
+        /// according to the rgb argument given in the parameters.
+        /// </summary>
+        /// <param name="b">Image to draw to.</param>
+        /// <param name="lines">Lines to draw.</param>
+        /// <param name="red">Red color value of line 0-255.</param>
+        /// <param name="green">Green color value of line 0-255.</param>
+        /// <param name="blue">Blue color value of line 0-255.</param>
         private void drawCrackLines(ref Bitmap b, ref List<Line> lines, byte red, byte green, byte blue)
         {
             int PixelSize = 3;
-
             BitmapData B_data = null;
 
             try
@@ -580,9 +605,9 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                 throw ex;
             }
 
+            // draw the best fit line for each line to image 2 pixels wide.
             foreach (Line line in lines)
             {
-                // draw the best fit line
                 for (int x = line.StartX; x < line.EndX; x++)
                 {
                     int y1 = line.GetValueAt(x);
@@ -603,8 +628,6 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         }
                     }
                 }
-
-                byte* endRow = (byte*)B_data.Scan0 + (line.StartY * B_data.Stride);
             }
 
             // unlock bits
@@ -620,6 +643,16 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        /// <summary>
+        /// Filters image looking for pixels that may be part of a crack.  The pixels are found by
+        /// applying a high frequency gain by sampling horizontally across the image.  By applying
+        /// a gain in this way, a vertical crack can be detected.  A list of all pixels that may be 
+        /// a crack is stored in crackPixels while a 2d bool array is filled with true if the pixel
+        /// is part of a crack.
+        /// </summary>
+        /// <param name="b">Image to perform filter on.</param>
+        /// <param name="crackPixels">List of points that may be part of crack.</param>
+        /// <param name="isCrackedPixel">2d array of image pixels indicating of part of crack.</param>
         private void findCrackPixels(ref Bitmap b, ref List<Point> crackPixels, ref Boolean[,] isCrackedPixel)
         {
             const int PixelSize = 3;
@@ -720,37 +753,58 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+        /// <summary>
+        /// Loops through all of the pixels listed in crackPixels and looks for neighbors around it
+        /// that may be part of a connected crack.  The cracks are then stored into a list of lines
+        /// and returned in lines.
+        /// 
+        /// Function works by avoiding recursion directly and using a stack to store where the
+        /// function is working on and pushing the current position when moving to a new position
+        /// and popping from the stack whenever no moves are available in the current position.
+        /// </summary>
+        /// <param name="crackPixels">List of cracked pixels.</param>
+        /// <param name="isCrackedPixel">2d bool array corresponding to image pixels stating if
+        /// it is part of crack.</param>
+        /// <param name="width">Width of image.</param>
+        /// <param name="height">Height of image.</param>
+        /// <param name="lines">Number of lines</param>
         private void findCrackLines(ref List<Point> crackPixels, ref Boolean[,] isCrackedPixel, int width, int height, ref List<Line> lines)
         {
             lines = new List<Line>();
             Stack<object> stack = new Stack<object>();
             bool[,] hasPixelBeenUsed = new bool[height, width];
+
+            // loop through all pixels that may be part of a crack.
             foreach (Point testPoint in crackPixels)
             {
                 Point p = testPoint;
                 Point min = new Point(testPoint.X,testPoint.Y);
                 Point max = new Point(testPoint.X,testPoint.Y);
+
+                // check that pixel has not been used yet
                 if (!hasPixelBeenUsed[p.Y,p.X])
                 {
                     hasPixelBeenUsed[p.Y,p.X] = true;
 
                     // this is where we look for neighbors
                     bool keepSearching = true;
+                    // start looking north and go clockwise around compass looking at 
+                    // N, NE, E, SE, S, SW, W, NW
                     ContourState s = ContourState.North;
                     
-                    // best fit vars
+                    // variables used to fit a line to data.
                     int count = 1;
                     int sumX = p.X;
                     int sumY = p.Y;
                     int sumX2 = (int)Math.Pow(p.X,2);
                     int sumXY = p.X * p.Y;
 
-
-
+                    // keep moving through image until no more moves are available
                     while (keepSearching)
                     {
                         Point focus = p;
                         Point direction = Point.Empty;
+                        // see what direction to move.
                         switch (s)
                         {
                             case ContourState.North:
@@ -787,9 +841,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         {
                             if (isCrackedPixel[checkPoint.Y, checkPoint.X] && !hasPixelBeenUsed[checkPoint.Y, checkPoint.X])
                             {
-                                //stack.Push
+                                // push our current position to stack before moving to new position
                                 stack.Push(new Point(p.X, p.Y));
                                 stack.Push(s);
+                                // move our position to new pixel
                                 p = checkPoint;
                                 s = ContourState.North;
                                 hasPixelBeenUsed[p.Y, p.X] = true;
@@ -801,7 +856,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 sumX2 += (int)Math.Pow(p.X, 2);
                                 sumXY += p.X * p.Y;
 
-                                // update min / max
+                                // update min / max for length of line
                                 if (p.X < min.X)
                                 {
                                     min.X = p.X;
@@ -823,6 +878,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                         }
                         if (!passedTests)
                         {
+                            // northwest is the last state, must pop backwards
                             if (s == ContourState.NorthWest)
                             {
                                 bool foundNewPoint = false;
@@ -840,6 +896,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                     }
                                     else
                                     {
+                                        // end case
                                         foundNewPoint = true;
                                         keepSearching = false;
                                     }
@@ -851,63 +908,83 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                             }
                         } 
                     }
+                    // get the length of the line
                     int xdif = max.X - min.X;
                     int ydif = max.Y - min.Y;
                     int hdif = (int)Math.Sqrt(Math.Pow(xdif, 2) + Math.Pow(ydif, 2));
-                    if (hdif >= 15)
+
+                    // check if line length is acceptable
+                    if (hdif >= lineLengthThresh)
                     {
+                        // best fit line to data
                         double xMean = (double)sumX / (double)count;
                         double yMean = (double)sumY / (double)count;
                         double slope = (double)(sumXY - sumX * yMean) / (double)(sumX2 - sumX * xMean);
                         double yInt = yMean - slope * xMean;
+                        // use best fit line to calculate start point and end point
                         Point startPoint = new Point(min.X, (int)(slope*min.X + yInt));
                         Point endPoint = new Point(max.X, (int)(slope * max.X + yInt));
-                        // may be a line   
+                        // may be a crack   
                         lines.Add(new Line(startPoint, endPoint, slope, yInt));
                     }
-                    
                 }
             }
         }
 
-        private double hypothenuse(Point p1, Point p2)
+        /// <summary>
+        /// Calculates the distance between two points by calculating
+        /// the hypotenuse.
+        /// </summary>
+        /// <param name="p1">Point 1.</param>
+        /// <param name="p2">Point 2.</param>
+        /// <returns></returns>
+        private double hypotenuse(Point p1, Point p2)
         {
             return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
 
+        /// <summary>
+        /// Goes through all the lines and looks at the start point and end points.
+        /// If the points are close enough together, than they can be connected. Checks
+        /// to see that the lines are relatively going in the same direction.
+        /// </summary>
+        /// <param name="lines">List of lines to attempt to connect.</param>
+        /// <param name="cracks">List of connected lines.</param>
         private void connectCrackLines(ref List<Line> lines, ref List<LineCollection> cracks)
         {
-            const double minDistance = 15;
-            const double absMinDist = 5;
-
             cracks = new List<LineCollection>();
+            
+            // loop through all lines and attempt to connect them
             for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
             {
                 Line line = lines[lineIndex];
-
+                // go through cracks
                 for (int testIndex = 0; testIndex < cracks.Count; testIndex++)
                 {
                     if (testIndex != lineIndex)
                     {
                         Line testLine = new Line(cracks[testIndex].StartPoint, cracks[testIndex].EndPoint, 0, 0);
-
-                        double d1 = hypothenuse(line.StartPoint, testLine.EndPoint);
-                        double d2 = hypothenuse(line.EndPoint, testLine.StartPoint);
+                        // calculate distance from line start to test end
+                        double d1 = hypotenuse(line.StartPoint, testLine.EndPoint);
+                        // calculate distance from line end to test start
+                        double d2 = hypotenuse(line.EndPoint, testLine.StartPoint);
 
                         bool addLine = false;
 
-                        if (d1 < absMinDist)
+                        // check if distance is within absolute threshold, automaticall connect
+                        if (d1 < connectCrackAbsDistanceThresh)
                         {
                             addLine = true;
                             cracks[testIndex].AddToEnd(line);
                         }
-                        if (d2 < absMinDist)
+                        // check if distance is within absolute threshold, automaticall connect
+                        if (d2 < connectCrackAbsDistanceThresh)
                         {
                             addLine = true;
                             cracks[testIndex].AddToStart(line);
                         }
 
-                        if (d1 < minDistance)
+                        if (d1 < connectCrackMaxDistanceThresh)
                         {
                             if (line.Angle > 95)
                             {
@@ -934,7 +1011,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                             
                         }
 
-                        if (d2 < minDistance)
+                        if (d2 < connectCrackMaxDistanceThresh)
                         {
                             if (line.Angle > 95)
                             {
@@ -968,17 +1045,17 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                     {
                         Line testLine = lines[testIndex];
 
-                        double d1 = hypothenuse(line.StartPoint, testLine.EndPoint);
-                        double d2 = hypothenuse(line.EndPoint, testLine.StartPoint);
+                        double d1 = hypotenuse(line.StartPoint, testLine.EndPoint);
+                        double d2 = hypotenuse(line.EndPoint, testLine.StartPoint);
 
                         bool addLine = false;
 
-                        if (d1 < absMinDist || d2 < absMinDist)
+                        if (d1 < connectCrackAbsDistanceThresh || d2 < connectCrackAbsDistanceThresh)
                         {
                             addLine = true;
                         }
 
-                        if (d1 < minDistance)
+                        if (d1 < connectCrackMaxDistanceThresh)
                         {
                             if (line.Angle > 95)
                             {
@@ -1000,7 +1077,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                             }
                         }
 
-                        if (d2 < minDistance)
+                        if (d2 < connectCrackMaxDistanceThresh)
                         {
                             if (line.Angle > 95)
                             {
@@ -1044,28 +1121,53 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 
                     }
                 }
-                
             }
         }
 
-
-        private int filterLinesAndCracks(ref List<Line> lines, ref List<LineCollection> cracks)
+        /// <summary>
+        /// Goes through the list of lines and line collections and checks to see if the length
+        /// of the line or line collection is greater than set threshold.  If it is greater than
+        /// said threshold, then the crack counter is incremented.  After the function has
+        /// cycled through both list, the total number of cracks is returned from the function.
+        /// </summary>
+        /// <param name="lines">List of purely lines to filter.</param>
+        /// <param name="cracks">List of purely connected lines to filter.</param>
+        /// <returns>Number of lines / line collections with length greather than threshold.</returns>
+        private int filterLinesAndCracks(ref Bitmap b, ref List<Line> lines, ref List<LineCollection> cracks)
         {
             int crackCount = 0;
+            List<Line> crackedLines = new List<Line>();
             foreach (Line line in lines)
             {
-                if (hypothenuse(line.StartPoint,line.EndPoint) > 50)
+                if (hypotenuse(line.StartPoint, line.EndPoint) > crackLengthThresh)
                 {
+                    crackedLines.Add(line);
                     crackCount++;
                 }
             }
             foreach (LineCollection crack in cracks)
             {
-                if (hypothenuse(crack.StartPoint, crack.EndPoint) > 50)
+                if (hypotenuse(crack.StartPoint, crack.EndPoint) > crackLengthThresh)
                 {
+                    foreach (Line line in crack.Lines)
+                    {
+                        crackedLines.Add(line);
+                    }
                     crackCount++;
                 }
             }
+            try
+            {
+                drawCrackLines(ref b, ref crackedLines, 255, 0, 255);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "FailureDetector.filterLinesAndCracks : Error drawing cracked lines.";
+                FailureDetectorException ex = new FailureDetectorException(errMsg, inner);
+                log.Error(errMsg, inner);
+                throw ex;
+            }
+            
             return crackCount;
         }
        
@@ -1257,6 +1359,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             
         }
 
+        /// <summary>
+        /// Calculate the weighted intensity of a histogram.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         private int weightedIntensity(int[] data)
         {
             int weightedSum = 0;
@@ -1269,6 +1376,11 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             return weightedSum / sum;
         }
 
+        /// <summary>
+        /// Creates a histogram of the intensity of a grayscale bitmap
+        /// </summary>
+        /// <param name="b"></param>
+        /// <returns></returns>
         private int[] histogram(Bitmap b)
         {
             int[] data = new int[256];
@@ -1310,6 +1422,10 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             return data;
         }
 
+        /// <summary>
+        /// Draws the roi in red
+        /// </summary>
+        /// <param name="b"></param>
         private void DrawROI(ref Bitmap b)
         {
             int PixelSize = 3;

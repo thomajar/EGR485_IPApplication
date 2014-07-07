@@ -1064,6 +1064,7 @@ namespace SAF_OpticalFailureDetector
             UpdateReplayVideo();
         }
 
+
     }
     // Use for exceptinos generated in FailureDetector class
     public class MainFormException : System.Exception

@@ -270,17 +270,22 @@ namespace SAF_OpticalFailureDetector.camera
 
         }
 
-
+        /// <summary>
+        /// Changes the exposure according to a gain.
+        /// </summary>
+        /// <param name="gain"></param>
         public void SetExposureByGain(double gain)
         {
             double tmp_exposure = exposure_s * gain;
 
-            if (tmp_exposure > EXPOSURE_MAX || tmp_exposure < EXPOSURE_MIN)
+            // make sure desired exposure is within expected values
+            if (tmp_exposure > EXPOSURE_MAX)
             {
-                string errMsg = "Camera.SetExposureByGain : Unable to set exposure, out of bounds.";
-                CameraException ex = new CameraException(errMsg);
-                log.Error(errMsg, ex);
-                throw ex;
+                tmp_exposure = EXPOSURE_MAX;
+            }
+            if (tmp_exposure < EXPOSURE_MIN)
+            {
+                tmp_exposure = EXPOSURE_MIN;
             }
 
             try
