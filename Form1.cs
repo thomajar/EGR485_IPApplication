@@ -845,7 +845,9 @@ namespace SAF_OpticalFailureDetector
         
         private void SwitchDisplayMode()
         {
+            this.SuspendLayout();
             isCameraMode = !isCameraMode;
+            
             if (isCameraMode)
             {
                 tsbtn_CameraMode.Enabled = false;
@@ -863,6 +865,7 @@ namespace SAF_OpticalFailureDetector
                 tlp_Main.ColumnStyles[2].Width = 25;
                 tlp_Main.ColumnStyles[3].Width = 25;
                 tlp_Main.ColumnStyles[4].Width = 0;
+                this.Text = PROGRAM_NAME + "[Camera View]";
             }
             else
             {
@@ -885,7 +888,9 @@ namespace SAF_OpticalFailureDetector
                 tlp_Main.ColumnStyles[2].Width = 0;
                 tlp_Main.ColumnStyles[3].Width = 0;
                 tlp_Main.ColumnStyles[4].Width = 100;
+                this.Text = PROGRAM_NAME + "[Replay View]";
             }
+            this.ResumeLayout();
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -942,8 +947,17 @@ namespace SAF_OpticalFailureDetector
             UpdateReplayVideo();
         }
 
+        
+        private void ReplayFeedbackTimer(object stateInfo)
+        {
+            replayManager.NextFrame();
+            UpdateReplayVideo();
+        }
+
         private void UpdateReplayVideo()
         {
+            // do stuff
+            Bitmap[] bitmaps = replayManager.GetCurrentBitmaps();
             // invokes
             if (zibReplayCam1.InvokeRequired || zibReplayCam2.InvokeRequired || txtFrameNumber.InvokeRequired || 
                 lbl_TotalFrames.InvokeRequired || sliderFrameNumber.InvokeRequired ||lblCam1Params.InvokeRequired || lblCam2Params.InvokeRequired || lblTestSettings.InvokeRequired)
@@ -953,8 +967,6 @@ namespace SAF_OpticalFailureDetector
             }
             else
             {
-                // do stuff
-                Bitmap[] bitmaps = replayManager.GetCurrentBitmaps();
                 if (bitmaps[0] != null)
                 {
                     zibReplayCam1.SetImage(bitmaps[0]);
@@ -963,7 +975,7 @@ namespace SAF_OpticalFailureDetector
                 {
                     zibReplayCam2.SetImage(bitmaps[1]);
                 }
-
+                
                 int currentFrame = replayManager.GetCurrentFrame();
                 int totalFrames = replayManager.GetTotalFrames();
 
@@ -997,6 +1009,7 @@ namespace SAF_OpticalFailureDetector
                 lblCam1Params.Text = frameInfo[0];
                 lblCam2Params.Text = frameInfo[1];
                 lblTestSettings.Text = replayManager.GetTestInfo();
+                
             }
         }
 
@@ -1058,11 +1071,7 @@ namespace SAF_OpticalFailureDetector
             replayFeedbackTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
-        private void ReplayFeedbackTimer(object stateInfo)
-        {
-            replayManager.NextFrame();
-            UpdateReplayVideo();
-        }
+        
 
 
     }

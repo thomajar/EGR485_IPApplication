@@ -238,6 +238,8 @@ namespace SAF_OpticalFailureDetector
             nudMinContrast.Value = metadata.MinimumContrast;
             nudTargetIntensity.Value = metadata.TargetIntenstiy;
             nudMinLineLength.Value = metadata.MinimumLineLength;
+            btnOpenRelay.Enabled = !USBRelayController.Instance.IsOpen;
+
         }
 
         private void ResetForm()

@@ -49,6 +49,8 @@
             this.cmboCam1View = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
             this.cmboCam2View = new System.Windows.Forms.ComboBox();
+            this.Camera1Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
+            this.Camera2Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.gbCamera1 = new System.Windows.Forms.GroupBox();
             this.lblCam1PotentialCracks = new System.Windows.Forms.Label();
             this.lblCam1CracksDetected = new System.Windows.Forms.Label();
@@ -83,8 +85,6 @@
             this.lblCam1Params = new System.Windows.Forms.Label();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.lblCam2Params = new System.Windows.Forms.Label();
-            this.Camera1Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
-            this.Camera2Display = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.zibReplayCam1 = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.zibReplayCam2 = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.toolStrip1.SuspendLayout();
@@ -229,6 +229,7 @@
             this.tsbtn_PlayFrame.Name = "tsbtn_PlayFrame";
             this.tsbtn_PlayFrame.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_PlayFrame.Text = "Play";
+            this.tsbtn_PlayFrame.Visible = false;
             this.tsbtn_PlayFrame.Click += new System.EventHandler(this.tsbtn_PlayFrame_Click);
             // 
             // tsbtn_StopFrame
@@ -240,6 +241,7 @@
             this.tsbtn_StopFrame.Name = "tsbtn_StopFrame";
             this.tsbtn_StopFrame.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_StopFrame.Text = "Stop";
+            this.tsbtn_StopFrame.Visible = false;
             this.tsbtn_StopFrame.Click += new System.EventHandler(this.tsbtn_StopFrame_Click);
             // 
             // tsbtn_NextFrame
@@ -299,7 +301,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(34, 7);
+            this.cmboCam1View.Location = new System.Drawing.Point(34, 8);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -323,11 +325,29 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(96, 7);
+            this.cmboCam2View.Location = new System.Drawing.Point(96, 8);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam2View.TabIndex = 3;
             this.cmboCam2View.TextChanged += new System.EventHandler(this.cmboCam2View_TextChanged);
+            // 
+            // Camera1Display
+            // 
+            this.tlp_Main.SetColumnSpan(this.Camera1Display, 2);
+            this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Camera1Display.Location = new System.Drawing.Point(3, 43);
+            this.Camera1Display.Name = "Camera1Display";
+            this.Camera1Display.Size = new System.Drawing.Size(56, 568);
+            this.Camera1Display.TabIndex = 4;
+            // 
+            // Camera2Display
+            // 
+            this.tlp_Main.SetColumnSpan(this.Camera2Display, 2);
+            this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Camera2Display.Location = new System.Drawing.Point(65, 43);
+            this.Camera2Display.Name = "Camera2Display";
+            this.Camera2Display.Size = new System.Drawing.Size(56, 568);
+            this.Camera2Display.TabIndex = 5;
             // 
             // gbCamera1
             // 
@@ -718,24 +738,6 @@
             this.lblCam2Params.TabIndex = 0;
             this.lblCam2Params.Text = "Timestamp :\r\nImage Number :\r\nImage Size :\r\nExposure (s) :\r\nIntensity (lsb) :\r\nPot" +
     "ential Cracks : \r\nContains Crack :";
-            // 
-            // Camera1Display
-            // 
-            this.tlp_Main.SetColumnSpan(this.Camera1Display, 2);
-            this.Camera1Display.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Camera1Display.Location = new System.Drawing.Point(3, 43);
-            this.Camera1Display.Name = "Camera1Display";
-            this.Camera1Display.Size = new System.Drawing.Size(56, 568);
-            this.Camera1Display.TabIndex = 4;
-            // 
-            // Camera2Display
-            // 
-            this.tlp_Main.SetColumnSpan(this.Camera2Display, 2);
-            this.Camera2Display.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Camera2Display.Location = new System.Drawing.Point(65, 43);
-            this.Camera2Display.Name = "Camera2Display";
-            this.Camera2Display.Size = new System.Drawing.Size(56, 568);
-            this.Camera2Display.TabIndex = 5;
             // 
             // zibReplayCam1
             // 

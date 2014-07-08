@@ -66,7 +66,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_ROI_UPDATE_PERIOD_MS = 5000;
         private const int DEFAULT_EXPOSURE_UPDATE_PERIOD_MS = 2500;
         private const int DEFAULT_LINE_LENGTH_THRESH = 15;
-        private const int DEFAULT_CRACK_LENGTH_THRESHOLD = 40;
+        private const int DEFAULT_CRACK_LENGTH_THRESH = 75;
         private const int DEFAULT_CONNECT_LINES_ABS_PASS_THRESH = 5;
         private const int DEFAULT_CONNECT_LINES_MAXIMUM_PASS_THRESH = 15;
 
@@ -98,7 +98,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             updateExposurePeriod_ms = DEFAULT_EXPOSURE_UPDATE_FREQUENCY;
             targetIntesity = DEFAULT_TARGET_INTENSITY;
             lineLengthThresh = DEFAULT_LINE_LENGTH_THRESH;
-            crackLengthThresh = DEFAULT_LINE_LENGTH_THRESH;
+            crackLengthThresh = DEFAULT_CRACK_LENGTH_THRESH;
             connectCrackAbsDistanceThresh = DEFAULT_CONNECT_LINES_ABS_PASS_THRESH;
             connectCrackMaxDistanceThresh = DEFAULT_CONNECT_LINES_MAXIMUM_PASS_THRESH;
         }

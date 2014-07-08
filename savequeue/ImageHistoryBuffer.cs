@@ -451,7 +451,14 @@ namespace SAF_OpticalFailureDetector.savequeue
             dataToWrite += "Minimum Line Length: " + metadata.MinimumLineLength.ToString("D3") + Environment.NewLine;
             dataToWrite += Environment.NewLine;
             dataToWrite += "Camera Information: " + Environment.NewLine;
-            dataToWrite += "Timestamp: " + data.TimeStamp.ToLongTimeString() + Environment.NewLine;
+            dataToWrite += "Timestamp: " +
+                data.TimeStamp.Month.ToString("D2") + "/" +
+                data.TimeStamp.Day.ToString("D2") + "/" +
+                data.TimeStamp.Year.ToString("D4") + "_" +
+                data.TimeStamp.Hour.ToString("D2") + ":" +
+                data.TimeStamp.Minute.ToString("D2") + ":" +
+                data.TimeStamp.Second.ToString("D2") + "." +
+                data.TimeStamp.Millisecond.ToString("D3") + Environment.NewLine;
             dataToWrite += "Image Number: " + data.ImageNumber.ToString("D8") + Environment.NewLine;
             dataToWrite += "Image Size: " + data.ImageSize.Width.ToString("D4") + "x" + data.ImageSize.Height.ToString("D4") + Environment.NewLine;
             dataToWrite += "Exposure (s): " + data.ImageExposure_s.ToString() + Environment.NewLine;
