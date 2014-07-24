@@ -20,6 +20,7 @@ namespace SAF_OpticalFailureDetector.savequeue
         private int ip_imagerContrast;
         private int ip_targetIntensity;
         private int ip_minLineLength;
+        private int ip_testFrequency;
 
         public String SampleNumber
         {
@@ -58,6 +59,14 @@ namespace SAF_OpticalFailureDetector.savequeue
             get
             {
                 return settings_debugSavingFrequency;
+            }
+        }
+
+        public int TestFrequency
+        {
+            get
+            {
+                return ip_testFrequency;
             }
         }
 
@@ -117,12 +126,13 @@ namespace SAF_OpticalFailureDetector.savequeue
             settings_testNumber = "";
             settings_saveLocation = "C:\\temp";
             settings_enableDebugSaving = true;
-            settings_debugSavingFrequency = 10;
+            settings_debugSavingFrequency = 20;
 
             // metadata image processing settings
+            ip_testFrequency = 5;
             ip_imagerNoise = 25;
             ip_imagerContrast = 15;
-            ip_targetIntensity = 150;
+            ip_targetIntensity = 100;
             ip_minLineLength = 0;
         }
 
@@ -140,8 +150,9 @@ namespace SAF_OpticalFailureDetector.savequeue
             this.settings_enableDebugSaving = enableDebugSave;
         }
 
-        public void SetIPSettings(int imagerNoise, int imagerContrast, int imagerTargetIntensity, int minLineLength)
+        public void SetIPSettings(int testFrequency, int imagerNoise, int imagerContrast, int imagerTargetIntensity, int minLineLength)
         {
+            this.ip_testFrequency = testFrequency;
             this.ip_imagerNoise = imagerNoise;
             this.ip_imagerContrast = imagerContrast;
             this.ip_targetIntensity = imagerTargetIntensity;

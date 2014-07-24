@@ -20,6 +20,7 @@ namespace SAF_OpticalFailureDetector.savequeue
     {
         private const int DEFAULT_THROTTLE_PERIOD = 250;
         private const int DEFAULT_TEST_HISTORY_SIZE = 50;
+        private const int CONSECUTIVE_CRACKS = 1; // Was at 10 before update
 
         public event ThreadErrorHandler ThreadError;
         // thread synchronization
@@ -258,7 +259,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                             if (data.ContainsCrack)
                             {
                                 cam1ConsecutiveCrackedSampleCount++;
-                                if (cam1ConsecutiveCrackedSampleCount > 10)
+                                if (cam1ConsecutiveCrackedSampleCount > CONSECUTIVE_CRACKS)
                                 {
                                     crackConfirmed = true;
                                 }
@@ -291,7 +292,7 @@ namespace SAF_OpticalFailureDetector.savequeue
                             if (data.ContainsCrack)
                             {
                                 cam2ConsecutiveCrackedSampleCount++;
-                                if (cam2ConsecutiveCrackedSampleCount > 10)
+                                if (cam2ConsecutiveCrackedSampleCount > CONSECUTIVE_CRACKS)
                                 {
                                     crackConfirmed = true;
                                 }
@@ -445,6 +446,7 @@ namespace SAF_OpticalFailureDetector.savequeue
             dataToWrite += "General Settings: " + Environment.NewLine;
             dataToWrite += "Sample Number: " + metadata.SampleNumber + Environment.NewLine;
             dataToWrite += "Test Number: " + metadata.TestNumber + Environment.NewLine;
+            dataToWrite += "Processing Frequency: " + metadata.TestFrequency + Environment.NewLine;
             dataToWrite += "Imager Noise: " + metadata.ImagerNoise.ToString("D3") + Environment.NewLine;
             dataToWrite += "Minimum Contrast: " + metadata.MinimumContrast.ToString("D3") + Environment.NewLine;
             dataToWrite += "Target Intensity: " + metadata.TargetIntenstiy.ToString("D3") + Environment.NewLine;

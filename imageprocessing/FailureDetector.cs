@@ -16,8 +16,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
 {
     unsafe class FailureDetector
     {
-
-        private const int THROTTLE_PERIOD = 250;
+        private int throttle_period_ms;
         public event ThreadErrorHandler ThreadError;
 
         // thread synchronization
@@ -55,7 +54,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private Boolean isRunning;
         private Thread processThread;
 
-
+        private const int DEFAULT_THROTTLE_PERIOD = 250;
         private const int DEFAULT_MIN_CONTRAST = 15;
         private const int DEFAULT_MIN_NOISE_LVL = 15;
         private const bool DEFAULT_ENABLE_ROI = false;
@@ -65,8 +64,8 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private const int DEFAULT_TARGET_INTENSITY = 50;
         private const int DEFAULT_ROI_UPDATE_PERIOD_MS = 5000;
         private const int DEFAULT_EXPOSURE_UPDATE_PERIOD_MS = 2500;
-        private const int DEFAULT_LINE_LENGTH_THRESH = 15;
-        private const int DEFAULT_CRACK_LENGTH_THRESH = 75;
+        private const int DEFAULT_LINE_LENGTH_THRESH = 12;
+        private const int DEFAULT_CRACK_LENGTH_THRESH = 40;
         private const int DEFAULT_CONNECT_LINES_ABS_PASS_THRESH = 5;
         private const int DEFAULT_CONNECT_LINES_MAXIMUM_PASS_THRESH = 15;
 
@@ -90,6 +89,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             this.cam = cam;
 
             // defaults
+            throttle_period_ms = DEFAULT_THROTTLE_PERIOD;
             minimumContrast = DEFAULT_MIN_CONTRAST;
             noiseRange = DEFAULT_MIN_NOISE_LVL;
             enableROI = DEFAULT_ENABLE_ROI;
@@ -184,12 +184,13 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         /// Starts the image processing thread.
         /// </summary>
         /// <exception cref="FailureDetectorException"></exception>
-        public void Start()
+        public void Start(int throttle_period_ms)
         {
             lock (_ipLock)
             {
                 if (!isRunning)
                 {
+                    this.throttle_period_ms = throttle_period_ms;
                     processThread = new Thread(new ThreadStart(Process));
                     try
                     {
@@ -311,7 +312,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             // keep thread running until told to stop or start
             while (isRunning)
             {
-                int timeToSleep = THROTTLE_PERIOD - Convert.ToInt32(_threadTimer.ElapsedMilliseconds);
+                int timeToSleep = throttle_period_ms - Convert.ToInt32(_threadTimer.ElapsedMilliseconds);
                 if (timeToSleep > 0)
                 {
                     Thread.Sleep(timeToSleep);

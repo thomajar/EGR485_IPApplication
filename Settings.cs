@@ -234,6 +234,7 @@ namespace SAF_OpticalFailureDetector
             txtTestNumber.Text = metadata.TestNumber;
             txtSaveLocation.Text = metadata.SaveLocation;
             cbEnableDebugSaving.Checked = metadata.EnableDebugSaving;
+            nudTestFrequency.Value = metadata.TestFrequency;
             nudImagerNoise.Value = metadata.ImagerNoise;
             nudMinContrast.Value = metadata.MinimumContrast;
             nudTargetIntensity.Value = metadata.TargetIntenstiy;
@@ -256,6 +257,7 @@ namespace SAF_OpticalFailureDetector
                 txtSaveLocation.Text,
                 cbEnableDebugSaving.Checked);
             metadata.SetIPSettings(
+                Convert.ToInt32(nudTestFrequency.Value),
                 Convert.ToInt32(nudImagerNoise.Value),
                 Convert.ToInt32(nudMinContrast.Value),
                 Convert.ToInt32(nudTargetIntensity.Value),

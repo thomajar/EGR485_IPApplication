@@ -38,7 +38,6 @@
             this.tsbtn_RefreshCamera = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Start = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_Stop = new System.Windows.Forms.ToolStripButton();
-            this.tsbtn_Help = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.tsbtn_PreviosFrame = new System.Windows.Forms.ToolStripButton();
             this.tsbtn_PlayFrame = new System.Windows.Forms.ToolStripButton();
@@ -87,6 +86,7 @@
             this.lblCam2Params = new System.Windows.Forms.Label();
             this.zibReplayCam1 = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
             this.zibReplayCam2 = new SAF_OpticalFailureDetector.threading.ZoomImageBox();
+            this.tsbtnEmergencyStop = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1.SuspendLayout();
             this.tlp_Main.SuspendLayout();
             this.gbCamera1.SuspendLayout();
@@ -113,12 +113,12 @@
             this.tsbtn_RefreshCamera,
             this.tsbtn_Start,
             this.tsbtn_Stop,
-            this.tsbtn_Help,
             this.toolStripSeparator2,
             this.tsbtn_PreviosFrame,
             this.tsbtn_PlayFrame,
             this.tsbtn_StopFrame,
-            this.tsbtn_NextFrame});
+            this.tsbtn_NextFrame,
+            this.tsbtnEmergencyStop});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1582, 79);
@@ -191,18 +191,6 @@
             this.tsbtn_Stop.Size = new System.Drawing.Size(68, 76);
             this.tsbtn_Stop.Text = "Stop";
             this.tsbtn_Stop.Click += new System.EventHandler(this.tsbtn_Stop_Click);
-            // 
-            // tsbtn_Help
-            // 
-            this.tsbtn_Help.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.tsbtn_Help.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbtn_Help.Image = ((System.Drawing.Image)(resources.GetObject("tsbtn_Help.Image")));
-            this.tsbtn_Help.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tsbtn_Help.Name = "tsbtn_Help";
-            this.tsbtn_Help.Size = new System.Drawing.Size(68, 76);
-            this.tsbtn_Help.Text = "Help";
-            this.tsbtn_Help.Visible = false;
-            this.tsbtn_Help.Click += new System.EventHandler(this.tsbtn_Help_Click);
             // 
             // toolStripSeparator2
             // 
@@ -301,7 +289,7 @@
             this.cmboCam1View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam1View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam1View.FormattingEnabled = true;
-            this.cmboCam1View.Location = new System.Drawing.Point(34, 8);
+            this.cmboCam1View.Location = new System.Drawing.Point(34, 7);
             this.cmboCam1View.Name = "cmboCam1View";
             this.cmboCam1View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam1View.TabIndex = 1;
@@ -325,7 +313,7 @@
             this.cmboCam2View.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.cmboCam2View.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmboCam2View.FormattingEnabled = true;
-            this.cmboCam2View.Location = new System.Drawing.Point(96, 8);
+            this.cmboCam2View.Location = new System.Drawing.Point(96, 7);
             this.cmboCam2View.Name = "cmboCam2View";
             this.cmboCam2View.Size = new System.Drawing.Size(25, 24);
             this.cmboCam2View.TabIndex = 3;
@@ -755,6 +743,18 @@
             this.zibReplayCam2.Size = new System.Drawing.Size(720, 427);
             this.zibReplayCam2.TabIndex = 6;
             // 
+            // tsbtnEmergencyStop
+            // 
+            this.tsbtnEmergencyStop.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.tsbtnEmergencyStop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbtnEmergencyStop.Image = ((System.Drawing.Image)(resources.GetObject("tsbtnEmergencyStop.Image")));
+            this.tsbtnEmergencyStop.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbtnEmergencyStop.Name = "tsbtnEmergencyStop";
+            this.tsbtnEmergencyStop.Size = new System.Drawing.Size(68, 76);
+            this.tsbtnEmergencyStop.Text = "toolStripButton1";
+            this.tsbtnEmergencyStop.ToolTipText = "Emergency Stop";
+            this.tsbtnEmergencyStop.Click += new System.EventHandler(this.tsbtnEmergencyStop_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -795,7 +795,6 @@
         private System.Windows.Forms.ToolStripButton tsbtn_Settings;
         private System.Windows.Forms.ToolStripButton tsbtn_Start;
         private System.Windows.Forms.ToolStripButton tsbtn_Stop;
-        private System.Windows.Forms.ToolStripButton tsbtn_Help;
         private System.Windows.Forms.ToolStripButton tsbtn_RefreshCamera;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ComboBox cmboCam1View;
@@ -847,6 +846,7 @@
         private System.Windows.Forms.Button btnBrowse;
         private System.Windows.Forms.Label lblCam1Params;
         private System.Windows.Forms.Label lblCam2Params;
+        private System.Windows.Forms.ToolStripButton tsbtnEmergencyStop;
     }
 }
 

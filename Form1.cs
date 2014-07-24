@@ -558,10 +558,15 @@ namespace SAF_OpticalFailureDetector
         private void tsbtn_Start_Click(object sender, EventArgs e)
         {
             log.Info("MainForm.tsbtn_Start_Click : User pressed start processing button.");
-            Start();
-            tsbtn_Stop.Enabled = true;
-            tsbtn_Start.Enabled = false;
-            tsbtn_Settings.Enabled = false;
+            if(Start())
+            {
+                cmboCam1View.SelectedIndex = cmboCam1View.Items.IndexOf(DISPLAY_TYPE_PROCESSED);
+                cmboCam2View.SelectedIndex = cmboCam2View.Items.IndexOf(DISPLAY_TYPE_PROCESSED);
+                tsbtn_Stop.Enabled = true;
+                tsbtn_Start.Enabled = false;
+                tsbtn_Settings.Enabled = false;
+            }
+            
         }
 
         /// <summary>
@@ -573,6 +578,8 @@ namespace SAF_OpticalFailureDetector
         {
             log.Info("MainForm.tsbtn_Stop_Click : User pressed stop processing button.");
             Stop();
+            cmboCam1View.SelectedIndex = cmboCam1View.Items.IndexOf(DISPLAY_TYPE_NORMAL);
+            cmboCam2View.SelectedIndex = cmboCam2View.Items.IndexOf(DISPLAY_TYPE_NORMAL);
             tsbtn_Stop.Enabled = false;
             tsbtn_Start.Enabled = true;
             ipQueue1.reset();
@@ -681,7 +688,7 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetTargetIntensity(metadata.TargetIntenstiy);
             try
             {
-                imagep1.Start();
+                imagep1.Start(1000 / metadata.TestFrequency);
             }
             catch (Exception inner)
             {
@@ -694,7 +701,7 @@ namespace SAF_OpticalFailureDetector
             Thread.Sleep(100);
             try
             {
-                imagep2.Start();
+                imagep2.Start(1000 / metadata.TestFrequency);
             }
             catch (Exception inner)
             {
@@ -1069,6 +1076,23 @@ namespace SAF_OpticalFailureDetector
             sliderFrameNumber.Enabled = true;
             tsbtn_CameraMode.Enabled = true;
             replayFeedbackTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private void tsbtnEmergencyStop_Click(object sender, EventArgs e)
+        {
+            USBRelayController relay = USBRelayController.Instance;
+            try
+            {
+                relay.SetRelay0Status(true);
+                relay.SetRelay1Status(true);
+            }
+            catch (Exception inner)
+            {
+                string errMsg = "MainForm.tsbtnEmergencyStop : Relay controller not initialized.";
+                MainFormException ex = new MainFormException(errMsg, inner);
+                log.Error(errMsg, ex);
+                DisplayError(errMsg, ex);
+            }
         }
 
         
