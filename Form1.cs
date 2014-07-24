@@ -21,7 +21,7 @@ namespace SAF_OpticalFailureDetector
 {
     public partial class MainForm : Form
     {
-        private const string PROGRAM_NAME = "Optical Failure Detector (V1.0)";
+        private const string PROGRAM_NAME = "Optical Failure Detector (V2.0) ";
         private const String DISPLAY_TYPE_NORMAL = "Camera Image";
         private const String DISPLAY_TYPE_PROCESSED = "Raw Processed";
         private const string VIDEO_TYPE_TEST = "Test";
