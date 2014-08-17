@@ -64,12 +64,15 @@ namespace SAF_OpticalFailureDetector.threading
         /// <summary>
         /// Point on unscaled image where mouse was pressed.
         /// </summary>
-        private Point mousePointDown;
+        private Point mousePointDown_scaled;
+        private Point mousePointDown_unscaled;
 
         /// <summary>
         /// Point on unscaled image where mouse was released.
         /// </summary>
-        private Point mousePointUp;
+        private Point mousePointUp_scaled;
+        private Point mousePointUp_unscaled;
+
 
         /// <summary>
         /// Mouse is either pressed or released.
@@ -78,6 +81,17 @@ namespace SAF_OpticalFailureDetector.threading
         {
             Released,
             Pressed
+        }
+
+        private bool isLocked;
+
+        public void Lock()
+        {
+            isLocked = true;
+        }
+        public void UnLock()
+        {
+            isLocked = false;
         }
 
         /// <summary>
@@ -93,7 +107,7 @@ namespace SAF_OpticalFailureDetector.threading
 
             // add event handler for mouse wheel events on display text label
             this.DisplayText.MouseWheel += this.DisplayImage_MouseScroll;
-
+            isLocked = false;
             // need to set DisplayText parent to Display Image box in order to have transparent background on label
             DisplayText.Parent = DisplayImageBox;
             DisplayText.ForeColor = Color.Red;
@@ -104,8 +118,12 @@ namespace SAF_OpticalFailureDetector.threading
             focusPoint = Point.Empty;
             displayImageOffset = new Point(0, 0);
             mousestate = MouseState.Released;
-            mousePointDown = new Point(0, 0);
-            mousePointUp = new Point(0, 0);
+            mousePointDown_unscaled = new Point(0, 0);
+            mousePointDown_scaled = new Point(0, 0);
+            mousePointUp_unscaled = new Point(0, 0);
+            mousePointUp_scaled = new Point(0, 0);
+            regionToProcess_unscaled = Rectangle.Empty;
+            regionToProcess_scaled = Rectangle.Empty;
 
             // release semaphore allowing control to others
             ctrlSem.Release();
@@ -430,6 +448,30 @@ namespace SAF_OpticalFailureDetector.threading
                 ctrlSem.Release();
                 throw ex;
             }
+            // Draw the region of intereset on box
+            if (regionToProcess_scaled != Rectangle.Empty)
+            {
+                try
+                {
+                    Brush b = new SolidBrush(Color.Red);
+                    Pen p = new Pen(b);
+                    /// Math.Pow(2, zoomlvl)
+                    //int startX = 
+
+                    int xStart = Convert.ToInt32(regionToProcess_scaled.Left * Math.Pow(2, zoomlvl));
+                    int yStart = Convert.ToInt32(regionToProcess_scaled.Top * Math.Pow(2, zoomlvl));
+                    int xEnd = Convert.ToInt32(regionToProcess_scaled.Right * Math.Pow(2, zoomlvl));
+                    int yEnd = Convert.ToInt32(regionToProcess_scaled.Bottom * Math.Pow(2, zoomlvl));
+
+                    Rectangle r = new Rectangle(xStart, yStart, xEnd - xStart, yEnd - yStart);
+                    g.DrawRectangle(p,r);
+                }
+                catch (Exception)
+                {
+                    
+                    throw;
+                }
+            }
             // dispose graphics ~ avoids memory leak
             g.Dispose();
 
@@ -447,6 +489,10 @@ namespace SAF_OpticalFailureDetector.threading
         /// <param name="e"></param>
         void DisplayImage_MouseScroll(object sender, MouseEventArgs e)
         {
+            if (isLocked)
+            {
+                return;
+            }
             // zoom in
             if (e.Delta > 0)
             {
@@ -493,8 +539,22 @@ namespace SAF_OpticalFailureDetector.threading
         /// <param name="e"></param>
         private void DisplayImageBox_MouseDown(object sender, MouseEventArgs e)
         {
-            mousePointDown = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
+            if (isLocked)
+            {
+                return;
+            }
+            mousePointDown_unscaled = new Point(e.X, e.Y);
+            mousePointDown_scaled = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
             mousestate = MouseState.Pressed;
+        }
+
+        private Rectangle regionToProcess_scaled;
+        private Rectangle regionToProcess_unscaled;
+
+        public Rectangle GetRegionToProcess()
+        {
+            return regionToProcess_scaled;
+
         }
 
         /// <summary>
@@ -504,6 +564,10 @@ namespace SAF_OpticalFailureDetector.threading
         /// <param name="e"></param>
         private void DisplayImageBox_MouseUp(object sender, MouseEventArgs e)
         {
+            if (isLocked)
+            {
+                return;
+            }
             // mouse needs to be down
             if (mousestate == MouseState.Pressed)
             {
@@ -516,10 +580,25 @@ namespace SAF_OpticalFailureDetector.threading
                 log.Info("ZoomImageBox.DisplayImageBox_MouseUp : User panned around image.");
 
                 // set point up in terms of unscaled image.
-                mousePointUp = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
+                mousePointUp_unscaled = new Point(e.X, e.Y);
+                mousePointUp_scaled = new Point(Convert.ToInt32(e.X / Math.Pow(2, zoomlvl)), Convert.ToInt32(e.Y / Math.Pow(2, zoomlvl)));
                 // adjust the focuspoint by amount moved from mousePointDown to mousePOintUp
-                int xCoordinate = focusPoint.X + (mousePointDown.X - mousePointUp.X);
-                int yCoordinate = focusPoint.Y + (mousePointDown.Y - mousePointUp.Y);
+                int xCoordinate = focusPoint.X + (mousePointDown_scaled.X - mousePointUp_scaled.X);
+                int yCoordinate = focusPoint.Y + (mousePointDown_scaled.Y - mousePointUp_scaled.Y);
+
+                try
+                {
+                    regionToProcess_unscaled = new Rectangle(mousePointDown_unscaled.X, mousePointDown_unscaled.Y,
+                        mousePointUp_unscaled.X - mousePointDown_unscaled.X, mousePointUp_unscaled.Y - mousePointDown_unscaled.Y);
+                    regionToProcess_scaled = new Rectangle(mousePointDown_scaled.X, mousePointDown_scaled.Y, mousePointUp_scaled.X - mousePointDown_scaled.X, mousePointUp_scaled.Y - mousePointDown_scaled.Y);
+                }
+                catch (Exception)
+                {
+                    regionToProcess_scaled = Rectangle.Empty;
+                    regionToProcess_unscaled = Rectangle.Empty;
+                    
+                }
+                
 
                 try
                 {

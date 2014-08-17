@@ -35,6 +35,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
         private int targetIntesity;
         private int lineLengthThresh;
         private int crackLengthThresh;
+	private Rectangle regionToProcess;
         private double connectCrackMaxDistanceThresh;
         private double connectCrackAbsDistanceThresh;
 
@@ -277,6 +278,14 @@ namespace SAF_OpticalFailureDetector.imageprocessing
             }
         }
 
+	public void SetRegionToProcess(Rectangle regionToProcess)
+	{
+            lock (_ipLock)
+            {
+		this.regionToProcess = regionToProcess;
+	    }
+	}
+
         public void EnableAutoExposure(bool enable)
         {
             lock (_ipLock)
@@ -355,7 +364,7 @@ namespace SAF_OpticalFailureDetector.imageprocessing
                                 Rectangle oldROI = new Rectangle(roi.X,roi.Y,roi.Width,roi.Height);
                                 try
                                 {
-                                    updateROI(processImage);
+                                    roi = regionToProcess;
                                 }
                                 catch (Exception inner)
                                 {

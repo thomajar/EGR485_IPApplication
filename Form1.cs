@@ -560,6 +560,8 @@ namespace SAF_OpticalFailureDetector
             log.Info("MainForm.tsbtn_Start_Click : User pressed start processing button.");
             if(Start())
             {
+                Camera1Display.Lock();
+                Camera2Display.Lock();
                 cmboCam1View.SelectedIndex = cmboCam1View.Items.IndexOf(DISPLAY_TYPE_PROCESSED);
                 cmboCam2View.SelectedIndex = cmboCam2View.Items.IndexOf(DISPLAY_TYPE_PROCESSED);
                 tsbtn_Stop.Enabled = true;
@@ -580,6 +582,8 @@ namespace SAF_OpticalFailureDetector
             Stop();
             cmboCam1View.SelectedIndex = cmboCam1View.Items.IndexOf(DISPLAY_TYPE_NORMAL);
             cmboCam2View.SelectedIndex = cmboCam2View.Items.IndexOf(DISPLAY_TYPE_NORMAL);
+            Camera1Display.UnLock();
+            Camera2Display.UnLock();
             tsbtn_Stop.Enabled = false;
             tsbtn_Start.Enabled = true;
             ipQueue1.reset();
@@ -686,6 +690,29 @@ namespace SAF_OpticalFailureDetector
             imagep2.SetContrast(metadata.MinimumContrast);
             imagep2.SetRange(metadata.ImagerNoise);
             imagep2.SetTargetIntensity(metadata.TargetIntenstiy);
+
+            Rectangle r = Camera1Display.GetRegionToProcess();
+            if (r != Rectangle.Empty)
+            {
+                imagep1.EnableAutoROI(true);
+                imagep1.SetRegionToProcess(r);
+            }
+            else
+            {
+                imagep1.EnableAutoROI(false);
+            }
+
+            r = Camera2Display.GetRegionToProcess();
+            if (r != Rectangle.Empty)
+            {
+                imagep2.EnableAutoROI(true);
+                imagep2.SetRegionToProcess(r);
+            }
+            else
+            {
+                imagep2.EnableAutoROI(false);
+            }
+
             try
             {
                 imagep1.Start(1000 / metadata.TestFrequency);
@@ -1093,6 +1120,25 @@ namespace SAF_OpticalFailureDetector
                 log.Error(errMsg, ex);
                 DisplayError(errMsg, ex);
             }
+        }
+
+        private Point pointReplay1;
+        private void zibReplayCam1_MouseDown(object sender, MouseEventArgs e)
+        {
+            // grap e.x and e.y store to temp point
+            pointReplay1 = new Point(e.X, e.Y);
+        }
+
+        private void zibReplayCam1_MouseUp(object sender, MouseEventArgs e)
+        {
+            // grab e.x and e.y and complete rectangle
+            Rectangle r = new Rectangle(pointReplay1.X, pointReplay1.Y, e.X - pointReplay1.X + 1, e.Y - pointReplay1.Y + 1);
+            imagep1.SetRegionToProcess(r);
+        }
+
+        private void tsbtnDrawRegionOfInterest_Click(object sender, EventArgs e)
+        {
+            
         }
 
         

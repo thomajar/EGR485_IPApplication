@@ -36,7 +36,7 @@ namespace SAF_OpticalFailureDetector.camera
         private const float DEFAULT_FRAME_RATE = 15.0f;
         private const string DEFAULT_VIDEO_FORMAT = "Y800 (1280x960)";
         private const bool DEFAULT_ENABLE_AUTO_EXPOSURE = false;
-        private const double DEFAULT_EXPOSURE_MS = 25.0;
+        private const double DEFAULT_EXPOSURE_MS = 2.0;
         private const bool DEFAULT_ENABLE_AUTO_GAIN = false;
         private const double DEFAULT_GAIN_DB = 0.0;
         private const int DEFAULT_IMAGE_BUFFER_SIZE = 50;

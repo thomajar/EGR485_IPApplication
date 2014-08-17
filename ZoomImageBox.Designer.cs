@@ -41,16 +41,18 @@
             this.DisplayPanel.Controls.Add(this.DisplayImageBox);
             this.DisplayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DisplayPanel.Location = new System.Drawing.Point(0, 0);
+            this.DisplayPanel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.DisplayPanel.Name = "DisplayPanel";
-            this.DisplayPanel.Size = new System.Drawing.Size(581, 490);
+            this.DisplayPanel.Size = new System.Drawing.Size(436, 398);
             this.DisplayPanel.TabIndex = 0;
             // 
             // DisplayText
             // 
             this.DisplayText.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DisplayText.Location = new System.Drawing.Point(0, 0);
+            this.DisplayText.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.DisplayText.Name = "DisplayText";
-            this.DisplayText.Size = new System.Drawing.Size(581, 490);
+            this.DisplayText.Size = new System.Drawing.Size(436, 398);
             this.DisplayText.TabIndex = 2;
             this.DisplayText.Text = "ZoomImageBoxText";
             this.DisplayText.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DisplayImageBox_MouseDown);
@@ -63,19 +65,20 @@
             this.DisplayImageBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.DisplayImageBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DisplayImageBox.Location = new System.Drawing.Point(0, 0);
+            this.DisplayImageBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.DisplayImageBox.Name = "DisplayImageBox";
-            this.DisplayImageBox.Size = new System.Drawing.Size(581, 490);
-            this.DisplayImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.DisplayImageBox.Size = new System.Drawing.Size(436, 398);
             this.DisplayImageBox.TabIndex = 1;
             this.DisplayImageBox.TabStop = false;
             // 
             // ZoomImageBox
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.DisplayPanel);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "ZoomImageBox";
-            this.Size = new System.Drawing.Size(581, 490);
+            this.Size = new System.Drawing.Size(436, 398);
             this.DisplayPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.DisplayImageBox)).EndInit();
             this.ResumeLayout(false);
